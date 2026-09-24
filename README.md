@@ -113,7 +113,10 @@ Subagents** filters child-agent activity by project, application, model,
 completion state, attention signal, and time. Provider-reported roles such as
 `token_meter_reviewer` are shown as the primary identity when available;
 provider nicknames remain a fallback. A stale nonterminal trace is labeled
-**Incomplete**, independently of any attention signal.
+**Incomplete**, independently of any attention signal. The default **Roles**
+view charts named-role spend, cost per run, and run volume over time, compares
+equal periods when coverage permits, and links each role back to its runs for
+investigation.
 
 <p align="center">
   <img src="images/dashboard.png" alt="Token Meter session detail with live cost, token, context, and execution metrics" width="900">

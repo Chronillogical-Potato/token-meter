@@ -16,6 +16,7 @@ ACTIVITY_STATES = frozenset({
     "working", "waiting", "recent", "incomplete", "complete", "unknown",
 })
 MAX_AGENT_USAGE_INVENTORY = 1000
+MAX_AGENT_ROLE_DAYS = 4000
 PUBLIC_AGENT_FIELDS = (
     "id", "parent_id", "session_id", "runtime", "client", "kind", "depth",
     "label", "role", "model", "activity_state", "started_at", "ended_at",
@@ -458,6 +459,41 @@ def _cohort_rows(records, key_fn, identity_fn):
     return rows
 
 
+def _role_rows(records, attention_ids):
+    grouped = defaultdict(list)
+    for record in records:
+        if record.get("role"):
+            grouped[(
+                record["runtime"], record["role"], record["kind"],
+            )].append(record)
+    rows = []
+    for (runtime, role, kind), members in grouped.items():
+        row = {
+            "id": f"{role}::{runtime}::{kind}",
+            "role": role,
+            "runtime": runtime,
+            "kind": kind,
+            **_detailed_totals(members),
+            "complete_agents": sum(
+                record["activity_state"] == "complete" for record in members
+            ),
+            "incomplete_agents": sum(
+                record["activity_state"] == "incomplete" for record in members
+            ),
+            "working_agents": sum(
+                record["activity_state"] == "working" for record in members
+            ),
+            "attention_agents": sum(
+                record["id"] in attention_ids for record in members
+            ),
+        }
+        rows.append(row)
+    rows.sort(key=lambda row: (
+        -(row["known_cost"] if row["cost_available"] else -1), row["id"],
+    ))
+    return rows
+
+
 def _usage_body(entries):
     records = [record for record, _group in entries]
     groups = {}
@@ -542,18 +578,7 @@ def _usage_body(entries):
                 "kind": key[1],
             },
         ),
-        "roles": _cohort_rows(
-            [record for record in records if record.get("role")],
-            lambda record: (
-                record["runtime"], record["role"], record["kind"],
-            ),
-            lambda key: {
-                "id": f"{key[1]}::{key[0]}::{key[2]}",
-                "role": key[1],
-                "runtime": key[0],
-                "kind": key[2],
-            },
-        ),
+        "roles": _role_rows(records, attention_ids),
     }
 
 
@@ -602,6 +627,7 @@ def _inventory_row(record, group, attention, now):
 
 def aggregate_agent_usage(
     groups, *, now=None, max_inventory=MAX_AGENT_USAGE_INVENTORY,
+    max_role_days=MAX_AGENT_ROLE_DAYS,
 ):
     """Aggregate child-agent usage without folding root-session work into it."""
     now = float(time.time() if now is None else now)
@@ -624,6 +650,49 @@ def aggregate_agent_usage(
         for item in group.get("attention") or ()
         if isinstance(item, dict)
     }
+    role_day_groups = defaultdict(list)
+    for record, group in entries:
+        timestamp = _agent_activity_timestamp(record)
+        if not record.get("role") or timestamp is None:
+            continue
+        key = (
+            time.strftime("%Y-%m-%d", time.localtime(timestamp)),
+            str(group.get("_project") or ""),
+            record["runtime"], record["kind"], record["role"],
+        )
+        role_day_groups[key].append(record)
+    role_days = []
+    for (day, project, runtime, kind, role), members in role_day_groups.items():
+        role_days.append({
+            "day": day,
+            "project": project,
+            "runtime": runtime,
+            "kind": kind,
+            "role": role,
+            **_detailed_totals(members),
+            "complete_agents": sum(
+                record["activity_state"] == "complete" for record in members
+            ),
+            "incomplete_agents": sum(
+                record["activity_state"] == "incomplete" for record in members
+            ),
+            "working_agents": sum(
+                record["activity_state"] == "working" for record in members
+            ),
+            "attention_agents": sum(
+                record["id"] in attention for record in members
+            ),
+        })
+    role_days.sort(key=lambda row: (
+        row["day"], row["runtime"], row["kind"], row["role"],
+        row["project"],
+    ), reverse=True)
+    max_role_days = max(1, min(
+        MAX_AGENT_ROLE_DAYS, int(max_role_days or 1),
+    ))
+    result["role_days"] = role_days[:max_role_days]
+    result["role_day_count"] = len(role_days)
+    result["role_days_truncated"] = len(role_days) > max_role_days
     inventory = [
         _inventory_row(record, group, attention, now)
         for record, group in entries
@@ -659,12 +728,28 @@ def aggregate_agent_usage(
                     entry for entry in window_entries
                     if not runtime or entry[0]["runtime"] == runtime
                 ]
-                scopes.append({
+                scope = {
                     "window": window,
                     "runtime": runtime,
                     "project": project,
                     **_usage_body(scoped_entries),
-                })
+                }
+                if seconds is not None:
+                    comparison_entries = [
+                        entry for entry in project_entries
+                        if (
+                            _agent_activity_timestamp(entry[0]) is not None
+                            and now - (2 * seconds)
+                            <= _agent_activity_timestamp(entry[0])
+                            < now - seconds
+                            and (
+                                not runtime
+                                or entry[0]["runtime"] == runtime
+                            )
+                        )
+                    ]
+                    scope["comparison"] = _usage_body(comparison_entries)
+                scopes.append(scope)
 
     append_scopes("", entries)
     projects = sorted({

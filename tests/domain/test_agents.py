@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from token_meter.domain.agents import (
@@ -293,6 +294,10 @@ class AgentGroupDomainTests(unittest.TestCase):
             "median_cost": 2.0,
             "p95_cost": 2.0,
             "output_per_dollar": 0.0,
+            "complete_agents": 0,
+            "incomplete_agents": 0,
+            "working_agents": 0,
+            "attention_agents": 0,
         }])
 
     def test_cross_session_usage_includes_bounded_content_free_inventory(self):
@@ -493,6 +498,113 @@ class AgentGroupDomainTests(unittest.TestCase):
         self.assertEqual(len(luna_scopes), 1)
         self.assertEqual(luna_scopes[0]["totals"]["agents"], 1)
         self.assertEqual(luna_scopes[0]["totals"]["cost"], 4.0)
+
+    def test_role_economics_compares_equal_periods_and_groups_local_days(self):
+        now = 2_000_000
+        current_a = now - 60
+        current_b = now - 86_460
+        previous = now - 604_860
+        older = now - 1_209_660
+        records = [agent(
+            "root", session_id="root-session", kind="root", depth=0,
+            cost=1, tokens=100, last_activity_at=now,
+        )]
+        records.extend([
+            agent(
+                "current-a", parent_id="root", role="reviewer", cost=2,
+                tokens=200, activity_state="complete",
+                last_activity_at=current_a,
+            ),
+            agent(
+                "current-b", parent_id="root", role="reviewer", cost=4,
+                tokens=400, activity_state="incomplete", retries=3,
+                last_activity_at=current_b,
+            ),
+            agent(
+                "previous", parent_id="root", role="reviewer", cost=6,
+                tokens=600, activity_state="complete",
+                last_activity_at=previous,
+            ),
+            agent(
+                "older", parent_id="root", role="reviewer", cost=8,
+                tokens=800, activity_state="complete",
+                last_activity_at=older,
+            ),
+            agent(
+                "anonymous", parent_id="root", role=None, cost=99,
+                tokens=9_900, last_activity_at=current_a,
+            ),
+        ])
+        usage = aggregate_agent_usage(build_agent_groups([
+            session("root-session", *records, project="/projects/token-meter"),
+        ], now=now), now=now)
+
+        scope = next(
+            row for row in usage["scopes"]
+            if row["project"] == "/projects/token-meter"
+            and row["runtime"] == "codex" and row["window"] == "7d"
+        )
+        current_role = scope["roles"][0]
+        previous_role = scope["comparison"]["roles"][0]
+        self.assertEqual(
+            (current_role["agents"], current_role["cost"],
+             current_role["incomplete_agents"],
+             current_role["attention_agents"]),
+            (2, 6.0, 1, 1),
+        )
+        self.assertEqual(
+            (previous_role["agents"], previous_role["cost"],
+             previous_role["incomplete_agents"]),
+            (1, 6.0, 0),
+        )
+        self.assertNotIn("comparison", next(
+            row for row in usage["scopes"]
+            if row["project"] == "/projects/token-meter"
+            and row["runtime"] == "codex" and row["window"] == "all"
+        ))
+
+        self.assertEqual(usage["role_day_count"], 4)
+        self.assertFalse(usage["role_days_truncated"])
+        self.assertEqual(
+            {row["day"] for row in usage["role_days"]},
+            {
+                time.strftime("%Y-%m-%d", time.localtime(timestamp))
+                for timestamp in (current_a, current_b, previous, older)
+            },
+        )
+        latest = next(
+            row for row in usage["role_days"]
+            if row["day"] == time.strftime(
+                "%Y-%m-%d", time.localtime(current_a)
+            )
+        )
+        self.assertEqual(latest["project"], "/projects/token-meter")
+        self.assertEqual(latest["role"], "reviewer")
+        self.assertNotEqual(latest["known_cost"], 99)
+
+    def test_role_day_series_is_bounded_without_changing_exact_role_totals(self):
+        now = 2_000_000
+        records = [agent(
+            "root", session_id="root-session", kind="root", depth=0,
+            last_activity_at=now,
+        )]
+        records.extend(
+            agent(
+                f"child-{index}", parent_id="root", role="reviewer",
+                cost=index + 1, tokens=100, last_activity_at=now - index * 86_400,
+            )
+            for index in range(4)
+        )
+        usage = aggregate_agent_usage(
+            build_agent_groups([session("root-session", *records)], now=now),
+            now=now, max_role_days=2,
+        )
+
+        self.assertEqual(usage["role_day_count"], 4)
+        self.assertEqual(len(usage["role_days"]), 2)
+        self.assertTrue(usage["role_days_truncated"])
+        self.assertEqual(usage["roles"][0]["agents"], 4)
+        self.assertEqual(usage["roles"][0]["cost"], 10.0)
 
 
 if __name__ == "__main__":

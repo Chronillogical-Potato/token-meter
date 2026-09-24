@@ -152,13 +152,26 @@ filtered totals are withheld.
 
 The Subagents workspace has three views. **Roles** is first and is the default
 for new installations. It compares provider-reported roles within their
-application and child kind, including run count, total covered spend,
-incomplete and attention rates, median and p95 estimated cost, tokens, and the
-most common observed model. **Sessions** keeps every matching child under the
-parent session that started it and shows the spawned-run count for each parent.
+application and child kind. Its KPI strip and chart separate total named-role
+spend, average estimated cost per run, and run volume, so reduced spend is not
+mistaken for fewer executions. Spend and cost-per-run changes compare the
+selected 24-hour, 7-day, 30-day, or 90-day period with the immediately previous
+period of the same duration. **Any time** shows available history without a
+comparison baseline. The role table includes run count, total spend, change,
+average and p95 estimated cost, incomplete rate, review rate, and an **Inspect
+runs** action. **Sessions** keeps every matching child under the parent session
+that started it and shows the spawned-run count for each parent.
 **Issues** shows only parent sessions containing an incomplete child or a
 deterministic attention signal. Filters apply across all three views; a saved
 view preference is preserved.
+
+Role trends use exact server-side app, project, and time aggregates rather than
+the bounded visible inventory. Search, Model, Status, and Signal are row-level
+filters; while any is active, Token Meter pauses the exact trend and explains
+why instead of mixing incompatible scopes. Spend and change are unavailable
+when either compared period lacks complete cost evidence. “What changed”
+describes arithmetic movement and long-tail concentration only: lower spend
+does not establish better output or a successful task.
 
 Select a child in Issues or Sessions to keep the parent list visible while the
 inspector shows identity, lifecycle, cost, tokens, elapsed time, executions,

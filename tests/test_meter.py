@@ -6046,6 +6046,82 @@ process.stdout.write(JSON.stringify({{html}}));
         self.assertIn("<b>--</b>", payload["html"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_economics_compares_spend_volume_and_cost_per_run(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(['selectSubagentUsageScope','subagentRoleKey','subagentRoleFineFilters','subagentRoleDayRows','buildSubagentRoleEconomics'].map(extract).join('\\n'));
+const current=[
+ {{id:'reviewer::codex::spawned',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost:6,cost_available:true,cost_covered_agents:2,known_tokens:600,tokens:600,tokens_available:true,token_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:1,attention_agents:1}},
+ {{id:'tester::codex::spawned',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:2,cost:2,cost_available:true,cost_covered_agents:1,known_tokens:200,tokens:200,tokens_available:true,token_covered_agents:1,median_cost:2,p95_cost:2,incomplete_agents:0,attention_agents:0}},
+];
+const previous=[
+ {{id:'reviewer::codex::spawned',runtime:'codex',kind:'spawned',role:'reviewer',agents:1,known_cost:8,cost:8,cost_available:true,cost_covered_agents:1,median_cost:8,p95_cost:8,incomplete_agents:0,attention_agents:0}},
+];
+const usage={{scopes:[{{window:'7d',runtime:'codex',project:'/repo',roles:current,comparison:{{roles:previous}}}}],role_day_count:2,role_days_truncated:false,role_days:[
+ {{day:'2026-09-24',project:'/repo',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2}},
+ {{day:'2026-09-23',project:'/repo',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:2,cost_available:true,cost_covered_agents:1}},
+]}};
+const base={{query:'',runtime:'codex',project:'/repo',model:'',status:'all',signal:'all',window:'7d',sort:'recent'}};
+const result=buildSubagentRoleEconomics(usage,base,Date.parse('2026-09-24T12:00:00'));
+const partial=buildSubagentRoleEconomics({{...usage,scopes:[{{...usage.scopes[0],roles:[{{...current[0],cost:null,cost_available:false,cost_covered_agents:1}}]}}]}},base,Date.parse('2026-09-24T12:00:00'));
+const filtered=buildSubagentRoleEconomics(usage,{{...base,status:'incomplete'}},Date.parse('2026-09-24T12:00:00'));
+process.stdout.write(JSON.stringify({{result,partial,filtered}}));
+"""
+        completed = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+
+        result = payload["result"]
+        self.assertEqual(result["runs"], 3)
+        self.assertEqual(result["cost"], 8)
+        self.assertAlmostEqual(result["averageCost"], 8 / 3)
+        self.assertEqual(result["previousRuns"], 1)
+        self.assertEqual(result["previousCost"], 8)
+        self.assertEqual(result["costChange"], 0)
+        self.assertAlmostEqual(result["averageCostChange"], -2 / 3)
+        reviewer = next(row for row in result["roles"] if row["role"] == "reviewer")
+        self.assertEqual(reviewer["costChange"], -0.25)
+        self.assertEqual(reviewer["runChange"], 1)
+        self.assertIsNone(payload["partial"]["cost"])
+        self.assertIsNone(payload["partial"]["costChange"])
+        self.assertEqual(payload["filtered"]["reason"], "filtered")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_economics_renders_chart_insights_and_drilldown(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),appFilterLabel=({{provider}})=>provider;
+let subagentRoleChartMode='spend';
+eval(['subagentRoleKey','renderSubagentRoleChart','renderSubagentRoleEconomics'].map(extract).join('\\n'));
+const economics={{reason:null,window:'7d',runs:3,cost:8,averageCost:8/3,costCovered:3,previousRuns:1,previousCost:8,costChange:0,averageCostChange:-2/3,runChange:2,incomplete:1,attention:1,previousIncomplete:0,roles:[
+ {{id:'reviewer::codex::spawned',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost:6,cost_available:true,cost_covered_agents:2,known_tokens:600,tokens_available:true,token_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:1,attention_agents:1,costChange:-.25,runChange:1,averageCostChange:-.625}},
+],days:[
+ {{day:'2026-09-23',runtime:'codex',kind:'spawned',role:'reviewer',agents:1,known_cost:4,cost_available:true,cost_covered_agents:1}},
+ {{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2}},
+]}};
+process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics)}}));
+"""
+        completed = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+
+        html = payload["html"]
+        self.assertIn("Role spend over time", html)
+        self.assertIn("Cost / run", html)
+        self.assertIn("What changed", html)
+        self.assertIn("<svg", html)
+        self.assertIn("data-subagent-inspect-role=", html)
+        self.assertIn("reviewer", html)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_workspace_groups_parent_sessions_and_prioritizes_issues(self):
         script = f"""
 const fs=require('fs');

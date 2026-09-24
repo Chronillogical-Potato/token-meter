@@ -239,6 +239,50 @@ class PublicProjectionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, encoded)
 
+    def test_agent_usage_projection_allowlists_role_economics(self):
+        role = {
+            "id": "reviewer::codex::spawned",
+            "runtime": "codex", "kind": "spawned", "role": "reviewer",
+            "agents": 2, "cost": 3.0, "known_cost": 3.0,
+            "cost_available": True, "cost_covered_agents": 2,
+            "tokens": 300, "known_tokens": 300,
+            "tokens_available": True, "token_covered_agents": 2,
+            "median_cost": 1.5, "p95_cost": 2.0,
+            "complete_agents": 1, "incomplete_agents": 1,
+            "working_agents": 0, "attention_agents": 1,
+            "prompt": "secret role prompt", "path": "/private/role",
+        }
+        projected = agent_usage_projection({
+            "scopes": [{
+                "window": "7d", "runtime": "codex", "project": "/repo",
+                "roles": [role],
+                "comparison": {"roles": [{**role, "cost": 4.0,
+                    "known_cost": 4.0}], "private": "comparison secret"},
+            }],
+            "role_days": [{
+                **role, "day": "2026-09-24", "project": "/repo",
+                "private": "daily secret", "tool_input": "do not project",
+            }],
+            "role_day_count": 1,
+            "role_days_truncated": False,
+        })
+        encoded = json.dumps(projected, sort_keys=True)
+
+        comparison = projected["scopes"][0]["comparison"]["roles"][0]
+        daily = projected["role_days"][0]
+        self.assertEqual(comparison["known_cost"], 4.0)
+        self.assertEqual(comparison["incomplete_agents"], 1)
+        self.assertEqual(daily["day"], "2026-09-24")
+        self.assertEqual(daily["project"], "/repo")
+        self.assertEqual(daily["attention_agents"], 1)
+        self.assertEqual(projected["role_day_count"], 1)
+        self.assertFalse(projected["role_days_truncated"])
+        for forbidden in (
+            "secret role prompt", "/private/role", "comparison secret",
+            "daily secret", "do not project", "prompt", "tool_input",
+        ):
+            self.assertNotIn(forbidden, encoded)
+
     def test_each_current_runtime_projects_without_private_source_data(self):
         fixture = json.loads((FIXTURES / "current-runtimes.json").read_text())
         for row in fixture["sessions"]:

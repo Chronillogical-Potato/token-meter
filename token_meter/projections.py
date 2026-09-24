@@ -29,11 +29,15 @@ AGENT_TOTAL_FIELDS = (
     "group_cost_covered_sessions", "agent_spend_share",
     "group_cost_coverage", "attention_agents",
 )
+AGENT_ROLE_ACTIVITY_FIELDS = (
+    "complete_agents", "incomplete_agents", "working_agents",
+)
 AGENT_COHORT_IDENTITY_FIELDS = (
     "id", "runtime", "model", "depth", "kind", "role",
 )
 MAX_AGENT_USAGE_SCOPES = 480
 MAX_AGENT_USAGE_INVENTORY = 1000
+MAX_AGENT_ROLE_DAYS = 4000
 AGENT_USAGE_INVENTORY_FIELDS = (
     "id", "root_session_id", "project", "runtime", "client", "kind",
     "depth", "label", "role", "model", "activity_state",
@@ -339,6 +343,10 @@ def _agent_cohort_projection(rows):
             for key in AGENT_COHORT_IDENTITY_FIELDS if key in item
         }
         row.update(_agent_totals_projection(item))
+        row.update({
+            key: item.get(key)
+            for key in AGENT_ROLE_ACTIVITY_FIELDS if key in item
+        })
         result.append(row)
     return result
 
@@ -363,17 +371,49 @@ def agent_usage_projection(usage):
     for item in raw_scopes[:MAX_AGENT_USAGE_SCOPES]:
         if not isinstance(item, Mapping):
             continue
-        scopes.append({
+        row = {
             "window": str(item.get("window") or "all")[:16],
             "runtime": str(item.get("runtime") or "")[:40],
             "project": str(item.get("project") or "")[:1000],
             **_agent_usage_body_projection(item),
-        })
+        }
+        if isinstance(item.get("comparison"), Mapping):
+            row["comparison"] = _agent_usage_body_projection(
+                item.get("comparison")
+            )
+        scopes.append(row)
     result["scopes"] = scopes
     result["scope_count"] = len(raw_scopes)
     result["scope_truncated"] = (
         bool(usage.get("scope_truncated"))
         or len(raw_scopes) > MAX_AGENT_USAGE_SCOPES
+    )
+    raw_role_days = list(usage.get("role_days") or ())
+    role_days = []
+    for item in raw_role_days[:MAX_AGENT_ROLE_DAYS]:
+        if not isinstance(item, Mapping):
+            continue
+        row = {
+            "day": str(item.get("day") or "")[:10],
+            "project": str(item.get("project") or "")[:1000],
+            "runtime": str(item.get("runtime") or "")[:40],
+            "kind": str(item.get("kind") or "")[:40],
+            "role": str(item.get("role") or "")[:64],
+            **_agent_totals_projection(item),
+        }
+        row.update({
+            key: item.get(key)
+            for key in AGENT_ROLE_ACTIVITY_FIELDS if key in item
+        })
+        role_days.append(row)
+    result["role_days"] = role_days
+    result["role_day_count"] = max(
+        len(raw_role_days),
+        _nonnegative_projection_int(usage.get("role_day_count")),
+    )
+    result["role_days_truncated"] = (
+        bool(usage.get("role_days_truncated"))
+        or len(raw_role_days) > MAX_AGENT_ROLE_DAYS
     )
     raw_inventory = list(usage.get("inventory") or ())
     inventory = []
