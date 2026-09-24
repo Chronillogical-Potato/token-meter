@@ -7,6 +7,42 @@ from typing import Mapping
 from token_meter.contracts import EvidenceBasis, EvidenceValue, NormalizedSession
 
 
+AGENT_FIELDS = (
+    "id", "parent_id", "session_id", "runtime", "client", "kind", "depth",
+    "label", "role", "model", "activity_state", "started_at", "ended_at",
+    "last_activity_at", "input_tokens", "output_tokens", "cache_read_tokens",
+    "cache_write_tokens", "reasoning_tokens", "tokens", "tokens_available",
+    "cost", "cost_available", "executions", "attempts", "retries",
+    "failed_attempts", "tool_calls", "elapsed_s", "group_cost_share",
+    "navigable", "attention_level",
+)
+AGENT_TOTAL_FIELDS = (
+    "agents", "tokens", "known_tokens", "tokens_available", "cost",
+    "known_cost", "cost_available", "cost_covered_agents",
+    "token_covered_agents", "input_tokens", "known_input_tokens",
+    "output_tokens", "known_output_tokens", "cache_read_tokens",
+    "known_cache_read_tokens", "cache_write_tokens",
+    "known_cache_write_tokens", "reasoning_tokens",
+    "known_reasoning_tokens", "executions", "cost_per_agent",
+    "median_cost", "p95_cost", "output_per_dollar", "parent_sessions",
+    "covered_group_cost", "covered_child_cost",
+    "group_cost_covered_sessions", "agent_spend_share",
+    "group_cost_coverage", "attention_agents",
+)
+AGENT_COHORT_IDENTITY_FIELDS = (
+    "id", "runtime", "model", "depth", "kind", "role",
+)
+MAX_AGENT_USAGE_SCOPES = 480
+MAX_AGENT_USAGE_INVENTORY = 1000
+AGENT_USAGE_INVENTORY_FIELDS = (
+    "id", "root_session_id", "project", "runtime", "client", "kind",
+    "depth", "label", "role", "model", "activity_state",
+    "last_activity_at", "tokens", "tokens_available", "cost",
+    "cost_available", "elapsed_s", "executions", "attempts", "retries",
+    "failed_attempts", "tool_calls",
+)
+
+
 def _timestamp(value):
     return float(value.timestamp()) if isinstance(value, datetime) else None
 
@@ -229,6 +265,144 @@ def mcp_projection(session):
         "tool_categories": row["tool_categories"],
         "availability": row["availability"],
     }
+
+
+def _agent_totals_projection(value):
+    value = value if isinstance(value, Mapping) else {}
+    return {key: value.get(key) for key in AGENT_TOTAL_FIELDS}
+
+
+def _agent_attention_projection(value):
+    result = []
+    for item in list(value or ())[:100]:
+        if not isinstance(item, Mapping):
+            continue
+        reasons = []
+        for reason in list(item.get("reasons") or ())[:8]:
+            if not isinstance(reason, Mapping):
+                continue
+            reasons.append({
+                "code": str(reason.get("code") or "")[:80],
+                "explanation": str(reason.get("explanation") or "")[:320],
+            })
+        result.append({
+            "agent_id": str(item.get("agent_id") or "")[:240],
+            "level": "needs_attention",
+            "reasons": reasons,
+        })
+    return result
+
+
+def _nonnegative_projection_int(value):
+    if isinstance(value, bool):
+        return 0
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
+def agent_group_projection(group):
+    """Project one browser-only agent group through a strict allowlist."""
+    if not isinstance(group, Mapping):
+        return None
+    agents = []
+    for item in list(group.get("agents") or ())[:100]:
+        if not isinstance(item, Mapping):
+            continue
+        agents.append({key: item.get(key) for key in AGENT_FIELDS})
+    coverage = group.get("coverage") if isinstance(group.get("coverage"), Mapping) else {}
+    return {
+        "root_session_id": str(group.get("root_session_id") or "")[:240],
+        "selected_agent_id": str(group.get("selected_agent_id") or "")[:240],
+        "coverage": {
+            key: str(coverage.get(key) or "unavailable")[:32]
+            for key in ("relationships", "tokens", "cost")
+        },
+        "totals": _agent_totals_projection(group.get("totals")),
+        "child_totals": _agent_totals_projection(group.get("child_totals")),
+        "agents": agents,
+        "attention": _agent_attention_projection(group.get("attention")),
+        "hidden_agent_count": _nonnegative_projection_int(
+            group.get("hidden_agent_count")
+        ),
+    }
+
+
+def _agent_cohort_projection(rows):
+    result = []
+    for item in list(rows or ())[:240]:
+        if not isinstance(item, Mapping):
+            continue
+        row = {
+            key: item.get(key)
+            for key in AGENT_COHORT_IDENTITY_FIELDS if key in item
+        }
+        row.update(_agent_totals_projection(item))
+        result.append(row)
+    return result
+
+
+def _agent_usage_body_projection(usage):
+    usage = usage if isinstance(usage, Mapping) else {}
+    return {
+        "totals": _agent_totals_projection(usage.get("totals")),
+        **{
+            key: _agent_cohort_projection(usage.get(key))
+            for key in ("runtimes", "models", "depths", "kinds", "roles")
+        },
+    }
+
+
+def agent_usage_projection(usage):
+    """Project bounded content-free child-agent analysis for the browser."""
+    usage = usage if isinstance(usage, Mapping) else {}
+    result = _agent_usage_body_projection(usage)
+    scopes = []
+    raw_scopes = list(usage.get("scopes") or ())
+    for item in raw_scopes[:MAX_AGENT_USAGE_SCOPES]:
+        if not isinstance(item, Mapping):
+            continue
+        scopes.append({
+            "window": str(item.get("window") or "all")[:16],
+            "runtime": str(item.get("runtime") or "")[:40],
+            "project": str(item.get("project") or "")[:1000],
+            **_agent_usage_body_projection(item),
+        })
+    result["scopes"] = scopes
+    result["scope_count"] = len(raw_scopes)
+    result["scope_truncated"] = (
+        bool(usage.get("scope_truncated"))
+        or len(raw_scopes) > MAX_AGENT_USAGE_SCOPES
+    )
+    raw_inventory = list(usage.get("inventory") or ())
+    inventory = []
+    for item in raw_inventory[:MAX_AGENT_USAGE_INVENTORY]:
+        if not isinstance(item, Mapping):
+            continue
+        row = {
+            key: item.get(key) for key in AGENT_USAGE_INVENTORY_FIELDS
+        }
+        row["attention"] = []
+        for reason in list(item.get("attention") or ())[:8]:
+            if not isinstance(reason, Mapping):
+                continue
+            row["attention"].append({
+                "code": str(reason.get("code") or "")[:80],
+                "explanation": str(reason.get("explanation") or "")[:320],
+            })
+        inventory.append(row)
+    result["inventory"] = inventory
+    result["inventory_count"] = max(
+        len(raw_inventory),
+        _nonnegative_projection_int(usage.get("inventory_count")),
+    )
+    result["inventory_truncated"] = (
+        bool(usage.get("inventory_truncated"))
+        or len(raw_inventory) > MAX_AGENT_USAGE_INVENTORY
+        or result["inventory_count"] > len(inventory)
+    )
+    return result
 
 
 def projection_bundle(session, runtime_catalog):

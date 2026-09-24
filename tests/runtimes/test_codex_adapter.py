@@ -510,6 +510,237 @@ class CodexRuntimeAdapterTests(unittest.TestCase):
         self.assertEqual(child["parent_thread_id"], "nested-source-parent-1")
         self.assertEqual(child["lineage_parent_id"], "nested-source-parent-1")
 
+    def test_spawn_metadata_is_bounded_allowlisted_and_resolves_public_parent(self):
+        parent_path = self._write_trace("agent-parent", [
+            self._session_meta("agent-parent-physical", "agent-parent-public"),
+            self._turn(),
+        ])
+        child_path = self._write_trace("agent-child", [
+            self._session_meta("agent-child-physical", "agent-child-public", source={
+                "subagent": {"thread_spawn": {
+                    "parent_thread_id": "agent-parent-physical",
+                    "agent_nickname": "  Research   Agent  ",
+                    "agent_role": " researcher ",
+                    "depth": 7,
+                    "agent_path": "/private/custom-agent.md",
+                    "base_instructions": "private instructions",
+                }},
+            }),
+            self._turn(),
+        ])
+
+        sources = {
+            source["path"]: source
+            for source in self.adapter.discover_legacy(self.context)
+        }
+        parent = sources[str(parent_path)]
+        child = sources[str(child_path)]
+
+        self.assertEqual(parent["agent_kind"], "root")
+        self.assertIsNone(parent["agent_parent_session_id"])
+        self.assertEqual(child["agent_kind"], "spawned")
+        self.assertEqual(
+            child["agent_parent_session_id"], "agent-parent-public",
+        )
+        self.assertEqual(child["agent_depth"], 7)
+        self.assertEqual(child["agent_label"], "Research Agent")
+        self.assertEqual(child["agent_role"], "researcher")
+        encoded = repr(child)
+        self.assertNotIn("custom-agent.md", encoded)
+        self.assertNotIn("private instructions", encoded)
+        self.assertNotIn("agent_path", child)
+        self.assertNotIn("base_instructions", child)
+
+    def test_duplicate_physical_parent_with_shared_public_session_builds_distinct_agent_identity(self):
+        first_parent = self._write_trace("shared-agent-parent-first", [
+            self._session_meta("shared-agent-parent", "shared-public"),
+            self._turn(),
+        ], mtime=10)
+        second_parent = self._write_trace("shared-agent-parent-second", [
+            self._session_meta("shared-agent-parent", "shared-public"),
+            self._turn(),
+        ], mtime=20)
+        child_paths = [
+            self._write_trace(f"shared-agent-child-{index}", [
+                self._session_meta(
+                    f"shared-agent-child-{index}", "shared-public", source={
+                        "subagent": {"thread_spawn": {
+                            "parent_thread_id": "shared-agent-parent",
+                            "agent_nickname": f"Worker {index}",
+                        }},
+                    },
+                ),
+                self._turn(),
+            ], mtime=20 + index)
+            for index in (1, 2)
+        ]
+
+        sources = {
+            source["path"]: source
+            for source in self.adapter.discover_legacy(self.context)
+        }
+        parents = [sources[str(first_parent)], sources[str(second_parent)]]
+        children = [sources[str(path)] for path in child_paths]
+
+        parent_agent_id = parents[0].get("agent_id")
+        self.assertIsNotNone(parent_agent_id)
+        self.assertEqual(parent_agent_id, parents[1].get("agent_id"))
+        self.assertTrue(parent_agent_id.startswith("codex-agent-"))
+        self.assertEqual(
+            {child["agent_parent_id"] for child in children},
+            {parent_agent_id},
+        )
+        self.assertEqual(len({child["agent_id"] for child in children}), 2)
+        self.assertTrue(all(
+            child["agent_id"] != child["physical_trace_id"]
+            for child in children
+        ))
+        self.assertTrue(all(
+            child["agent_parent_session_id"] is None for child in children
+        ))
+
+        self.adapter.compatibility = meter._codex_compatibility()
+        summary = self.adapter.summarize_legacy(children[0])
+        record = summary["_agent_records"][0]
+        self.assertEqual(record["id"], children[0]["agent_id"])
+        self.assertEqual(record["parent_id"], parent_agent_id)
+        self.assertIsNone(record["session_id"])
+        encoded = repr(record)
+        self.assertNotIn("shared-agent-parent", encoded)
+        self.assertNotIn("shared-agent-child-1", encoded)
+
+    def test_duplicate_physical_parent_with_conflicting_agent_metadata_is_ambiguous(self):
+        for suffix, role in (("first", "researcher"), ("second", "reviewer")):
+            self._write_trace(f"conflicting-agent-parent-{suffix}", [
+                self._session_meta(
+                    "conflicting-agent-parent", "conflicting-parent-public",
+                    source={"subagent": {"thread_spawn": {
+                        "parent_thread_id": "outer-agent-parent",
+                        "agent_role": role,
+                        "depth": 1,
+                    }}},
+                ),
+            ])
+        child_path = self._write_trace("conflicting-agent-child", [
+            self._session_meta(
+                "conflicting-agent-child", "conflicting-child-public",
+                source={"subagent": {"thread_spawn": {
+                    "parent_thread_id": "conflicting-agent-parent",
+                    "depth": 2,
+                }}},
+            ),
+        ])
+
+        child = next(
+            source for source in self.adapter.discover_legacy(self.context)
+            if source["path"] == str(child_path)
+        )
+
+        self.assertIsNone(child["agent_parent_id"])
+        self.assertIsNone(child["agent_parent_session_id"])
+
+    def test_spawn_display_metadata_rejects_path_url_and_credential_shapes(self):
+        self._write_trace("safe-agent-parent", [
+            self._session_meta("safe-agent-parent-physical"),
+        ])
+        unsafe_path = self._write_trace("unsafe-agent-display", [
+            self._session_meta("unsafe-agent-child", source={
+                "subagent": {"thread_spawn": {
+                    "parent_thread_id": "safe-agent-parent-physical",
+                    "agent_nickname": "/Users/private/custom-agent.md",
+                    "agent_role": "Bearer secret-token-value",
+                }},
+            }),
+        ])
+
+        child = next(
+            source for source in self.adapter.discover_legacy(self.context)
+            if source["path"] == str(unsafe_path)
+        )
+
+        self.assertEqual(child["agent_label"], "")
+        self.assertEqual(child["agent_role"], "")
+
+    def test_direct_parent_is_internal_but_fork_only_is_not_an_agent_edge(self):
+        self._write_trace("relation-parent", [
+            self._session_meta("relation-parent-physical", "relation-parent-public"),
+        ])
+        internal_path = self._write_trace("relation-internal", [
+            self._session_meta(
+                "relation-internal-physical", "relation-internal-public",
+                parent_thread_id="relation-parent-physical",
+            ),
+        ])
+        fork_path = self._write_trace("relation-fork", [
+            self._session_meta(
+                "relation-fork-physical", "relation-fork-public",
+                forked_from_id="relation-parent-physical",
+            ),
+        ])
+
+        sources = {
+            source["path"]: source
+            for source in self.adapter.discover_legacy(self.context)
+        }
+
+        self.assertEqual(sources[str(internal_path)]["agent_kind"], "internal")
+        self.assertEqual(
+            sources[str(internal_path)]["agent_parent_session_id"],
+            "relation-parent-public",
+        )
+        self.assertEqual(sources[str(fork_path)]["agent_kind"], "root")
+        self.assertIsNone(sources[str(fork_path)]["agent_parent_session_id"])
+
+    def test_summary_agent_record_uses_corrected_usage_and_safe_structure(self):
+        self.adapter.compatibility = meter._codex_compatibility()
+        self._write_trace("summary-parent", [
+            self._session_meta("summary-parent-physical", "summary-parent-public"),
+            self._turn(model="gpt-5.6-sol"),
+            self._token_event(100, 10, 100, 10),
+        ], mtime=10)
+        child_path = self._write_trace("summary-child", [
+            self._session_meta("summary-child-physical", "summary-child-public", source={
+                "subagent": {"thread_spawn": {
+                    "parent_thread_id": "summary-parent-physical",
+                    "agent_nickname": "Worker",
+                    "agent_role": "researcher",
+                    "agent_path": "/private/worker.md",
+                }},
+            }),
+            self._turn(model="gpt-5.6-sol", timestamp="2026-08-11T01:00:01Z"),
+            self._token_event(100, 10, 100, 10, "2026-08-11T01:00:02Z"),
+            self._token_event(50, 5, 150, 15, "2026-08-11T02:00:02Z"),
+        ], mtime=20)
+        sources = {
+            source["path"]: source
+            for source in self.adapter.discover_legacy(self.context)
+        }
+        source = sources[str(child_path)]
+
+        summary = self.adapter.summarize_legacy(source)
+        record = summary["_agent_records"][0]
+
+        self.assertEqual(summary["turns"], 1)
+        self.assertEqual(record["id"], source["agent_id"])
+        self.assertEqual(
+            record["parent_id"],
+            sources[str(self.trace.parent / "rollout-summary-parent.jsonl")]["agent_id"],
+        )
+        self.assertEqual(record["session_id"], "summary-child-public")
+        self.assertEqual(record["kind"], "spawned")
+        self.assertEqual(record["label"], "Worker")
+        self.assertEqual(record["role"], "researcher")
+        self.assertEqual(record["model"], "gpt-5.6-sol")
+        self.assertEqual(record["activity_state"], "incomplete")
+        self.assertEqual(record["tokens"], summary["tokens"])
+        self.assertEqual(record["input_tokens"], summary["input_tokens"])
+        self.assertEqual(record["output_tokens"], summary["output_tokens"])
+        self.assertEqual(record["cost"], summary["cost"])
+        self.assertEqual(
+            record["cost_available"], summary["availability"]["cost"],
+        )
+        self.assertNotIn("agent_path", record)
+
     def test_parent_appearance_changes_child_lineage_revision(self):
         child_path = self._write_trace("revision-child", [
             self._session_meta(

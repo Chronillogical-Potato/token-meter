@@ -375,6 +375,103 @@ class ClaudeGroupedDiscoveryTests(unittest.TestCase):
         self.assertEqual(loaded.usage.output_tokens.value, 3)
         self.assertEqual(len(loaded.turns), 2)
 
+    def test_nested_subagent_summary_reconciles_private_component_ownership(self):
+        self.adapter.compatibility = meter._claude_compatibility()
+        source = self.adapter.discover_legacy(
+            DiscoveryContext(home=str(self.root)),
+        )[0]
+
+        summary = self.adapter.summarize_legacy(source)
+        records = summary["_agent_records"]
+        root, child = records
+
+        self.assertEqual(root["id"], source["id"])
+        self.assertEqual(root["kind"], "root")
+        self.assertIsNone(root["parent_id"])
+        self.assertEqual(root["depth"], 0)
+        self.assertEqual(root["tokens"], 11)
+        self.assertEqual(child["kind"], "spawned")
+        self.assertEqual(child["parent_id"], root["id"])
+        self.assertEqual(child["depth"], 1)
+        self.assertEqual(child["tokens"], 22)
+        self.assertEqual(child["label"], "")
+        self.assertIsNone(child["role"])
+        self.assertIsNone(child["session_id"])
+        self.assertEqual(sum(row["tokens"] for row in records), summary["tokens"])
+        self.assertAlmostEqual(
+            sum(row["cost"] for row in records), summary["cost"], places=12,
+        )
+        encoded = repr(records)
+        self.assertNotIn(str(self.nested), encoded)
+        self.assertNotIn("agent-one", encoded)
+        self.assertNotIn("private response", encoded)
+
+    def test_stale_nonterminal_components_are_incomplete(self):
+        self.adapter.compatibility = meter._claude_compatibility()
+        for path in (self.main, self.nested):
+            rows = [json.loads(line) for line in path.read_text().splitlines()]
+            for row in rows:
+                row["message"]["stop_reason"] = None
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        source = self.adapter.discover_legacy(
+            DiscoveryContext(home=str(self.root)),
+        )[0]
+
+        with mock.patch("token_meter.runtimes.claude.time.time", return_value=2_000_000_000):
+            records = self.adapter.summarize_legacy(source)["_agent_records"]
+
+        self.assertEqual(
+            {record["activity_state"] for record in records}, {"incomplete"},
+        )
+
+    def test_message_update_improves_usage_without_changing_first_owner(self):
+        self.adapter.compatibility = meter._claude_compatibility()
+        self.nested.write_text("".join((
+            json.dumps(assistant(
+                "shared", claude_usage(input_tokens=30, output_tokens=3),
+                "2026-09-07T00:00:01.000Z",
+            )) + "\n",
+            json.dumps(assistant(
+                "unique", claude_usage(input_tokens=20, output_tokens=2),
+                "2026-09-07T00:00:02.000Z",
+            )) + "\n",
+        )))
+        source = self.adapter.discover_legacy(
+            DiscoveryContext(home=str(self.root)),
+        )[0]
+
+        summary = self.adapter.summarize_legacy(source)
+        root, child = summary["_agent_records"]
+
+        self.assertEqual(root["tokens"], 33)
+        self.assertEqual(child["tokens"], 22)
+        self.assertEqual(summary["tokens"], 55)
+
+    def test_nested_component_hierarchy_uses_opaque_ids_and_distinct_idless_rows(self):
+        self.adapter.compatibility = meter._claude_compatibility()
+        grandchild = (
+            self.nested.with_suffix("") / "subagents" / "agent-two.jsonl"
+        )
+        grandchild.parent.mkdir(parents=True)
+        idless = assistant(
+            None, claude_usage(input_tokens=3, output_tokens=4),
+            "2026-09-07T00:00:03.000Z",
+        )
+        grandchild.write_text(json.dumps(idless) + "\n")
+        source = self.adapter.discover_legacy(
+            DiscoveryContext(home=str(self.root)),
+        )[0]
+
+        summary = self.adapter.summarize_legacy(source)
+        root, child, nested = summary["_agent_records"]
+
+        self.assertEqual(nested["parent_id"], child["id"])
+        self.assertEqual(nested["depth"], 2)
+        self.assertEqual(nested["tokens"], 7)
+        self.assertNotIn("agent-two", nested["id"])
+        self.assertNotIn("subagents", nested["id"])
+        self.assertEqual(summary["tokens"], 40)
+
     def test_copied_and_symlinked_transcripts_merge_by_logical_message_id(self):
         copied = self.main.parent / "copied.jsonl"
         alias = self.main.parent / "alias.jsonl"

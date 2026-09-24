@@ -5601,6 +5601,169 @@ class LiveCrossSessionRefreshTests(unittest.TestCase):
         self.assertNotIn(duplicate_path, json.dumps(result))
         self.assertEqual(language_signals.call_count, 1)
 
+    def test_cross_session_projects_subagent_usage_and_selected_group(self):
+        sources = [
+            {"id": "root", "path": "/tmp/root", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/repo",
+             "mtime": 2},
+            {"id": "child", "path": "/tmp/child", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/repo",
+             "mtime": 3},
+        ]
+
+        def summary(source):
+            child = source["id"] == "child"
+            cost = 2.0 if child else 1.0
+            tokens = 200 if child else 100
+            agent_record = {
+                "id": source["id"],
+                "parent_id": "root" if child else None,
+                "session_id": source["id"],
+                "runtime": "codex", "client": "Codex",
+                "kind": "spawned" if child else "root",
+                "depth": 1 if child else 0, "label": "Worker" if child else "",
+                "role": "researcher" if child else None,
+                "model": "gpt-5.6-sol", "activity_state": "working" if child else "recent",
+                "started_at": 1, "ended_at": None, "last_activity_at": 2,
+                "tokens": tokens, "tokens_available": True,
+                "input_tokens": tokens - 10, "output_tokens": 10,
+                "cache_read_tokens": 0, "cache_write_tokens": 0,
+                "reasoning_tokens": 0, "cost": cost, "cost_available": True,
+                "executions": 1, "attempts": 1, "retries": 0,
+                "failed_attempts": 0, "tool_calls": 0,
+                "agent_path": "/private/agent.md",
+            }
+            return {
+                **source, "turns": 1, "cost": cost, "tokens": tokens,
+                "input_tokens": tokens - 10, "output_tokens": 10,
+                "models": ["gpt-5.6-sol"], "token_estimate": False,
+                "availability": meter.metric_availability(
+                    "codex", cost=True, tokens=True,
+                    input_tokens=True, output_tokens=True,
+                ),
+                "_model_cost": {"gpt-5.6-sol": cost},
+                "_model_tok": {"gpt-5.6-sol": tokens},
+                "_day_cost": {"2026-08-18": cost}, "model_stats": [],
+                "_model_daily": [], "_performance_samples": [],
+                "_wait_samples": [], "_tool_evidence": {},
+                "frustration": {}, "_frustration_events": [],
+                "_agent_records": [agent_record],
+            }
+
+        saved_cache = dict(meter._xsess)
+        try:
+            meter._xsess.update({"data": None, "at": 0, "agent_groups": ()})
+            with mock.patch.object(meter, "session_summary", side_effect=summary), \
+                    mock.patch.object(meter, "capability_inventory", return_value={}):
+                cross = meter.cross_session(sources=sources)
+            state = meter.attach_cross_session({"source": {"id": "child"}}, cross)
+        finally:
+            meter._xsess.clear()
+            meter._xsess.update(saved_cache)
+
+        self.assertEqual(cross["total_cost"], 3.0)
+        self.assertEqual(cross["total_tokens"], 300)
+        self.assertEqual(cross["agent_usage"]["totals"]["agents"], 1)
+        self.assertEqual(cross["agent_usage"]["totals"]["cost"], 2.0)
+        self.assertEqual(
+            cross["agent_usage"]["models"][0]["id"],
+            "gpt-5.6-sol::codex::spawned",
+        )
+        self.assertEqual(
+            cross["agent_usage"]["inventory"][0]["role"], "researcher",
+        )
+        self.assertEqual(
+            cross["agent_usage"]["inventory"][0]["root_session_id"], "root",
+        )
+        self.assertFalse(cross["agent_usage"]["inventory_truncated"])
+        self.assertEqual(state["agent_group"]["root_session_id"], "root")
+        self.assertEqual(state["agent_group"]["selected_agent_id"], "child")
+        self.assertEqual(len(state["agent_group"]["agents"]), 2)
+        encoded = json.dumps({"cross": cross, "group": state["agent_group"]})
+        self.assertNotIn("agent_path", encoded)
+        self.assertNotIn("/private/agent.md", encoded)
+        self.assertNotIn("_all_agents", encoded)
+        self.assertNotIn("_session_ids", encoded)
+
+    def test_cross_session_uses_physical_agents_without_changing_accounting_totals(self):
+        sources = [
+            {"id": "shared", "path": "/tmp/root-old", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/luna-3",
+             "physical_trace_id": "physical-root", "mtime": 1},
+            {"id": "shared", "path": "/tmp/root-new", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/luna-3",
+             "physical_trace_id": "physical-root", "mtime": 2},
+            {"id": "shared", "path": "/tmp/child-a", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/luna-3",
+             "physical_trace_id": "physical-child-a", "mtime": 3},
+            {"id": "shared", "path": "/tmp/child-b", "provider": "codex",
+             "runtime": "Codex", "label": "Codex", "project": "/luna-3",
+             "physical_trace_id": "physical-child-b", "mtime": 4},
+        ]
+
+        def summary(source):
+            suffix = source["path"].rsplit("/", 1)[-1]
+            is_root = suffix.startswith("root")
+            cost = {"root-old": 1.0, "root-new": 2.0,
+                    "child-a": 3.0, "child-b": 4.0}[suffix]
+            tokens = int(cost * 100)
+            agent_id = "agent-root" if is_root else f"agent-{suffix}"
+            record = {
+                "id": agent_id,
+                "parent_id": None if is_root else "agent-root",
+                "session_id": "shared" if is_root else None,
+                "runtime": "codex", "client": "Codex",
+                "kind": "root" if is_root else "spawned",
+                "depth": 0 if is_root else 1,
+                "model": "gpt-5.6-sol", "activity_state": "recent",
+                "started_at": 1, "ended_at": 2, "last_activity_at": 2,
+                "tokens": tokens, "tokens_available": True,
+                "input_tokens": tokens - 10, "output_tokens": 10,
+                "cache_read_tokens": 0, "cache_write_tokens": 0,
+                "reasoning_tokens": 0, "cost": cost,
+                "cost_available": True, "executions": 1, "attempts": 1,
+                "retries": 0, "failed_attempts": 0, "tool_calls": 0,
+            }
+            return {
+                **source, "turns": 1, "cost": cost, "tokens": tokens,
+                "input_tokens": tokens - 10, "output_tokens": 10,
+                "models": ["gpt-5.6-sol"], "token_estimate": False,
+                "availability": meter.metric_availability(
+                    "codex", cost=True, tokens=True,
+                    input_tokens=True, output_tokens=True,
+                ),
+                "_model_cost": {"gpt-5.6-sol": cost},
+                "_model_tok": {"gpt-5.6-sol": tokens},
+                "_day_cost": {"2026-09-22": cost}, "model_stats": [],
+                "_model_daily": [], "_performance_samples": [],
+                "_wait_samples": [], "_tool_evidence": {},
+                "frustration": {}, "_frustration_events": [],
+                "_agent_records": [record],
+            }
+
+        saved_cache = dict(meter._xsess)
+        try:
+            meter._xsess.update({"data": None, "at": 0, "agent_groups": ()})
+            with mock.patch.object(meter, "session_summary", side_effect=summary), \
+                    mock.patch.object(meter, "capability_inventory", return_value={}):
+                cross = meter.cross_session(sources=sources)
+        finally:
+            meter._xsess.clear()
+            meter._xsess.update(saved_cache)
+
+        self.assertEqual(cross["total_sessions"], 4)
+        self.assertEqual(cross["total_cost"], 10.0)
+        self.assertEqual(cross["total_tokens"], 1000)
+        self.assertEqual(cross["agent_usage"]["totals"]["agents"], 2)
+        self.assertEqual(cross["agent_usage"]["totals"]["cost"], 7.0)
+        project_scopes = [
+            scope for scope in cross["agent_usage"]["scopes"]
+            if scope.get("project") == "/luna-3"
+            and scope["window"] == "all" and scope["runtime"] == "codex"
+        ]
+        self.assertEqual(len(project_scopes), 1)
+        self.assertEqual(project_scopes[0]["totals"]["agents"], 2)
+
 
 class DashboardLayoutTests(unittest.TestCase):
     @classmethod
@@ -5623,6 +5786,415 @@ class DashboardLayoutTests(unittest.TestCase):
         self.assertIn('class=logo role=img aria-label=Splunk', self.page)
         self.assertIn('/assets/brand/logo-splunk-acc-rgb-w.png', self.page)
         self.assertIn('name=theme-color content="#07090c"', self.page)
+
+    def test_sessions_surfaces_include_agent_activity_and_usage_statistics(self):
+        for expected in (
+            "id=agent-activity",
+            "id=agent-activity-tree",
+            "id=agent-attention-detail",
+            "id=session-scope-subagents",
+            "id=subagent-explorer",
+            "id=subagent-filter-status",
+            "id=subagent-filter-signal",
+            "id=subagent-view-tabs",
+            "id=subagent-compact-summary",
+            "id=subagent-workspace",
+            "id=subagent-results",
+            "id=subagent-inspector",
+            "renderAgentActivity(s);",
+            "renderSubagentExplorer(",
+            "Median / P95",
+            "groupSubagentSessions(",
+            "buildSubagentRoleRows(",
+        ):
+            self.assertIn(expected, self.page)
+        self.assertIn("Needs attention", self.page)
+        self.assertIn("possible issue, not a diagnosis", self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_explorer_prefers_roles_and_filters_status_and_signals(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('agentIdentityPresentation'));
+eval(extract('filterSubagentInventory'));
+const usage={{inventory_count:3,inventory_truncated:false,inventory:[
+ {{id:'a',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:'token_meter_reviewer',label:'Heisenberg',activity_state:'complete',last_activity_at:100,tokens:10,tokens_available:true,cost:1,cost_available:true,elapsed_s:30,attention:[]}},
+ {{id:'b',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:null,label:'Gauss',activity_state:'incomplete',last_activity_at:200,tokens:20,tokens_available:true,cost:4,cost_available:true,elapsed_s:60,attention:[{{code:'peer_cost_outlier',explanation:'3x peers'}}]}},
+ {{id:'c',root_session_id:'root-c',project:'/luna-3',runtime:'claude',model:'opus',role:null,label:'',activity_state:'working',last_activity_at:300,tokens:null,tokens_available:false,cost:null,cost_available:false,elapsed_s:90,attention:[]}},
+]}};
+const result=filterSubagentInventory(usage,{{query:'gauss',runtime:'codex',project:'/token-meter',model:'gpt',status:'incomplete',signal:'peer_cost_outlier',window:'all',sort:'cost'}},400);
+process.stdout.write(JSON.stringify({{
+ role:agentIdentityPresentation(usage.inventory[0],0),
+ nickname:agentIdentityPresentation(usage.inventory[1],1),
+ fallback:agentIdentityPresentation(usage.inventory[2],2),
+ result,
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+
+        self.assertEqual(payload["role"], {
+            "primary": "token_meter_reviewer", "secondary": "Heisenberg",
+        })
+        self.assertEqual(payload["nickname"], {
+            "primary": "Gauss", "secondary": "",
+        })
+        self.assertEqual(payload["fallback"], {
+            "primary": "Agent 3", "secondary": "",
+        })
+        self.assertEqual([row["id"] for row in payload["result"]["rows"]], ["b"])
+        self.assertEqual(payload["result"]["summary"]["incomplete"], 1)
+        self.assertEqual(payload["result"]["summary"]["attention"], 1)
+        self.assertEqual(payload["result"]["summary"]["parentSessions"], 1)
+        self.assertTrue(payload["result"]["summary"]["complete"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_explorer_withholds_filtered_totals_when_inventory_is_truncated(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('filterSubagentInventory'));
+const result=filterSubagentInventory({{inventory_count:1001,inventory_truncated:true,inventory:[{{id:'a',root_session_id:'root',runtime:'codex',label:'Agent A',activity_state:'complete',last_activity_at:100,attention:[]}}]}},{{query:'agent',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}},200);
+process.stdout.write(JSON.stringify(result));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertFalse(payload["summary"]["complete"])
+        self.assertIsNone(payload["summary"]["agents"])
+        self.assertEqual(payload["inventoryCount"], 1001)
+        self.assertEqual(len(payload["rows"]), 1)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_triage_preserves_context_and_pages_large_results(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('applySubagentPreset'));
+eval(extract('subagentPresetForFilters'));
+eval(extract('paginateSubagentRows'));
+const base={{query:'reviewer',runtime:'codex',project:'/token-meter',model:'gpt-5',status:'complete',signal:'retry_pressure',window:'7d',sort:'cost'}};
+const incomplete=applySubagentPreset(base,'incomplete');
+const attention=applySubagentPreset(base,'attention');
+const all=applySubagentPreset(base,'all');
+const rows=Array.from({{length:123}},(_,id)=>({{id}}));
+process.stdout.write(JSON.stringify({{
+ incomplete,attention,all,
+ presets:[subagentPresetForFilters(incomplete),subagentPresetForFilters(attention),subagentPresetForFilters(all),subagentPresetForFilters(base)],
+ first:paginateSubagentRows(rows,50),
+ complete:paginateSubagentRows(rows,150),
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+
+        for state in (payload["incomplete"], payload["attention"], payload["all"]):
+            self.assertEqual(state["runtime"], "codex")
+            self.assertEqual(state["project"], "/token-meter")
+            self.assertEqual(state["window"], "7d")
+            self.assertEqual(state["query"], "reviewer")
+            self.assertEqual(state["model"], "gpt-5")
+            self.assertEqual(state["sort"], "cost")
+        self.assertEqual(payload["incomplete"]["status"], "incomplete")
+        self.assertEqual(payload["incomplete"]["signal"], "all")
+        self.assertEqual(payload["attention"]["status"], "all")
+        self.assertEqual(payload["attention"]["signal"], "attention")
+        self.assertEqual(payload["all"]["status"], "all")
+        self.assertEqual(payload["all"]["signal"], "all")
+        self.assertEqual(payload["presets"], [
+            "incomplete", "attention", "all", "custom",
+        ])
+        self.assertEqual(len(payload["first"]["rows"]), 50)
+        self.assertEqual(payload["first"]["shown"], 50)
+        self.assertEqual(payload["first"]["total"], 123)
+        self.assertTrue(payload["first"]["hasMore"])
+        self.assertEqual(payload["first"]["nextLimit"], 100)
+        self.assertEqual(len(payload["complete"]["rows"]), 123)
+        self.assertFalse(payload["complete"]["hasMore"])
+        self.assertEqual(payload["complete"]["nextLimit"], 123)
+
+    def test_subagent_explorer_has_progressive_filters_and_evidence_inspector(self):
+        for expected in (
+            "id=subagent-view-tabs",
+            "aria-controls=subagent-results-panel",
+            "data-subagent-view=issues",
+            "data-subagent-view=sessions",
+            "data-subagent-view=roles",
+            "id=subagent-filter-more",
+            "id=subagent-filter-advanced",
+            "id=subagent-active-filters",
+            "id=subagent-workspace",
+            "id=subagent-results",
+            "id=subagent-results-panel role=tabpanel",
+            "id=subagent-inspector",
+            "data-subagent-open-parent",
+            "data-subagent-show-session",
+            "subagentWorkspace.roleView",
+            "expandedSubagentRoot=root",
+            "subagentInspector",
+        ):
+            self.assertIn(expected, self.page)
+        for removed in (
+            "id=subagent-triage",
+            "id=subagent-insights",
+            "id=subagent-explorer-summary",
+            "id=subagent-inventory-more",
+        ):
+            self.assertNotIn(removed, self.page)
+        self.assertIn(
+            "body.sessionRoute #view-session.sessionSubagents "
+            ".currentDaySummary{display:none}",
+            self.page,
+        )
+        self.assertIn("function renderSubagentInspector(", self.page)
+        self.assertIn("compact('Needs review'", self.page)
+        self.assertNotIn("compact('Need review'", self.page)
+
+    def test_subagent_workspace_orders_roles_sessions_issues_and_defaults_to_roles(self):
+        tablist_start = self.page.index('id=subagent-view-tabs')
+        tablist_end = self.page.index('</div>', tablist_start)
+        tablist = self.page[tablist_start:tablist_end]
+        self.assertLess(tablist.index('data-subagent-view=roles'), tablist.index('data-subagent-view=sessions'))
+        self.assertLess(tablist.index('data-subagent-view=sessions'), tablist.index('data-subagent-view=issues'))
+        self.assertIn('data-subagent-view=roles aria-selected=true', tablist)
+        self.assertIn("localStorage.getItem('tm_subagent_view')||'roles'", self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_summary_tags_toggle_incomplete_and_attention_filters(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)return null;let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}return null;}}
+const source=extract('toggleSubagentSummaryFilter');
+if(!source)process.stdout.write(JSON.stringify({{missing:true}}));
+else{{
+ eval(source);
+ const start={{query:'reviewer',runtime:'codex',project:'/token-meter',model:'gpt',status:'all',signal:'all',window:'7d',sort:'cost'}};
+ process.stdout.write(JSON.stringify({{
+  missing:false,
+  incomplete:toggleSubagentSummaryFilter(start,'incomplete'),
+  incompleteOff:toggleSubagentSummaryFilter(toggleSubagentSummaryFilter(start,'incomplete'),'incomplete'),
+  attention:toggleSubagentSummaryFilter(start,'attention'),
+  outlier:toggleSubagentSummaryFilter(start,'peer_cost_outlier'),
+ }}));
+}}
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+
+        self.assertFalse(payload.get("missing", False))
+        self.assertEqual(payload["incomplete"]["status"], "incomplete")
+        self.assertEqual(payload["incomplete"]["signal"], "all")
+        self.assertEqual(payload["incompleteOff"]["status"], "all")
+        self.assertEqual(payload["attention"]["signal"], "attention")
+        self.assertEqual(payload["attention"]["status"], "all")
+        self.assertEqual(payload["outlier"]["signal"], "peer_cost_outlier")
+        self.assertEqual(payload["outlier"]["query"], "reviewer")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_session_rows_keep_spawned_run_count(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const selectedSubagentId='',expandedSubagentRoot='not-this-root';
+const esc=value=>String(value),f=value=>String(value),countWord=(value,word)=>value===1?word:`${{word}}s`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),currentSessionAge=()=> 'now',durationShort=value=>`${{value}}s`;
+const agentIdentityPresentation=(row)=>({{primary:row.role||row.label,secondary:''}}),subagentParentPresentation=()=>({{title:'Parent run',project:'token-meter'}});
+eval(extract('subagentGroupHtml'));
+const rows=[
+ {{id:'a',role:'reviewer',kind:'spawned',activity_state:'complete',model:'gpt',cost:1,cost_available:true,tokens:10,tokens_available:true,elapsed_s:30,attention:[]}},
+ {{id:'b',role:'tester',kind:'spawned',activity_state:'incomplete',model:'gpt',cost:2,cost_available:true,tokens:20,tokens_available:true,elapsed_s:45,attention:[]}},
+];
+const html=subagentGroupHtml({{rootSessionId:'root',rows,agents:2,attention:0,incomplete:1,working:0,cost:3,costCovered:2,knownTokens:30,tokenCovered:2,lastActivity:100,project:'/token-meter'}},0,new Map(),false);
+process.stdout.write(JSON.stringify({{html}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertIn("Spawned runs", payload["html"])
+        self.assertIn("<b>2</b>", payload["html"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_table_reports_total_covered_spend(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),appFilterLabel=({{provider}})=>provider;
+eval(extract('buildSubagentRoleRows'));
+eval(extract('renderSubagentRoles'));
+const html=renderSubagentRoles([
+ {{runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt',activity_state:'complete',cost:1,cost_available:true,tokens:100,tokens_available:true,attention:[]}},
+ {{runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt',activity_state:'complete',cost:3,cost_available:true,tokens:200,tokens_available:true,attention:[]}},
+ {{runtime:'codex',kind:'spawned',role:'token_meter_tester',model:'gpt',activity_state:'complete',cost:null,cost_available:false,tokens:50,tokens_available:true,attention:[]}},
+]);
+process.stdout.write(JSON.stringify({{html}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertIn("Total spend", payload["html"])
+        self.assertIn("$4.00", payload["html"])
+        self.assertIn("token_meter_tester", payload["html"])
+        self.assertIn("<b>--</b>", payload["html"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_workspace_groups_parent_sessions_and_prioritizes_issues(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('groupSubagentSessions'));
+const rows=[
+ {{id:'quiet',root_session_id:'root-quiet',project:'/quiet',activity_state:'complete',last_activity_at:300,cost:10,cost_available:true,attention:[]}},
+ {{id:'incomplete',root_session_id:'root-incomplete',project:'/work',activity_state:'incomplete',last_activity_at:200,cost:4,cost_available:true,attention:[]}},
+ {{id:'attention-2',root_session_id:'root-attention',project:'/work',activity_state:'complete',last_activity_at:90,cost:null,cost_available:false,attention:[]}},
+ {{id:'attention',root_session_id:'root-attention',project:'/work',activity_state:'complete',last_activity_at:100,cost:1,cost_available:true,attention:[{{code:'peer_cost_outlier'}}]}},
+];
+process.stdout.write(JSON.stringify({{issues:groupSubagentSessions(rows,true),sessions:groupSubagentSessions(rows,false)}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+
+        self.assertEqual(
+            [row["rootSessionId"] for row in payload["issues"]],
+            ["root-attention", "root-incomplete"],
+        )
+        self.assertEqual(len(payload["sessions"]), 3)
+        attention = payload["issues"][0]
+        self.assertEqual(attention["agents"], 2)
+        self.assertEqual(attention["attention"], 1)
+        self.assertEqual(attention["incomplete"], 0)
+        self.assertEqual(attention["costCovered"], 1)
+        self.assertEqual(attention["cost"], 1)
+        self.assertEqual(
+            [row["id"] for row in attention["rows"]],
+            ["attention", "attention-2"],
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_roles_preserve_runtime_kind_and_calculate_review_metrics(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('buildSubagentRoleRows'));
+const rows=[
+ {{id:'a',runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt-a',activity_state:'complete',cost:1,cost_available:true,tokens:100,tokens_available:true,attention:[]}},
+ {{id:'b',runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt-a',activity_state:'incomplete',cost:3,cost_available:true,tokens:300,tokens_available:true,attention:[{{code:'retry_pressure'}}]}},
+ {{id:'c',runtime:'claude',kind:'spawned',role:'token_meter_reviewer',model:'opus',activity_state:'complete',cost:8,cost_available:true,tokens:800,tokens_available:true,attention:[]}},
+ {{id:'d',runtime:'codex',kind:'spawned',role:null,model:'gpt-a',activity_state:'complete',cost:5,cost_available:true,tokens:500,tokens_available:true,attention:[]}},
+];
+process.stdout.write(JSON.stringify(buildSubagentRoleRows(rows)));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+
+        self.assertEqual(len(payload), 2)
+        claude, codex = payload
+        self.assertEqual((claude["runtime"], claude["role"]), ("claude", "token_meter_reviewer"))
+        self.assertEqual((codex["runtime"], codex["kind"]), ("codex", "spawned"))
+        self.assertEqual(codex["agents"], 2)
+        self.assertEqual(codex["incomplete"], 1)
+        self.assertEqual(codex["attention"], 1)
+        self.assertEqual(codex["incompleteRate"], 0.5)
+        self.assertEqual(codex["attentionRate"], 0.5)
+        self.assertEqual(codex["medianCost"], 2)
+        self.assertEqual(codex["p95Cost"], 3)
+        self.assertEqual(codex["knownTokens"], 400)
+        self.assertEqual(codex["topModel"], "gpt-a")
+
+    def test_sessions_all_uses_exact_coverage_copy_without_ambiguous_suffixes(self):
+        start = self.page.index("function renderAllSessionStats(")
+        end = self.page.index("function currentSessionAge(", start)
+        block = self.page[start:end]
+        self.assertIn("sessionCoverageCopy", block)
+        self.assertNotIn("?' partial'", block)
+        self.assertNotIn(" incl. est", block)
+
+        start = self.page.index("function renderSubagentUsage(")
+        end = self.page.index("function renderAllSessions(", start)
+        subagent_block = self.page[start:end]
+        self.assertIn("group_cost_covered_sessions", subagent_block)
+        self.assertIn("parent sessions have complete group cost", subagent_block)
+        self.assertNotIn("group-cost coverage", subagent_block)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_browser_agent_attention_adds_cap_and_live_growth_only_with_cost_evidence(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('deriveAgentAttention'));
+const group={{root_session_id:'root',totals:{{cost:2,cost_available:true}},agents:[
+ {{id:'root',kind:'root',cost:0.5,cost_available:true,activity_state:'recent'}},
+ {{id:'child',kind:'spawned',cost:1.5,cost_available:true,activity_state:'working'}}
+],attention:[{{agent_id:'child',level:'needs_attention',reasons:[{{code:'retry_pressure',explanation:'3 retries'}}]}}]}};
+const covered=deriveAgentAttention(group,1,new Map([['root:child',1.0]]));
+const partial=deriveAgentAttention({{...group,totals:{{cost:null,cost_available:false}},agents:[group.agents[0],{{...group.agents[1],cost:null,cost_available:false}}]}},1,new Map([['root:child',1.0]]));
+process.stdout.write(JSON.stringify({{covered,partial}}));
+"""
+
+        result = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        )
+        payload = json.loads(result.stdout)
+        covered = {
+            row["agent_id"]: [reason["code"] for reason in row["reasons"]]
+            for row in payload["covered"]
+        }
+        partial = {
+            row["agent_id"]: [reason["code"] for reason in row["reasons"]]
+            for row in payload["partial"]
+        }
+        self.assertEqual(covered["root"], ["cap_exceeded"])
+        self.assertEqual(covered["child"], [
+            "retry_pressure", "cap_exceeded", "observed_live_growth",
+        ])
+        self.assertEqual(partial["child"], ["retry_pressure"])
+        self.assertNotIn("root", partial)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_usage_scope_supports_project_filters_and_blocks_text_search(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('selectSubagentUsageScope'));
+const usage={{totals:{{agents:9}},scope_truncated:false,scopes:[
+ {{window:'all',runtime:'',project:'',totals:{{agents:9}}}},
+ {{window:'7d',runtime:'codex',project:'~/Documents/github/token-meter',totals:{{agents:2}}}},
+]}};
+process.stdout.write(JSON.stringify({{
+ supported:selectSubagentUsageScope(usage,'codex','7d','~/Documents/github/token-meter',false),
+ blocked:selectSubagentUsageScope(usage,'codex','7d','~/Documents/github/token-meter',true),
+ missing:selectSubagentUsageScope(usage,'codex','7d','~/Documents/github/luna-3',false),
+ truncated:selectSubagentUsageScope({{...usage,scope_truncated:true}},'codex','7d','~/Documents/github/luna-3',false),
+}}));
+"""
+
+        result = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        )
+        payload = json.loads(result.stdout)
+        self.assertIsNotNone(payload["supported"]["usage"])
+        self.assertEqual(payload["supported"]["usage"]["totals"]["agents"], 2)
+        self.assertIsNone(payload["supported"]["reason"])
+        self.assertIsNone(payload["blocked"]["usage"])
+        self.assertEqual(payload["blocked"]["reason"], "filtered")
+        self.assertIsNone(payload["missing"]["usage"])
+        self.assertEqual(payload["missing"]["reason"], "empty")
+        self.assertIsNone(payload["truncated"]["usage"])
+        self.assertEqual(payload["truncated"]["reason"], "unavailable")
 
     def test_current_header_keeps_one_line_session_start_message_visible(self):
         self.assertIn('class="card previewStartStrip"', self.page)
@@ -7755,7 +8327,8 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
     def test_sessions_all_spend_learn_and_settings_are_first_class_routes(self):
         for marker in (
             "id=session-scope-tabs", "id=session-scope-current", "id=session-scope-all",
-            "id=all-session-history", "id=tab-daily", "id=view-daily",
+            "id=session-scope-subagents", "id=all-session-history",
+            "id=subagent-explorer", "id=tab-daily", "id=view-daily",
             "id=tab-learn", "id=view-learn", "id=tab-settings", "id=view-settings",
         ):
             self.assertIn(marker, self.page)
@@ -7772,6 +8345,8 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
         self.assertIn('class="tabs sessionScopeTabs"', self.page)
         self.assertIn('<span class=tabLabel>Current sessions</span>', self.page)
         self.assertIn('<span class=tabLabel>All sessions</span>', self.page)
+        self.assertIn('<span class=tabLabel>Subagents</span>', self.page)
+        self.assertIn("h==='sessions-subagents'", self.page)
         self.assertIn("live · updated ${new Date(generatedAt*1000).toLocaleTimeString", self.page)
         self.assertLess(self.page.index("id=tab-session"), self.page.index("id=tab-daily"))
         self.assertIn("id=s-range", self.page)
@@ -8867,7 +9442,7 @@ console.log(JSON.stringify({
         self.assertNotIn("data-current-panel=sessions", self.page)
         self.assertNotIn('id=current-tabs', self.page)
         self.assertRegex(self.page, r"id=tab-session[^>]*>.*?<span class=tabLabel>Sessions</span>")
-        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='current-sessions')", self.page)
+        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='sessions-subagents'||h==='current-sessions')", self.page)
         self.assertIn("history.replaceState(null,'','/#sessions')", self.page)
         self.assertIn("function currentSessionModelName", self.page)
         self.assertIn("row.session_name||row.project||'Untitled session'", self.page)
@@ -11832,6 +12407,47 @@ class AgentDataContractTests(unittest.TestCase):
         for removed in ("by_namespace", "by_name", "by_execution"):
             self.assertNotIn(removed, projected["tools"])
         self.assertEqual(state["trace"], [{"kind": "usage"}])
+
+    def test_dashboard_reprojects_agent_data_at_the_browser_boundary(self):
+        state = {
+            "source": {"id": "root", "provider": "codex"},
+            "agent_group": {
+                "root_session_id": "root", "selected_agent_id": "root",
+                "coverage": {}, "totals": {"agents": 2},
+                "agents": [{
+                    "id": "root", "kind": "root", "depth": 0,
+                    "agent_path": "/private/agent.md", "prompt": "secret",
+                }],
+                "_all_agents": [{"path": "/private/trace.jsonl"}],
+            },
+            "xsession": {
+                "agent_usage": {
+                    "totals": {"agents": 1},
+                    "models": [{
+                        "id": "model::codex", "runtime": "codex",
+                        "model": "model", "agents": 1,
+                        "session_id": "private-session",
+                    }],
+                },
+            },
+        }
+        registry = mock.Mock()
+        registry.descriptors = ()
+
+        with mock.patch.object(meter, "runtime_registry", return_value=registry):
+            projected = meter.dashboard_state_payload(state)
+
+        encoded = json.dumps(projected)
+        self.assertEqual(projected["agent_group"]["root_session_id"], "root")
+        self.assertEqual(
+            projected["xsession"]["agent_usage"]["models"][0]["id"],
+            "model::codex",
+        )
+        for forbidden in (
+            "/private", "secret", "_all_agents", "agent_path",
+            "private-session", "session_id\": \"private-session",
+        ):
+            self.assertNotIn(forbidden, encoded)
 
     def test_check_refuses_to_fall_back_across_projects(self):
         with mock.patch.object(meter, "all_session_sources", return_value=[self.source]):

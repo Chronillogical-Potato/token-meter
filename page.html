@@ -290,7 +290,7 @@ body.sessionRoute #view-session .sessionFlowHead[data-session-flow=idle] .pageSi
 body.sessionRoute #view-session .sessionFlowHead[data-session-flow=unavailable] .pageSignalField{opacity:.62}
 body.sessionRoute #view-session.sessionDetail .sessionFlowHead :is(.pageSignalField,.pageHeroBorder),body.sessionRoute #view-session.sessionDetail .spectrumPageActions{display:none}
 @keyframes sessionFlowStatusPulse{0%,70%{box-shadow:0 0 0 0 rgba(102,217,144,.4)}100%{box-shadow:0 0 0 9px transparent}}
-body.sessionRoute #view-session .sessionScopeTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:100%;margin:-4px 0 12px;padding:4px;border-color:rgba(0,188,235,.24);background:rgba(7,12,17,.72)}
+body.sessionRoute #view-session .sessionScopeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;width:100%;margin:-4px 0 12px;padding:4px;border-color:rgba(0,188,235,.24);background:rgba(7,12,17,.72)}
 body.sessionRoute #view-session .sessionScopeTabs .tab{display:flex;min-height:44px;align-items:center;justify-content:center;gap:8px;padding:10px 14px;text-align:center}
 body.sessionRoute #view-session .sessionScopeTabs .tab .tabIcon{width:17px;height:17px;flex:0 0 auto}
 body.sessionRoute #view-session .sessionScopeTabs .tab[aria-selected=true]{background:var(--spectrum-active);color:#062430;box-shadow:0 7px 20px rgba(0,188,235,.16)}
@@ -502,6 +502,42 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .frustrationSection .signalRankTrack i,.frustrationSection .chatSignalTrack i{background:linear-gradient(90deg,var(--signal-primary),var(--signal-secondary))}
 .frustrationSection .termPanel .signalRankTrack i{background:linear-gradient(90deg,var(--signal-secondary),var(--signal-primary))}
 .frustrationSection .signalRateBadge{border-color:var(--signal-edge);background:var(--signal-wash);color:var(--signal-secondary)}
+/* sessions-agent-observability-v1 */
+.agentActivity,.subagentUsage{margin-top:14px;padding:17px 18px;overflow:hidden}.agentActivity[hidden],.subagentUsage[hidden]{display:none}.agentActivity:before,.subagentUsage:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--orange3),transparent 72%)}
+.agentActivityHead,.subagentUsageHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.agentActivityHead h2,.subagentUsageHead h2{margin:1px 0 0;font-size:16px}.agentActivityHead p,.subagentUsageHead p{margin:3px 0 0;color:var(--dim);font-size:11.5px;line-height:1.45}.agentActivityEyebrow{color:var(--accent);font-size:9px;font-weight:820;letter-spacing:.1em;text-transform:uppercase}.agentCoverage{max-width:380px;color:var(--faint);font-size:10px;text-align:right}.agentActivityMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:13px}.agentActivityMetric{padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.025)}.agentActivityMetric span{display:block;color:var(--faint);font-size:8.5px;font-weight:780;text-transform:uppercase}.agentActivityMetric strong{display:block;margin-top:3px;color:var(--fg);font:780 16px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.agentActivityMetric small{display:block;margin-top:2px;color:var(--dim);font-size:9.5px}
+.agentActivityTree{margin-top:12px;overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:rgba(5,9,13,.24);scrollbar-width:thin}.agentTreeHeader,.agentRow{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(105px,.8fr) 82px repeat(4,minmax(70px,.5fr));align-items:center;gap:9px;min-width:820px}.agentTreeHeader{padding:7px 10px;color:var(--faint);font-size:8px;font-weight:800;text-transform:uppercase}.agentTreeHeader span:not(:first-child){text-align:right}.agentRow{width:100%;min-height:58px;padding:8px 10px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.agentRow:hover,.agentRow:focus-visible{background:rgba(0,188,235,.045);outline:none}.agentRow.selected{background:rgba(0,188,235,.07);box-shadow:inset 2px 0 var(--accent)}.agentRow.attention{box-shadow:inset 2px 0 var(--warn)}.agentRow.selected.attention{box-shadow:inset 2px 0 var(--warn),inset 5px 0 rgba(0,188,235,.38)}.agentIdentity{min-width:0;padding-left:calc(var(--agent-depth)*18px)}.agentIdentity strong{display:flex;align-items:center;gap:7px;min-width:0;color:var(--fg);font-size:11.5px}.agentIdentity strong span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.agentIdentity small{display:block;margin-top:2px;color:var(--faint);font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.agentMetric{text-align:right;font:680 10.5px/1.3 ui-monospace,"SF Mono",Menlo,monospace}.agentState{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end;color:var(--dim);font-size:9.5px;text-transform:capitalize}.agentState:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint)}.agentState.working:before{background:var(--good);box-shadow:0 0 0 3px rgba(102,217,144,.1)}.agentState.waiting:before{background:var(--warn)}.agentAttentionBadge{flex:none;border:1px solid rgba(255,180,87,.42);border-radius:999px;background:rgba(255,180,87,.09);padding:2px 6px;color:var(--warn);font-size:8px;font-weight:820;text-transform:uppercase}.agentAttentionDetail{margin-top:9px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.018);color:var(--dim);font-size:10.5px;line-height:1.45}.agentAttentionDetail b{color:var(--fg)}.agentAttentionDetail ul{margin:5px 0 0;padding-left:17px}.agentActivityFoot,.subagentUsageFoot{margin-top:9px;color:var(--faint);font-size:9.5px}
+.subagentUsageControls{display:grid;gap:5px;justify-items:end}.subagentUsageHead .seg{flex-wrap:wrap}.subagentUsageSummary{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:13px}.subagentUsageStat{padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.022);min-width:0}.subagentUsageStat span{display:block;color:var(--faint);font-size:8px;font-weight:780;text-transform:uppercase}.subagentUsageStat strong{display:block;margin-top:3px;color:var(--fg);font:790 15px/1.2 ui-monospace,"SF Mono",Menlo,monospace;overflow:hidden;text-overflow:ellipsis}.subagentUsageStat small{display:block;margin-top:2px;color:var(--dim);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentUsageRows{display:grid;margin-top:10px;border-top:1px solid var(--line)}.subagentUsageRow{display:grid;grid-template-columns:minmax(170px,1.15fr) minmax(120px,.8fr) repeat(4,minmax(72px,.45fr));align-items:center;gap:10px;min-height:58px;border-bottom:1px solid var(--line);padding:8px 0}.subagentUsageIdentity strong{display:block;color:var(--fg);font-size:11.5px}.subagentUsageIdentity small{display:block;margin-top:2px;color:var(--faint);font-size:9.5px}.subagentUsageBar{height:5px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.055)}.subagentUsageBar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--orange3))}.subagentUsageValue{text-align:right}.subagentUsageValue span{display:block;color:var(--faint);font-size:8px;text-transform:uppercase}.subagentUsageValue b{display:block;margin-top:2px;color:var(--dim);font:700 10.5px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentUsageEmpty{padding:24px;color:var(--dim);font-size:11.5px;text-align:center}
+.subagentExplorerHead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 10px;padding:2px 2px 0}.subagentExplorerHead h2{margin:0;font-family:"Tektur Local","Avenir Next",-apple-system,BlinkMacSystemFont,sans-serif;font-size:22px;font-weight:610;letter-spacing:-.025em}.subagentExplorerHead p{margin:3px 0 0;color:var(--faint);font-size:12px}.subagentExplorerMeta{color:var(--faint);font-size:11px;white-space:nowrap}.subagentToolbar{display:grid;grid-template-columns:minmax(190px,1.35fr) repeat(5,minmax(120px,.72fr));gap:9px;padding:12px}.subagentToolbar .filterControl{min-width:0}.subagentToolbar .filterControl select,.subagentToolbar .filterControl input{width:100%}.subagentToolbarFoot{display:flex;align-items:flex-end;gap:9px;margin-top:8px;padding:12px}.subagentToolbarFoot .filterControl{min-width:170px}.subagentToolbarFoot .filterClear{margin-left:auto}.subagentExplorerSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:10px;overflow:hidden;border:1px solid rgba(0,188,235,.18);border-radius:8px;background:linear-gradient(90deg,rgba(0,188,235,.055),rgba(127,219,242,.025) 62%,rgba(199,167,255,.035));box-shadow:var(--shadow-soft)}.subagentExplorerStat{min-width:0;padding:13px 14px;border-left:1px solid var(--line)}.subagentExplorerStat:first-child{border-left:0}.subagentExplorerStat span{display:block;color:var(--faint);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.035em}.subagentExplorerStat strong{display:block;margin-top:3px;color:var(--fg);font:790 20px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentExplorerStat small{display:block;margin-top:3px;color:var(--dim);font-size:10px;line-height:1.35}.subagentInsights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.subagentInsight{padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02)}.subagentInsight strong{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--fg);font-size:11.5px}.subagentInsight strong b{color:var(--warn);font:790 14px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentInsight p{margin:5px 0 0;color:var(--faint);font-size:9.5px;line-height:1.4}.subagentInventoryCard{margin-top:12px;overflow:hidden}.subagentInventoryHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}.subagentInventoryHead h3{margin:0;font-size:13px}.subagentInventoryCount{color:var(--faint);font-size:10.5px}.subagentInventory{overflow-x:auto}.subagentInventoryHeader,.subagentInventoryRow{display:grid;grid-template-columns:minmax(230px,1.35fr) minmax(170px,1fr) minmax(125px,.75fr) 95px 105px 105px 90px;gap:10px;align-items:center;min-width:960px}.subagentInventoryHeader{padding:8px 14px;color:var(--faint);font-size:8px;font-weight:800;text-transform:uppercase}.subagentInventoryHeader span:not(:first-child){text-align:right}.subagentInventoryRow{width:100%;min-height:64px;padding:9px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentInventoryRow:hover,.subagentInventoryRow:focus-visible{background:rgba(0,188,235,.045);outline:none}.subagentInventoryIdentity{min-width:0}.subagentInventoryIdentity strong{display:flex;align-items:center;gap:7px;min-width:0;color:var(--fg);font-size:11.5px}.subagentInventoryIdentity strong>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryIdentity small{display:block;margin-top:2px;overflow:hidden;color:var(--faint);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryProject{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryMetric{text-align:right;font:680 10.5px/1.3 ui-monospace,"SF Mono",Menlo,monospace}.subagentInventoryEmpty{padding:32px 16px;color:var(--dim);font-size:11.5px;text-align:center}.subagentInventoryWarning{margin-top:10px;border:1px solid rgba(255,180,87,.3);border-radius:8px;background:rgba(255,180,87,.065);padding:10px 12px;color:var(--warn);font-size:10.5px}.subagentInventoryWarning[hidden]{display:none}
+@media(max-width:1100px){.agentActivityMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.agentActivityHead,.subagentUsageHead{align-items:flex-start;flex-direction:column}.agentCoverage{text-align:left}.subagentUsageControls{justify-items:start}.subagentUsageSummary{grid-template-columns:repeat(3,minmax(0,1fr))}.subagentUsageRow{grid-template-columns:minmax(150px,1fr) minmax(105px,.7fr) repeat(4,minmax(68px,.4fr))}}
+@media(max-width:1100px){.subagentToolbar{grid-template-columns:repeat(3,minmax(0,1fr))}.subagentExplorerSummary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentExplorerStat:nth-child(3){border-left:0;border-top:1px solid var(--line)}.subagentExplorerStat:nth-child(4){border-top:1px solid var(--line)}.subagentInsights{grid-template-columns:1fr}}
+/* subagent-investigation-v2 */
+.subagentTriage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.subagentTriageCard{position:relative;display:grid;min-width:0;min-height:100px;padding:14px 15px;overflow:hidden;border:1px solid var(--line);border-radius:9px;background:linear-gradient(145deg,rgba(22,31,41,.96),rgba(12,17,23,.98));box-shadow:var(--shadow-soft);color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentTriageCard:before{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:var(--line3)}.subagentTriageCard:hover,.subagentTriageCard:focus-visible{border-color:rgba(127,219,242,.42);background:linear-gradient(145deg,rgba(0,188,235,.075),rgba(12,17,23,.98));outline:none}.subagentTriageCard[aria-pressed=true]{border-color:rgba(0,188,235,.48);background:linear-gradient(145deg,rgba(0,188,235,.12),rgba(12,17,23,.98));box-shadow:0 0 0 1px rgba(0,188,235,.1),var(--shadow-soft)}.subagentTriageCard[aria-pressed=true]:before{background:var(--accent)}.subagentTriageCard[data-subagent-preset=incomplete]:before{background:var(--orange3)}.subagentTriageCard[data-subagent-preset=attention]:before{background:var(--warn)}.subagentTriageCard>span{color:var(--dim);font-size:10px;font-weight:790;text-transform:uppercase;letter-spacing:.055em}.subagentTriageCard>strong{margin-top:5px;color:var(--fg);font:800 25px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentTriageCard>small{align-self:end;margin-top:8px;color:var(--faint);font-size:9.5px;line-height:1.35}
+.subagentFilterCard{padding:13px 14px;box-shadow:var(--shadow-soft)}.subagentFilterPrimary{display:grid;grid-template-columns:minmax(240px,1.4fr) repeat(3,minmax(130px,.72fr)) auto;gap:9px;align-items:end}.subagentFilterPrimary .filterControl,.subagentFilterAdvanced .filterControl{min-width:0}.subagentFilterPrimary input,.subagentFilterPrimary select,.subagentFilterAdvanced select{width:100%}.subagentFilterMore{height:38px;border:1px solid var(--line2);border-radius:7px;background:rgba(255,255,255,.035);padding:0 12px;color:var(--dim);font:inherit;font-size:11px;font-weight:740;white-space:nowrap;cursor:pointer}.subagentFilterMore:hover,.subagentFilterMore:focus-visible{border-color:rgba(127,219,242,.48);color:var(--fg);outline:none}.subagentFilterMore[aria-expanded=true]{border-color:rgba(0,188,235,.38);background:rgba(0,188,235,.07);color:var(--fg)}.subagentFilterMore span:not(:empty){display:inline-grid;min-width:18px;height:18px;margin-left:4px;place-items:center;border-radius:999px;background:rgba(0,188,235,.16);color:var(--orange3);font:760 9px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentFilterAdvanced{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}.subagentFilterAdvanced[hidden]{display:none}.subagentFilterFooter{display:flex;align-items:center;gap:12px;min-height:34px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.subagentActiveFilters{display:flex;flex:1;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}.subagentActiveFilters>span{color:var(--faint);font-size:9.5px}.subagentFilterChip{display:inline-flex;align-items:center;gap:6px;max-width:230px;border:1px solid rgba(0,188,235,.28);border-radius:999px;background:rgba(0,188,235,.065);padding:4px 8px;color:var(--dim);font:inherit;font-size:9.5px;cursor:pointer}.subagentFilterChip:hover,.subagentFilterChip:focus-visible{border-color:rgba(127,219,242,.58);color:var(--fg);outline:none}.subagentFilterChip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:720}.subagentFilterChip i{color:var(--orange3);font-style:normal}.subagentFilterFooter>.clearFilters{flex:none}
+.subagentExplorerSummary{grid-template-columns:repeat(4,minmax(0,1fr))}.subagentInsights{gap:9px}.subagentInsight{width:100%;color:inherit;font:inherit;text-align:left;cursor:pointer}.subagentInsight:hover,.subagentInsight:focus-visible{border-color:rgba(255,180,87,.36);background:rgba(255,180,87,.04);outline:none}.subagentInsight[aria-pressed=true]{border-color:rgba(255,180,87,.52);background:rgba(255,180,87,.08);box-shadow:inset 2px 0 var(--warn)}.subagentInsight p{min-height:27px}
+.subagentInventoryHead{min-height:52px}.subagentInventoryRow.selected{background:rgba(0,188,235,.07);box-shadow:inset 2px 0 var(--accent)}.subagentInventoryRow.attention.selected{box-shadow:inset 2px 0 var(--warn),inset 5px 0 rgba(0,188,235,.38)}.subagentInventoryFooter{display:flex;justify-content:center;padding:12px 14px;border-top:1px solid var(--line)}.subagentInventoryFooter[hidden]{display:none}.subagentShowMore{min-width:210px;border:1px solid rgba(0,188,235,.34);border-radius:7px;background:rgba(0,188,235,.065);padding:8px 14px;color:var(--orange3);font:inherit;font-size:10.5px;font-weight:760;cursor:pointer}.subagentShowMore:hover,.subagentShowMore:focus-visible{border-color:rgba(127,219,242,.66);background:rgba(0,188,235,.12);color:var(--fg);outline:none}.subagentEvidence{padding:15px 16px 16px;border-top:1px solid rgba(0,188,235,.26);border-bottom:1px solid rgba(0,188,235,.18);background:linear-gradient(135deg,rgba(0,188,235,.07),rgba(9,14,20,.84) 54%,rgba(199,167,255,.04));box-shadow:inset 3px 0 var(--accent)}.subagentEvidenceHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.subagentEvidenceHead h4{margin:0;color:var(--fg);font-size:14px}.subagentEvidenceHead p{margin:3px 0 0;color:var(--faint);font-size:10px}.subagentEvidenceClose{flex:none;width:28px;height:28px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--dim);font-size:16px;cursor:pointer}.subagentEvidenceClose:hover,.subagentEvidenceClose:focus-visible{border-color:var(--line3);color:var(--fg);outline:none}.subagentEvidenceContext{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}.subagentEvidenceContext span{border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.025);padding:4px 8px;color:var(--dim);font-size:9.5px}.subagentEvidenceGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-top:11px}.subagentEvidenceMetric{min-width:0;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.024);padding:9px 10px}.subagentEvidenceMetric span{display:block;color:var(--faint);font-size:8px;font-weight:790;text-transform:uppercase}.subagentEvidenceMetric strong{display:block;margin-top:3px;overflow:hidden;color:var(--fg);font:740 12px/1.2 ui-monospace,"SF Mono",Menlo,monospace;text-overflow:ellipsis;white-space:nowrap}.subagentEvidenceSignals{margin-top:11px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:rgba(5,9,13,.3);color:var(--dim);font-size:10px;line-height:1.45}.subagentEvidenceSignals strong{color:var(--fg)}.subagentEvidenceSignals ul{margin:5px 0 0;padding-left:17px}.subagentEvidenceActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}.subagentEvidenceActions p{margin:0;color:var(--faint);font-size:9.5px}.subagentOpenParent{flex:none;border:1px solid rgba(0,188,235,.44);border-radius:7px;background:rgba(0,188,235,.09);padding:7px 11px;color:var(--orange3);font:inherit;font-size:10.5px;font-weight:760;cursor:pointer}.subagentOpenParent:hover,.subagentOpenParent:focus-visible{border-color:rgba(127,219,242,.7);background:rgba(0,188,235,.15);color:var(--fg);outline:none}
+.subagentUsage{padding:0;margin-top:12px}.subagentUsage>summary{display:flex;min-height:62px;align-items:center;justify-content:space-between;gap:18px;padding:13px 16px;list-style:none;cursor:pointer}.subagentUsage>summary::-webkit-details-marker{display:none}.subagentUsage>summary>div{display:grid}.subagentUsage>summary strong{color:var(--fg);font-size:13px}.subagentUsage>summary span{margin-top:2px;color:var(--faint);font-size:10px}.subagentUsage>summary>b{color:var(--orange3);font-size:10px}.subagentUsage>summary>b:after{content:"  ›";display:inline-block;margin-left:5px;transform:rotate(90deg);transition:transform .15s ease}.subagentUsage[open]>summary>b:after{transform:rotate(-90deg)}.subagentUsageBody{padding:0 16px 16px;border-top:1px solid var(--line)}.subagentUsageHead{margin-top:13px}.subagentUsageHead>p{max-width:440px}
+@media(max-width:1100px){.subagentFilterPrimary{grid-template-columns:minmax(220px,1.2fr) repeat(2,minmax(125px,.7fr));}.subagentFilterPrimary .filterControl:nth-child(4){grid-column:1/2}.subagentFilterMore{grid-column:3/4}.subagentExplorerSummary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentEvidenceGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.subagentTriage{grid-template-columns:1fr}.subagentFilterPrimary,.subagentFilterAdvanced{grid-template-columns:1fr 1fr}.subagentFilterPrimary .filterControl:first-child{grid-column:1/-1}.subagentFilterPrimary .filterControl:nth-child(4),.subagentFilterMore{grid-column:auto}.subagentExplorerSummary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentEvidenceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentEvidenceActions{align-items:flex-start;flex-direction:column}.subagentUsage>summary{align-items:flex-start;flex-direction:column;gap:5px}}
+/* subagent-investigation-v3 */
+body.sessionRoute #view-session.sessionSubagents .currentDaySummary{display:none}
+.subagentCommand{overflow:hidden;padding:0;box-shadow:var(--shadow-soft)}
+.subagentViewTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--line);background:rgba(5,9,13,.26)}
+.subagentViewTabs button{display:flex;min-height:48px;align-items:center;justify-content:center;gap:8px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;font-size:11.5px;font-weight:780;cursor:pointer}.subagentViewTabs button:last-child{border-right:0}.subagentViewTabs button:hover,.subagentViewTabs button:focus-visible{background:rgba(0,188,235,.045);color:var(--fg);outline:none}.subagentViewTabs button[aria-selected=true]{background:linear-gradient(180deg,rgba(0,188,235,.12),rgba(0,188,235,.035));box-shadow:inset 0 -2px var(--accent);color:var(--fg)}.subagentViewTabs small{display:inline-grid;min-width:24px;height:20px;place-items:center;border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.035);color:var(--faint);font:750 9px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentViewTabs button[aria-selected=true] small{border-color:rgba(0,188,235,.38);background:rgba(0,188,235,.1);color:var(--orange3)}
+.subagentCommand .subagentFilterPrimary{padding:12px 13px 0}.subagentCommand .subagentFilterAdvanced{margin:10px 13px 0}.subagentCommand .subagentFilterFooter{margin:10px 13px 0;padding-bottom:10px}
+.subagentCompactSummary{display:flex;align-items:center;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:thin}.subagentCompactMetric{display:flex;min-width:max-content;align-items:baseline;gap:7px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.022);padding:7px 10px;color:var(--faint);font:inherit;font-size:9.5px}.subagentCompactMetric b{color:var(--fg);font:770 12px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentCompactMetric.warn{border-color:rgba(255,180,87,.3);background:rgba(255,180,87,.055)}.subagentCompactMetric.warn b{color:var(--warn)}.subagentCompactMetric.dim b{color:var(--dim)}.subagentCompactMetric.actionable{cursor:pointer}.subagentCompactMetric.actionable:hover,.subagentCompactMetric.actionable:focus-visible{border-color:rgba(127,219,242,.52);background:rgba(0,188,235,.075);color:var(--fg);outline:none}.subagentCompactMetric.actionable[aria-pressed=true]{border-color:rgba(0,188,235,.58);background:rgba(0,188,235,.13);box-shadow:inset 0 0 0 1px rgba(0,188,235,.12);color:var(--orange3)}.subagentCompactMetric.actionable[aria-pressed=true] b{color:var(--orange3)}
+.subagentWorkspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,340px);gap:12px;align-items:start;margin-top:12px}.subagentResultsCard{overflow:hidden;box-shadow:var(--shadow-soft)}.subagentResultsHead{display:flex;min-height:58px;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line)}.subagentResultsHead h3{margin:0;font-size:13px}.subagentResultsHead p{margin:2px 0 0;color:var(--faint);font-size:9.5px}.subagentResultsHead>span{flex:none;color:var(--faint);font-size:10px}.subagentResultsEmpty{display:grid;min-height:220px;place-items:center;padding:28px;color:var(--dim);font-size:11.5px;text-align:center}.subagentResultsEmpty strong{display:block;margin-bottom:5px;color:var(--fg);font-size:13px}
+.subagentWorkspace.roleView{grid-template-columns:1fr}.subagentWorkspace.roleView .subagentInspector{display:none}
+.subagentSessionGroup{border-bottom:1px solid var(--line);background:rgba(5,9,13,.12)}.subagentSessionGroup:last-child{border-bottom:0}.subagentSessionGroup>summary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;min-height:70px;padding:11px 14px;list-style:none;cursor:pointer}.subagentSessionGroup>summary::-webkit-details-marker{display:none}.subagentSessionGroup>summary:hover,.subagentSessionGroup>summary:focus-visible{background:rgba(0,188,235,.035);outline:none}.subagentSessionGroup[open]>summary{background:linear-gradient(90deg,rgba(0,188,235,.065),transparent 72%);box-shadow:inset 2px 0 var(--accent)}.subagentSessionGroup.hasAttention>summary{box-shadow:inset 2px 0 var(--warn)}.subagentSessionIdentity{min-width:0}.subagentSessionIdentity strong{display:flex;align-items:center;gap:7px;color:var(--fg);font-size:11.5px}.subagentSessionIdentity strong span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentSessionIdentity small{display:block;margin-top:3px;overflow:hidden;color:var(--faint);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}.subagentSessionBadges{display:flex;gap:5px;flex-wrap:wrap}.subagentSessionBadge{border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.03);padding:2px 6px;color:var(--dim);font-size:8px;font-weight:790;text-transform:uppercase}.subagentSessionBadge.warn{border-color:rgba(255,180,87,.38);background:rgba(255,180,87,.07);color:var(--warn)}.subagentSessionMetrics{display:grid;grid-template-columns:repeat(3,minmax(58px,auto));gap:12px;text-align:right}.subagentSessionMetric span{display:block;color:var(--faint);font-size:8px;text-transform:uppercase}.subagentSessionMetric b{display:block;margin-top:2px;color:var(--dim);font:720 10.5px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentSessionGroup>summary:after{content:"›";position:absolute;right:9px;color:var(--faint);transform:rotate(90deg)}.subagentSessionGroup[open]>summary:after{transform:rotate(-90deg)}
+.subagentChildHeader,.subagentChildRow{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(92px,.75fr) minmax(72px,.5fr) minmax(68px,.48fr);align-items:center;gap:9px}.subagentChildHeader{padding:7px 14px;border-top:1px solid var(--line);background:rgba(0,0,0,.12);color:var(--faint);font-size:7.5px;font-weight:800;text-transform:uppercase}.subagentChildHeader span:not(:first-child){text-align:right}.subagentChildRow{width:100%;min-height:58px;padding:8px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentChildRow:hover,.subagentChildRow:focus-visible{background:rgba(0,188,235,.04);outline:none}.subagentChildRow.selected{background:rgba(0,188,235,.08);box-shadow:inset 3px 0 var(--accent)}.subagentChildRow.attention{box-shadow:inset 2px 0 var(--warn)}.subagentChildRow.attention.selected{box-shadow:inset 2px 0 var(--warn),inset 5px 0 rgba(0,188,235,.36)}.subagentChildIdentity{min-width:0}.subagentChildIdentity strong{display:flex;align-items:center;gap:6px;min-width:0;color:var(--fg);font-size:10.5px}.subagentChildIdentity strong>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentChildIdentity small{display:block;margin-top:2px;overflow:hidden;color:var(--faint);font-size:8.8px;text-overflow:ellipsis;white-space:nowrap}.subagentChildMetric{text-align:right;font:680 9.8px/1.25 ui-monospace,"SF Mono",Menlo,monospace}
+.subagentSiblingLink{width:100%;border:0;border-top:1px solid var(--line);background:rgba(0,188,235,.025);padding:10px 14px;color:var(--orange3);font:inherit;font-size:9.5px;font-weight:740;text-align:left;cursor:pointer}.subagentSiblingLink:hover,.subagentSiblingLink:focus-visible{background:rgba(0,188,235,.07);color:var(--fg);outline:none}
+.subagentInspector{position:sticky;top:76px;min-height:310px;overflow:hidden;padding:15px;box-shadow:var(--shadow-soft)}.subagentInspector:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--orange3),transparent)}.subagentInspectorEmpty{display:grid;min-height:278px;place-items:center;text-align:center}.subagentInspectorEmpty svg{width:34px;height:34px;margin:auto;fill:none;stroke:var(--faint);stroke-width:1.5}.subagentInspectorEmpty strong{display:block;margin-top:10px;color:var(--fg);font-size:12px}.subagentInspectorEmpty p{max-width:235px;margin:4px auto 0;color:var(--faint);font-size:9.5px;line-height:1.45}.subagentInspectorHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.subagentInspectorHead h3{margin:0;color:var(--fg);font-size:14px;overflow-wrap:anywhere}.subagentInspectorHead p{margin:3px 0 0;color:var(--faint);font-size:9.5px}.subagentInspectorClose{flex:none;width:28px;height:28px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--dim);font-size:16px;cursor:pointer}.subagentInspectorClose:hover,.subagentInspectorClose:focus-visible{border-color:var(--line3);color:var(--fg);outline:none}.subagentInspectorParent{margin-top:12px;padding:9px 10px;border:1px solid rgba(0,188,235,.2);border-radius:7px;background:rgba(0,188,235,.045)}.subagentInspectorParent span{display:block;color:var(--faint);font-size:8px;font-weight:780;text-transform:uppercase}.subagentInspectorParent strong{display:block;margin-top:3px;overflow:hidden;color:var(--fg);font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.subagentInspectorParent small{display:block;margin-top:2px;color:var(--dim);font-size:9px}.subagentInspectorTags{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}.subagentInspectorTags span{border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.025);padding:3px 6px;color:var(--dim);font-size:8.5px}.subagentInspectorGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}.subagentInspectorMetric{min-width:0;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.02);padding:8px 9px}.subagentInspectorMetric span{display:block;color:var(--faint);font-size:7.5px;font-weight:790;text-transform:uppercase}.subagentInspectorMetric b{display:block;margin-top:3px;overflow:hidden;color:var(--fg);font:720 11px/1.2 ui-monospace,"SF Mono",Menlo,monospace;text-overflow:ellipsis;white-space:nowrap}.subagentInspectorSignals{margin-top:10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(5,9,13,.28);color:var(--dim);font-size:9.5px;line-height:1.45}.subagentInspectorSignals>strong{color:var(--fg)}.subagentInspectorSignals ul{margin:5px 0 0;padding-left:16px}.subagentInspectorSignals p{margin:4px 0 0}.subagentInspectorAction{width:100%;margin-top:10px}
+.subagentRoleTable{overflow-x:auto}.subagentRoleHeader,.subagentRoleRow{display:grid;grid-template-columns:minmax(170px,1.15fr) repeat(5,minmax(72px,.55fr));align-items:center;gap:10px;min-width:690px}.subagentRoleHeader{padding:8px 14px;color:var(--faint);font-size:7.5px;font-weight:800;text-transform:uppercase}.subagentRoleHeader span:not(:first-child){text-align:right}.subagentRoleRow{min-height:68px;padding:9px 14px;border-top:1px solid var(--line)}.subagentRoleIdentity{min-width:0}.subagentRoleIdentity strong{display:block;overflow:hidden;color:var(--fg);font-size:10.8px;text-overflow:ellipsis;white-space:nowrap}.subagentRoleIdentity small{display:block;margin-top:2px;color:var(--faint);font-size:8.8px}.subagentRoleMetric{text-align:right}.subagentRoleMetric span{display:block;color:var(--faint);font-size:7.5px;text-transform:uppercase}.subagentRoleMetric b{display:block;margin-top:2px;color:var(--dim);font:710 10px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentRoleMetric.warn b{color:var(--warn)}
+.subagentSessionMetrics{grid-template-columns:repeat(4,minmax(58px,auto))}
+.subagentRoleHeader,.subagentRoleRow{grid-template-columns:minmax(170px,1.15fr) repeat(6,minmax(72px,.55fr));min-width:780px}
+.subagentSessionGroup>summary{position:relative;padding-right:24px}
+@media(max-width:1180px){.subagentWorkspace{grid-template-columns:minmax(0,1fr) 300px}.subagentSessionMetrics{gap:8px}.subagentChildHeader,.subagentChildRow{grid-template-columns:minmax(130px,1fr) minmax(82px,.7fr) minmax(68px,.48fr) minmax(62px,.44fr)}}
+@media(max-width:1100px){.subagentCommand .subagentFilterPrimary .filterControl:nth-child(4){grid-column:1/3}}
+@media(max-width:900px){.subagentWorkspace{grid-template-columns:1fr}.subagentInspector{position:relative;top:auto}.subagentFilterPrimary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentFilterPrimary .filterControl:first-child{grid-column:1/-1}.subagentFilterPrimary .filterControl:nth-child(4),.subagentFilterMore{grid-column:auto}.subagentSessionGroup>summary{grid-template-columns:1fr}.subagentSessionMetrics{text-align:left}.subagentSessionMetric{display:inline-flex;align-items:baseline;gap:4px}.subagentSessionMetric span,.subagentSessionMetric b{display:inline}.subagentChildHeader,.subagentChildRow{grid-template-columns:minmax(140px,1fr) minmax(80px,.7fr) minmax(66px,.45fr) minmax(62px,.42fr)}}
 </style></head><body class=spectrumApp>
 <!--
 THESIS: Sessions are live instruments, not a generic grid of dark cards.
@@ -693,6 +729,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="tabs sessionScopeTabs" id=session-scope-tabs role=tablist aria-label="Sessions view">
    <button class=tab id=session-scope-current type=button role=tab aria-selected=true aria-controls=current-sessions-overview data-session-scope=current><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Current sessions</span></button>
    <button class=tab id=session-scope-all type=button role=tab aria-selected=false aria-controls=all-session-history data-session-scope=all><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span class=tabLabel>All sessions</span></button>
+   <button class=tab id=session-scope-subagents type=button role=tab aria-selected=false aria-controls=subagent-explorer data-session-scope=subagents><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><circle cx="12" cy="7" r="3"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M12 10v3M6 15v-2h12v2"/></svg><span class=tabLabel>Subagents</span></button>
   </div>
 
   <div class=previewSurface id=preview-surface-sessions>
@@ -771,6 +808,42 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     </div>
     <div class=slist id=slist></div>
    </section>
+   <section id=subagent-explorer role=tabpanel aria-labelledby=session-scope-subagents hidden>
+    <div class=subagentExplorerHead><div><h2>Subagents</h2><p>Investigate child-agent work by issue, parent session, or provider-reported role.</p></div><span class=subagentExplorerMeta id=subagent-explorer-meta>Waiting for agent evidence</span></div>
+    <div class="card subagentCommand">
+     <div class=subagentViewTabs id=subagent-view-tabs role=tablist aria-label="Subagent workspace view">
+      <button id=subagent-tab-roles type=button role=tab data-subagent-view=roles aria-selected=true aria-controls=subagent-results-panel><span>Roles</span><small id=subagent-view-roles-count>--</small></button>
+      <button id=subagent-tab-sessions type=button role=tab data-subagent-view=sessions aria-selected=false aria-controls=subagent-results-panel><span>Sessions</span><small id=subagent-view-sessions-count>--</small></button>
+      <button id=subagent-tab-issues type=button role=tab data-subagent-view=issues aria-selected=false aria-controls=subagent-results-panel><span>Issues</span><small id=subagent-view-issues-count>--</small></button>
+     </div>
+     <div class=subagentFilterPrimary>
+      <label class="filterControl logSearchControl"><span>Search</span><input class=searchbox id=subagent-filter-search type=search placeholder="Role, nickname, model, or project"></label>
+      <label class=filterControl><span>App</span><select class=filterSelect id=subagent-filter-app><option value="">All apps</option></select></label>
+      <label class=filterControl><span>Project</span><select class=filterSelect id=subagent-filter-project><option value="">All projects</option></select></label>
+      <label class=filterControl><span>Time range</span><select class=filterSelect id=subagent-filter-time><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option></select></label>
+      <button class=subagentFilterMore id=subagent-filter-more type=button aria-expanded=false aria-controls=subagent-filter-advanced>More filters <span id=subagent-filter-more-count></span></button>
+     </div>
+     <div class=subagentFilterAdvanced id=subagent-filter-advanced hidden>
+      <label class=filterControl><span>Model</span><select class=filterSelect id=subagent-filter-model><option value="">All models</option></select></label>
+      <label class=filterControl><span>Status</span><select class=filterSelect id=subagent-filter-status><option value=all>All statuses</option><option value=working>Working</option><option value=incomplete>Incomplete</option><option value=complete>Complete</option><option value=waiting>Waiting</option><option value=recent>Recent</option><option value=unknown>Unknown</option></select></label>
+      <label class=filterControl><span>Signal</span><select class=filterSelect id=subagent-filter-signal><option value=all>All signals</option><option value=attention>Needs attention</option><option value=peer_cost_outlier>Peer cost outlier</option><option value=active_cost_concentration>Active cost concentration</option><option value=retry_pressure>Retry pressure</option></select></label>
+      <label class=filterControl><span>Sort</span><select class=filterSelect id=subagent-filter-sort><option value=recent>Recent</option><option value=cost>Cost</option><option value=tokens>Tokens</option><option value=elapsed>Elapsed</option><option value=name>Agent name</option></select></label>
+     </div>
+     <div class=subagentFilterFooter>
+      <div class=subagentActiveFilters id=subagent-active-filters aria-live=polite></div>
+      <button class="tbtn clearFilters" id=subagent-filter-clear type=button>Clear all</button>
+     </div>
+    </div>
+    <div class=subagentCompactSummary id=subagent-compact-summary aria-live=polite></div>
+    <div class=subagentInventoryWarning id=subagent-inventory-warning hidden></div>
+    <div class=subagentWorkspace id=subagent-workspace>
+     <section class="card subagentResultsCard" id=subagent-results-panel role=tabpanel aria-labelledby=subagent-tab-roles tabindex=0>
+      <div class=subagentResultsHead><div><h3 id=subagent-results-title>Role comparison</h3><p id=subagent-results-description>Provider-reported roles compared across the current filters.</p></div><span id=subagent-results-count></span></div>
+      <div class=subagentResults id=subagent-results></div>
+     </section>
+     <aside class="card subagentInspector" id=subagent-inspector aria-label="Agent inspector"></aside>
+    </div>
+   </section>
   </div>
 
   <div class=previewRunMeta data-current-detail>
@@ -822,6 +895,13 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
    <div class="card previewKpi"><div class=label>Burn / minute</div><div class="v mono" id=preview-burn>--</div><div class=sm id=preview-burn-note>while the run is active</div></div>
    <div class="card previewKpi"><div class=label>Cost / task</div><div class="v mono" id=preview-cost-task>--</div><div class=sm id=preview-cost-task-note>accepted-task estimate</div></div>
   </div>
+  <section class="card agentActivity" id=agent-activity aria-labelledby=agent-activity-title hidden>
+   <div class=agentActivityHead><div><div class=agentActivityEyebrow>Subagent observability</div><h2 id=agent-activity-title>Agent activity</h2><p id=agent-activity-context></p></div><div class=agentCoverage id=agent-activity-coverage></div></div>
+   <div class=agentActivityMetrics id=agent-activity-metrics></div>
+   <div class=agentActivityTree id=agent-activity-tree role=tree aria-label="Agent activity hierarchy"></div>
+   <div class=agentAttentionDetail id=agent-attention-detail aria-live=polite></div>
+   <div class=agentActivityFoot>Needs attention marks a possible issue, not a diagnosis. Token Meter never stops or changes an agent.</div>
+  </section>
   <div class=foot>Live session evidence · local-only · run preferences stay in this browser</div>
   </div>
  </div>
@@ -1490,15 +1570,17 @@ function openSelectedSessionRoute(route='summary'){
  }
  setHashRoute(route);
 }
-const SESSION_SCOPES=['current','all'];
+const SESSION_SCOPES=['current','all','subagents'];
 let sessionScope='current',sessionReturnScope='current';
-function normalizeSessionScope(scope){return scope==='all'?'all':'current';}
-function sessionScopeRoute(scope){return normalizeSessionScope(scope)==='all'?'sessions-all':'sessions';}
+function normalizeSessionScope(scope){return SESSION_SCOPES.includes(scope)?scope:'current';}
+function sessionScopeRoute(scope){scope=normalizeSessionScope(scope);return scope==='all'?'sessions-all':scope==='subagents'?'sessions-subagents':'sessions';}
 function renderSessionScope(){
- const all=sessionScope==='all',overview=currentPanel==='sessions';
+ const all=sessionScope==='all',subagents=sessionScope==='subagents',overview=currentPanel==='sessions';
  $('view-session').classList.toggle('sessionAll',all);
- $('current-sessions-overview').hidden=all;
+ $('view-session').classList.toggle('sessionSubagents',subagents);
+ $('current-sessions-overview').hidden=all||subagents;
  $('all-session-history').hidden=!all;
+ $('subagent-explorer').hidden=!subagents;
  [...$('session-scope-tabs').querySelectorAll('[data-session-scope]')].forEach(button=>{
   const selected=button.dataset.sessionScope===sessionScope;
   button.setAttribute('aria-selected',String(selected));
@@ -1506,13 +1588,14 @@ function renderSessionScope(){
   button.tabIndex=selected?0:-1;
  });
  if(overview){
- $('current-description').textContent=all?'Local session history.':'Live local traces · last 30 minutes.';
-  $('session-page-title').setAttribute('aria-description',all?'Search, filter, and compare local session history.':'Select a card to inspect it. Drag a card or press ⌥ and an arrow key to reorder.');
+  $('current-description').textContent=all?'Local session history.':subagents?'Investigate child-agent spend, completion, and role patterns.':'Live local traces · last 30 minutes.';
+  $('session-page-title').setAttribute('aria-description',all?'Search, filter, and compare local session history.':subagents?'Filter child agents, inspect incomplete work, and open their parent sessions.':'Select a card to inspect it. Drag a card or press ⌥ and an arrow key to reorder.');
  }
  if(all&&LATEST){
   renderAllSessions(LATEST.xsession);
   loadAllSessions();
  }
+ if(subagents&&LATEST){renderSubagentExplorer(LATEST.xsession?.agent_usage);loadAllSessions();}
 }
 function setSessionScope(scope){
  sessionScope=normalizeSessionScope(scope);
@@ -1528,7 +1611,7 @@ function openSessionScope(scope,{replace=false}={}){
  if(history.pushState)history[replace?'replaceState':'pushState'](null,'',`/#${route}`);
  else location.hash=route;
  applyHashRoute();
- return sessionScope==='all'?allSessionInventory||[]:LATEST?.xsession?.current_sessions||[];
+ return sessionScope==='all'?allSessionInventory||[]:sessionScope==='subagents'?LATEST?.xsession?.agent_usage?.inventory||[]:LATEST?.xsession?.current_sessions||[];
 }
 
 const ONBOARDING_KEY='tm_onboarding_v1';
@@ -1864,8 +1947,8 @@ function applyHashRoute(){
  const h=(location.hash||'').replace(/^#/,'');
  const panel=PANEL_ALIAS[h]||h;
  const legacyGlobal=h==='global'||h==='global-logs'||/^global-(overview|evidence)$/.test(h);
- if(h==='sessions'||h==='sessions-all'||h==='current-sessions'){
- const scope=h==='sessions-all'?'all':'current',route=sessionScopeRoute(scope);
+ if(h==='sessions'||h==='sessions-all'||h==='sessions-subagents'||h==='current-sessions'){
+ const scope=h==='sessions-all'?'all':h==='sessions-subagents'?'subagents':'current',route=sessionScopeRoute(scope);
  if((routedSessionId()||h==='current-sessions')&&history.replaceState)history.replaceState(null,'',`/#${route}`);
  if(pinned){sessionRequest++;pinned=null;CURRENT=LATEST;}
  setSessionScope(scope);
@@ -2882,6 +2965,25 @@ if(['claude_code','claude_desktop'].includes(globalApp)){
 let globalProject=localStorage.getItem('tm_global_project')||'';
 let globalTime=localStorage.getItem('tm_global_time')||'all';
 let allSessionInventory=null,allSessionInventoryAt=0,allSessionsRequest=null,renderedAllSessions=new Map(),renderedAllSessionActions={},forceAllSessionRowRefresh=false;
+let subagentUsageDimension=localStorage.getItem('tm_subagent_usage_dimension')||'runtimes';
+if(!['runtimes','models','depths','kinds','roles'].includes(subagentUsageDimension))subagentUsageDimension='runtimes';
+let subagentUsageSort=localStorage.getItem('tm_subagent_usage_sort')||'cost';
+if(!['cost','tokens','agents','output'].includes(subagentUsageSort))subagentUsageSort='cost';
+let subagentView=localStorage.getItem('tm_subagent_view')||'roles';
+if(!['issues','sessions','roles'].includes(subagentView))subagentView='roles';
+let subagentFilters={
+ query:localStorage.getItem('tm_subagent_filter_search')||'',
+ runtime:localStorage.getItem('tm_subagent_filter_app')||'',
+ project:localStorage.getItem('tm_subagent_filter_project')||'',
+ model:localStorage.getItem('tm_subagent_filter_model')||'',
+ status:localStorage.getItem('tm_subagent_filter_status')||'all',
+ signal:localStorage.getItem('tm_subagent_filter_signal')||'all',
+ window:localStorage.getItem('tm_subagent_filter_time')||'all',
+ sort:localStorage.getItem('tm_subagent_filter_sort')||'recent',
+};
+const SUBAGENT_PAGE_SIZE=50;
+let subagentVisibleLimit=SUBAGENT_PAGE_SIZE,selectedSubagentId='',expandedSubagentRoot=null;
+let subagentAdvancedOpen=Boolean(subagentFilters.model||subagentFilters.status!=='all'||subagentFilters.signal!=='all'||subagentFilters.sort!=='recent');
 const logHtmlCache=new WeakMap();
 function setLogText(element,value){
  value=String(value??'');
@@ -2908,7 +3010,10 @@ async function loadAllSessions(){
  }).then(payload=>{
   allSessionInventory=payload.sessions||[];
   allSessionInventoryAt=Number(payload.generated_at||0);
-  if(LATEST&&$('view-session').classList.contains('on')&&sessionScope==='all')renderAllSessions(LATEST.xsession);
+  if(LATEST&&$('view-session').classList.contains('on')){
+   if(sessionScope==='all')renderAllSessions(LATEST.xsession);
+   if(sessionScope==='subagents')renderSubagentExplorer(LATEST.xsession?.agent_usage);
+  }
   return allSessionInventory;
  }).catch(()=>allSessionInventory||[]).finally(()=>{allSessionsRequest=null;});
  return allSessionsRequest;
@@ -3578,6 +3683,101 @@ function sessionThroughputNote(throughput){
  return `${throughput?.basis==='tool_free'?'tool-free':'end-to-end'} · ${f(throughput?.sample_count||0)} timed ${countWord(throughput?.sample_count||0,'sample')} · ${pct(throughput?.timing_coverage)} coverage`;
 }
 
+const agentCostObservations=new Map();
+let selectedAgentActivityId='';
+function deriveAgentAttention(group,budget,previousCosts=new Map()){
+ const reasonsByAgent=new Map();
+ const addReason=(agentId,reason)=>{
+  if(!agentId||!reason?.code)return;
+  const reasons=reasonsByAgent.get(agentId)||[];
+  if(!reasons.some(item=>item.code===reason.code))reasons.push({code:String(reason.code),explanation:String(reason.explanation||'')});
+  reasonsByAgent.set(agentId,reasons);
+ };
+ for(const item of group?.attention||[]){
+  for(const reason of item?.reasons||[])addReason(item?.agent_id,reason);
+ }
+ const covered=group?.totals?.cost_available===true&&Number.isFinite(Number(group?.totals?.cost));
+ if(covered){
+  const cap=Number(budget),rootId=String(group?.root_session_id||'');
+  if(Number.isFinite(cap)&&cap>0&&Number(group.totals.cost)>cap){
+   const root=(group?.agents||[]).find(agent=>agent?.kind==='root');
+   if(root)addReason(root.id,{code:'cap_exceeded',explanation:`Covered estimated group spend is above this session's browser-local ${'$'}${cap.toFixed(2)} cap.`});
+  }
+  for(const agent of group?.agents||[]){
+   if(agent?.kind==='root'||agent?.cost_available!==true||!Number.isFinite(Number(agent?.cost)))continue;
+   const cost=Number(agent.cost);
+   if(Number.isFinite(cap)&&cap>0&&cost>cap)addReason(agent.id,{code:'cap_exceeded',explanation:`Covered estimated child-agent spend is above this session's browser-local ${'$'}${cap.toFixed(2)} cap.`});
+   if(agent.activity_state==='working'){
+    const key=`${rootId}:${agent.id}`,previous=Number(previousCosts.get(key));
+    if(Number.isFinite(previous)&&cost>previous&&cost-previous>=.25)addReason(agent.id,{code:'observed_live_growth',explanation:'Covered estimated cost increased by at least $0.25 while this child was reported working.'});
+    previousCosts.set(key,cost);
+   }
+  }
+ }
+ return (group?.agents||[]).filter(agent=>reasonsByAgent.has(agent?.id)).map(agent=>({
+  agent_id:agent.id,level:'needs_attention',reasons:reasonsByAgent.get(agent.id),
+ }));
+}
+function agentIdentityPresentation(agent,index){
+ if(agent?.kind==='root')return {primary:'Main session',secondary:''};
+ const role=String(agent?.role||'').trim(),label=String(agent?.label||'').trim();
+ if(role)return {primary:role,secondary:label&&label!==role?label:''};
+ return {primary:label||`Agent ${index+1}`,secondary:''};
+}
+function agentDisplayLabel(agent,index){
+ return agentIdentityPresentation(agent,index).primary;
+}
+function renderAgentActivity(s){
+ const module=$('agent-activity'),group=s?.agent_group,agents=Array.isArray(group?.agents)?group.agents:[];
+ if(!group||agents.length<2){
+  module.hidden=true;
+  selectedAgentActivityId='';
+  return;
+ }
+ module.hidden=false;
+ const attention=deriveAgentAttention(group,sessionBudgetForSession(s),agentCostObservations),attentionByAgent=new Map(attention.map(item=>[String(item.agent_id),item]));
+ if(!agents.some(agent=>String(agent.id)===String(selectedAgentActivityId)))selectedAgentActivityId=group.selected_agent_id||agents[0].id;
+ const selected=agents.find(agent=>String(agent.id)===String(selectedAgentActivityId))||agents[0];
+ selectedAgentActivityId=selected.id;
+ const selectedIndex=Math.max(0,agents.indexOf(selected)),selectedLabel=agentDisplayLabel(selected,selectedIndex);
+ const childAgents=agents.filter(agent=>agent.kind!=='root'),childTotals=group.child_totals||{},knownChildCost=Number(childTotals.known_cost)||0;
+ const childCostCovered=childTotals.cost_available===true&&Number.isFinite(Number(childTotals.cost));
+ const totals=group.totals||{},coverage=group.coverage||{},hidden=Number(group.hidden_agent_count)||0;
+ $('agent-activity-context').textContent=selected.kind==='root'
+  ? `${f(childAgents.length+hidden)} ${countWord(childAgents.length+hidden,'child agent')} under this session`
+  : `Main session → ${selectedLabel}`;
+ $('agent-activity-coverage').textContent=`Relationships ${coverage.relationships||'unavailable'} · cost ${coverage.cost||'unavailable'} · tokens ${coverage.tokens||'unavailable'}${hidden?` · ${f(hidden)} more hidden by the 100-agent display limit`:''}`;
+ const metric=(label,value,note)=>`<div class=agentActivityMetric><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
+ $('agent-activity-metrics').innerHTML=[
+  metric('Group cost',totals.cost_available?money(totals.cost):'--',totals.cost_available?'API-rate estimate · all agents cost-covered':totals.known_cost?`${money(totals.known_cost)} covered cost; some agents unavailable`:'cost unavailable'),
+  metric('Child cost',childCostCovered?money(childTotals.cost):'--',childCostCovered?'API-rate estimate · root session excluded':knownChildCost?`${money(knownChildCost)} covered child cost; some agents unavailable`:'child cost unavailable'),
+  metric('Tokens',totals.tokens_available?f(totals.tokens):'--',totals.tokens_available?'all agents token-covered':totals.known_tokens?`${f(totals.known_tokens)} covered tokens; some agents unavailable`:'token evidence unavailable'),
+  metric('Agents',f(totals.agents||agents.length),`${f(childAgents.length+hidden)} children · ${f(attention.length)} ${countWord(attention.length,'signal')}`),
+ ].join('');
+ const rows=agents.map((agent,index)=>{
+  const identity=agentIdentityPresentation(agent,index),label=identity.primary,reason=attentionByAgent.get(String(agent.id)),selectedRow=String(agent.id)===String(selectedAgentActivityId);
+  const model=agent.model&&agent.model!=='unknown'?agent.model:'model unavailable',state=agent.activity_state||'unknown';
+  const tokenValue=agent.tokens_available===true?f(agent.tokens):'--',costValue=agent.cost_available===true?money(agent.cost):'--';
+  const share=agent.group_cost_share==null?'--':pct(agent.group_cost_share),elapsed=agent.elapsed_s==null?'--':durationShort(agent.elapsed_s);
+  const secondary=identity.secondary?`${identity.secondary} · `:'',kind=agent.kind==='root'?'session':agent.kind;
+  const destination=agent.navigable&&agent.session_id?` data-agent-session="${esc(agent.session_id)}"`:'';
+  return `<button class="agentRow${selectedRow?' selected':''}${reason?' attention':''}" type=button role=treeitem aria-level="${Math.max(1,Number(agent.depth||0)+1)}" aria-selected="${selectedRow?'true':'false'}" style="--agent-depth:${Math.max(0,Number(agent.depth)||0)}" data-agent-id="${esc(agent.id)}"${destination}><span class=agentIdentity><strong><span>${esc(label)}</span>${reason?'<span class=agentAttentionBadge>Needs attention</span>':''}</strong><small>${esc(secondary+kind)}</small></span><span class=agentMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=agentMetric>${esc(tokenValue)}</span><span class=agentMetric>${esc(costValue)}</span><span class=agentMetric>${esc(share)}</span><span class=agentMetric>${esc(elapsed)}</span></button>`;
+ }).join('');
+ $('agent-activity-tree').innerHTML='<div class=agentTreeHeader><span>Agent</span><span>Model</span><span>Status</span><span>Tokens</span><span>Cost</span><span>Share</span><span>Elapsed</span></div>'+rows;
+ const selectedAttention=attentionByAgent.get(String(selected.id));
+ $('agent-attention-detail').innerHTML=selectedAttention
+  ? `<b>${esc(selectedLabel)} · Needs attention</b><ul>${selectedAttention.reasons.map(reason=>`<li>${esc(reason.explanation)}</li>`).join('')}</ul>`
+  : `<b>${esc(selectedLabel)}</b> · No deterministic attention signal is present in the available local evidence.`;
+}
+$('agent-activity-tree').addEventListener('click',event=>{
+ const row=event.target.closest('[data-agent-id]');
+ if(!row||!CURRENT)return;
+ selectedAgentActivityId=row.dataset.agentId;
+ const destination=row.dataset.agentSession,currentId=String(stateSessionId(CURRENT)||'');
+ if(destination&&destination!==currentId){selectSession(destination,{returnScope:sessionReturnScope});return;}
+ renderAgentActivity(CURRENT);
+});
+
 function renderCurrentRun(s){
 	 const source=s.source||{},throughput=sessionDisplayThroughput(s),wait=s.wait_time||{},context=s.context||{},tools=s.tools||{},cache=s.cache||{},timing=s.timing||{};
  const costAvailable=metricAvailable(s,'cost'),cacheAvailable=metricAvailable(s,'cache'),throughputAvailable=metricAvailable(s,'throughput'),cacheSavingsAvailable=costAvailable&&cacheAvailable&&cache.savings_available!==false;
@@ -3683,7 +3883,7 @@ function renderSession(s){
  $('burnsm').textContent=costAvailable&&timing.duration_available?`${f(s.burn_tok_min)} tok/min · active${cursorEstimate?' · local proxy':''}`:(timing.duration_available?'active timing available · billing unavailable':'execution timing unavailable');
  setCostValue('cpt',money(s.analyses?.cost_per_task?.per_task||0)+(cursorEstimate?' est':''),costAvailable);
  $('cptsm').textContent=costAvailable?f(s.analyses?.cost_per_task?.completed||0)+` completed${cursorEstimate?' · local proxy':''}`:'billing unavailable';
- renderOverview(s); renderCurrentOptimization(s); renderCurrentRun(s); renderSessionEfficiency(s);
+ renderOverview(s); renderCurrentOptimization(s); renderCurrentRun(s); renderSessionEfficiency(s); renderAgentActivity(s);
 
  const semanticAvailable=s.semantic_available!==false,semTot=Object.values(sem).reduce((a,b)=>a+(b||0),0)||1;
  const segs=[['reasoning','var(--reason)'],['output','var(--output)'],['retrieval','var(--retrieval)'],['coordination','var(--coord)']];
@@ -5910,6 +6110,467 @@ function mergeAllSessionInventory(inventory,liveSessions){
  (liveSessions||[]).forEach(row=>rows.set(String(row.id),row));
  return [...rows.values()];
 }
+function subagentUsageIdentity(row,dimension){
+ const runtime=appFilterLabel({provider:row?.runtime});
+ const kind=String(row?.kind||''),kindLabel=kind?kind[0].toUpperCase()+kind.slice(1):'All kinds';
+ if(dimension==='models')return {label:row?.model||'Unknown model',detail:`${runtime} · ${kindLabel}`};
+ if(dimension==='depths')return {label:`Depth ${Number(row?.depth)||0}`,detail:`${runtime} · ${kindLabel}`};
+ if(dimension==='kinds')return {label:kindLabel,detail:runtime};
+ if(dimension==='roles')return {label:row?.role||'Unreported role',detail:`${runtime} · ${kindLabel} · provider-reported`};
+ return {label:runtime,detail:'all child-agent kinds'};
+}
+function applySubagentPreset(filters,preset){
+ const next={...(filters||{})};
+ if(preset==='incomplete'){next.status='incomplete';next.signal='all';}
+ else if(preset==='attention'){next.status='all';next.signal='attention';}
+ else if(preset==='all'){next.status='all';next.signal='all';}
+ return next;
+}
+function subagentPresetForFilters(filters){
+ const status=String(filters?.status||'all'),signal=String(filters?.signal||'all');
+ if(status==='incomplete'&&signal==='all')return 'incomplete';
+ if(status==='all'&&signal==='attention')return 'attention';
+ if(status==='all'&&signal==='all')return 'all';
+ return 'custom';
+}
+function toggleSubagentSummaryFilter(filters,key){
+ const next={...(filters||{})},filter=String(key||'');
+ if(filter==='incomplete'){
+  next.status=next.status==='incomplete'?'all':'incomplete';
+  next.signal='all';
+ }else if(filter){
+  next.status='all';
+  next.signal=next.signal===filter?'all':filter;
+ }
+ return next;
+}
+function paginateSubagentRows(rows,limit){
+ rows=Array.isArray(rows)?rows:[];
+ const total=rows.length,shown=Math.min(total,Math.max(0,Number(limit)||0));
+ return {rows:rows.slice(0,shown),shown,total,hasMore:shown<total,nextLimit:Math.min(total,shown+50)};
+}
+function subagentActiveFilterItems(filters){
+ const items=[];
+ if(filters.query)items.push({key:'query',label:'Search',value:filters.query});
+ if(filters.runtime)items.push({key:'runtime',label:'App',value:appFilterLabel({provider:filters.runtime})});
+ if(filters.project)items.push({key:'project',label:'Project',value:projectFilterLabel(filters.project)});
+ if(filters.window!=='all')items.push({key:'window',label:'Time',value:{'24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[filters.window]||filters.window});
+ if(filters.model)items.push({key:'model',label:'Model',value:filters.model});
+ if(filters.status!=='all')items.push({key:'status',label:'Status',value:filters.status});
+ if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Needs attention':String(filters.signal).replaceAll('_',' ')});
+ if(filters.sort!=='recent')items.push({key:'sort',label:'Sort',value:filters.sort});
+ return items;
+}
+function filterSubagentInventory(usage,filters,nowSeconds){
+ filters=filters||{};nowSeconds=nowSeconds==null?Date.now()/1000:Number(nowSeconds);
+ const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],query=String(filters.query||'').trim().toLowerCase();
+ const runtime=String(filters.runtime||''),project=String(filters.project||''),model=String(filters.model||''),status=String(filters.status||'all'),signal=String(filters.signal||'all'),window=String(filters.window||'all'),sort=String(filters.sort||'recent');
+ const seconds={all:0,'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[window]||0,rangeStart=seconds?Number(nowSeconds)-seconds:0;
+ const rows=inventory.filter(row=>{
+  const reasons=Array.isArray(row?.attention)?row.attention:[];
+  if(runtime&&String(row?.runtime||'')!==runtime)return false;
+  if(project&&String(row?.project||'')!==project)return false;
+  if(model&&String(row?.model||'')!==model)return false;
+  if(status!=='all'&&String(row?.activity_state||'unknown')!==status)return false;
+  if(signal==='attention'&&!reasons.length)return false;
+  if(signal!=='all'&&signal!=='attention'&&!reasons.some(reason=>String(reason?.code||'')===signal))return false;
+  if(rangeStart&&Number(row?.last_activity_at||0)<rangeStart)return false;
+  if(query&&!['role','label','model','project','runtime','client'].some(key=>String(row?.[key]||'').toLowerCase().includes(query)))return false;
+  return true;
+ });
+ const name=row=>String(row?.role||row?.label||row?.id||'').toLowerCase();
+ const sorters={
+  recent:(a,b)=>Number(b?.last_activity_at||0)-Number(a?.last_activity_at||0)||name(a).localeCompare(name(b)),
+  cost:(a,b)=>Number(b?.cost||0)-Number(a?.cost||0)||Number(b?.last_activity_at||0)-Number(a?.last_activity_at||0),
+  tokens:(a,b)=>Number(b?.tokens||0)-Number(a?.tokens||0)||Number(b?.last_activity_at||0)-Number(a?.last_activity_at||0),
+  elapsed:(a,b)=>Number(b?.elapsed_s||0)-Number(a?.elapsed_s||0)||Number(b?.last_activity_at||0)-Number(a?.last_activity_at||0),
+  name:(a,b)=>name(a).localeCompare(name(b))||String(a?.id||'').localeCompare(String(b?.id||'')),
+ };
+ rows.sort(sorters[sort]||sorters.recent);
+ const truncated=usage?.inventory_truncated===true,inventoryCount=Math.max(inventory.length,Number(usage?.inventory_count)||0),complete=!truncated;
+ const reasons=rows.flatMap(row=>Array.isArray(row?.attention)?row.attention:[]),signalCounts={};
+ reasons.forEach(reason=>{const code=String(reason?.code||'');if(code)signalCounts[code]=(signalCounts[code]||0)+1;});
+ const summary=complete?{
+  complete:true,agents:rows.length,parentSessions:new Set(rows.map(row=>String(row?.root_session_id||'')).filter(Boolean)).size,
+  incomplete:rows.filter(row=>row?.activity_state==='incomplete').length,working:rows.filter(row=>row?.activity_state==='working').length,
+  attention:rows.filter(row=>Array.isArray(row?.attention)&&row.attention.length).length,
+  costCovered:rows.filter(row=>row?.cost_available===true).length,cost:rows.reduce((total,row)=>total+(row?.cost_available===true?Number(row?.cost)||0:0),0),
+ }: {complete:false,agents:null,parentSessions:null,incomplete:null,working:null,attention:null,costCovered:null,cost:null};
+ return {rows,summary,signalCounts,inventoryCount,truncated};
+}
+function renderSubagentExplorerLegacy(usage){
+ const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],filters=subagentFilters;
+ const values=key=>[...new Set(inventory.map(row=>String(row?.[key]||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+ const runtimes=values('runtime'),projects=values('project'),models=values('model');
+ if(filters.runtime&&!runtimes.includes(filters.runtime))filters.runtime='';
+ if(filters.project&&!projects.includes(filters.project))filters.project='';
+ if(filters.model&&!models.includes(filters.model))filters.model='';
+ setLogSelectOptions($('subagent-filter-app'),'<option value="">All apps</option>'+runtimes.map(value=>`<option value="${esc(value)}">${esc(appFilterLabel({provider:value}))}</option>`).join(''),filters.runtime);
+ setLogSelectOptions($('subagent-filter-project'),'<option value="">All projects</option>'+projects.map(value=>`<option value="${esc(value)}">${esc(projectFilterLabel(value))}</option>`).join(''),filters.project);
+ setLogSelectOptions($('subagent-filter-model'),'<option value="">All models</option>'+models.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join(''),filters.model);
+ $('subagent-filter-search').value=filters.query;$('subagent-filter-status').value=filters.status;$('subagent-filter-signal').value=filters.signal;$('subagent-filter-time').value=filters.window;$('subagent-filter-sort').value=filters.sort;
+ const advancedCount=[filters.model,filters.status!=='all',filters.signal!=='all',filters.sort!=='recent'].filter(Boolean).length;
+ $('subagent-filter-advanced').hidden=!subagentAdvancedOpen;
+ $('subagent-filter-more').setAttribute('aria-expanded',String(subagentAdvancedOpen));
+ $('subagent-filter-more-count').textContent=advancedCount?String(advancedCount):'';
+ const filterItems=subagentActiveFilterItems(filters);
+ $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'<span>Showing all available child-agent evidence</span>';
+ $('subagent-filter-clear').disabled=!filterItems.length;
+ const triageResult=filterSubagentInventory(usage,applySubagentPreset(filters,'all')),triageExact=triageResult.summary.complete;
+ $('subagent-triage-all').textContent=triageExact?f(triageResult.summary.agents):'--';
+ $('subagent-triage-incomplete').textContent=triageExact?f(triageResult.summary.incomplete):'--';
+ $('subagent-triage-attention').textContent=triageExact?f(triageResult.summary.attention):'--';
+ const activePreset=subagentPresetForFilters(filters);
+ [...$('subagent-triage').querySelectorAll('[data-subagent-preset]')].forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.subagentPreset===activePreset)));
+ const result=filterSubagentInventory(usage,filters),summary=result.summary,exact=summary.complete;
+ $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} recorded child agents`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child agents`;
+ const metric=(label,value,note)=>`<div class=subagentExplorerStat><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
+ $('subagent-explorer-summary').innerHTML=[
+  metric('Matching agents',exact?f(summary.agents):'--',exact?`${f(summary.incomplete)} incomplete · ${f(summary.working)} working`:'exact filtered total withheld'),
+  metric('Parent sessions',exact?f(summary.parentSessions):'--','open an agent to inspect its parent'),
+  metric('Estimated cost',exact&&summary.costCovered?money(summary.cost):'--','local API-rate estimate'),
+  metric('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--',exact?'agents with estimated cost available':'exact filtered total withheld'),
+ ].join('');
+ const warning=$('subagent-inventory-warning');warning.hidden=!result.truncated;warning.textContent=result.truncated?'The child-agent inventory reached its privacy-safe display limit. Visible rows remain filterable, but exact filtered totals are withheld.':'';
+ const insights=[
+  ['Peer cost outlier','peer_cost_outlier','Covered estimated cost is at least $0.50 and 3× the median of at least three comparable peers.'],
+  ['Active cost concentration','active_cost_concentration','A working child has at least $1.00 of covered estimated spend and at least 50% of covered group spend.'],
+  ['Retry pressure','retry_pressure','Provider evidence reports at least three retries or failed attempts in the recent execution window.'],
+ ];
+ $('subagent-insights').innerHTML=insights.map(([label,code,description])=>`<button class=subagentInsight type=button data-subagent-signal="${esc(code)}" aria-pressed="${String(filters.signal===code)}"><strong><span>${esc(label)}</span><b>${triageExact?f(triageResult.signalCounts[code]||0):'--'}</b></strong><p>${esc(description)}</p></button>`).join('');
+ if(selectedSubagentId&&!result.rows.some(row=>String(row?.id||'')===selectedSubagentId))selectedSubagentId='';
+ const page=paginateSubagentRows(result.rows,subagentVisibleLimit);
+ $('subagent-inventory-count').textContent=result.truncated?`${f(page.rows.length)} visible rows from a limited inventory`:`Showing ${f(page.rows.length)} of ${f(page.total)} ${countWord(page.total,'agent')}`;
+ const evidenceMetric=(label,value)=>`<div class=subagentEvidenceMetric><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+ const rows=page.rows.map((row,index)=>{
+  const identity=agentIdentityPresentation(row,index),attention=Array.isArray(row.attention)&&row.attention.length,state=String(row.activity_state||'unknown'),model=row.model&&row.model!=='unknown'?row.model:'model unavailable';
+  const tokens=row.tokens_available===true?f(row.tokens):'--',cost=row.cost_available===true?money(row.cost):'--',elapsed=row.elapsed_s==null?'--':durationShort(row.elapsed_s),secondary=[identity.secondary,row.kind].filter(Boolean).join(' · '),id=String(row.id||''),selected=id&&id===selectedSubagentId,evidenceId=`subagent-evidence-${index}`;
+  let html=`<button class="subagentInventoryRow${attention?' attention':''}${selected?' selected':''}" type=button data-subagent-id="${esc(id)}" aria-expanded="${String(selected)}" aria-controls="${evidenceId}" aria-label="Inspect evidence for ${esc(identity.primary)}"><span class=subagentInventoryIdentity><strong><span>${esc(identity.primary)}</span>${attention?'<span class=agentAttentionBadge>Needs attention</span>':''}</strong><small>${esc(secondary)}</small></span><span class=subagentInventoryProject title="${esc(row.project||'')}">${esc(projectFilterLabel(row.project)||'No project')}</span><span class=subagentInventoryMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=subagentInventoryMetric>${esc(tokens)}</span><span class=subagentInventoryMetric>${esc(cost)}</span><span class=subagentInventoryMetric>${esc(elapsed)}</span></button>`;
+  if(selected){
+   const reasons=attention?row.attention.map(reason=>`<li><strong>${esc(String(reason?.code||'').replaceAll('_',' '))}:</strong> ${esc(reason?.explanation||'Evidence threshold met.')}</li>`).join(''):'';
+   const attempts=Number(row.retries||0)+Number(row.failed_attempts||0),runtime=appFilterLabel({provider:row.runtime});
+   html+=`<div class=subagentEvidence id="${evidenceId}" role=region aria-label="Evidence for ${esc(identity.primary)}"><div class=subagentEvidenceHead><div><h4>${esc(identity.primary)}</h4><p>${esc(identity.secondary?`Provider role · nickname ${identity.secondary}`:'Child-agent evidence')}</p></div><button class=subagentEvidenceClose type=button data-subagent-close-detail aria-label="Close agent evidence">×</button></div><div class=subagentEvidenceContext><span>${esc(runtime)}</span><span>${esc(projectFilterLabel(row.project)||'No project')}</span><span>${esc(model)}</span><span>${esc(row.kind||'child')}</span><span>${esc(state)}</span></div><div class=subagentEvidenceGrid>${evidenceMetric('Estimated cost',cost)}${evidenceMetric('Tokens',tokens)}${evidenceMetric('Elapsed',elapsed)}${evidenceMetric('Executions',f(row.executions||0))}${evidenceMetric('Tool calls',f(row.tool_calls||0))}${evidenceMetric('Retry evidence',f(attempts))}</div><div class=subagentEvidenceSignals><strong>${attention?'Why this needs attention':'Attention evidence'}</strong>${attention?`<ul>${reasons}</ul>`:'<p>No deterministic attention signal is present in the available local evidence.</p>'}</div><div class=subagentEvidenceActions><p>Only content-free local metadata is shown here.</p><button class=subagentOpenParent type=button data-subagent-open-parent="${esc(row.root_session_id)}">Open parent session</button></div></div>`;
+  }
+  return html;
+ }).join('');
+ $('subagent-inventory').innerHTML=result.rows.length?'<div class=subagentInventoryHeader><span>Agent</span><span>Project</span><span>Model</span><span>Status</span><span>Tokens</span><span>Estimated cost</span><span>Elapsed</span></div>'+rows:'<div class=subagentInventoryEmpty>No child agents match these filters.</div>';
+ $('subagent-inventory-footer').hidden=!page.hasMore;
+ $('subagent-inventory-more').textContent=page.hasMore?`Show ${f(Math.min(SUBAGENT_PAGE_SIZE,page.total-page.shown))} more · ${f(page.total-page.shown)} remaining`:'';
+ const fineFilter=Boolean(filters.query||filters.model||filters.status!=='all'||filters.signal!=='all');
+ renderSubagentUsage(usage,filters,fineFilter);
+}
+function groupSubagentSessions(rows,issuesOnly=false,sort='priority'){
+ const grouped=new Map();
+ (Array.isArray(rows)?rows:[]).forEach(row=>{
+  const rootSessionId=String(row?.root_session_id||'');
+  if(!rootSessionId)return;
+  const group=grouped.get(rootSessionId)||{rootSessionId,rows:[],agents:0,attention:0,incomplete:0,working:0,cost:0,costCovered:0,knownTokens:0,tokenCovered:0,lastActivity:0,maxElapsed:0,project:String(row?.project||'')};
+  group.rows.push(row);group.agents+=1;
+  if(Array.isArray(row?.attention)&&row.attention.length)group.attention+=1;
+  if(row?.activity_state==='incomplete')group.incomplete+=1;
+  if(row?.activity_state==='working')group.working+=1;
+  if(row?.cost_available===true){group.cost+=Number(row.cost)||0;group.costCovered+=1;}
+  if(row?.tokens_available===true){group.knownTokens+=Number(row.tokens)||0;group.tokenCovered+=1;}
+  group.lastActivity=Math.max(group.lastActivity,Number(row?.last_activity_at)||0);
+  group.maxElapsed=Math.max(group.maxElapsed,Number(row?.elapsed_s)||0);
+  grouped.set(rootSessionId,group);
+ });
+ let groups=[...grouped.values()];
+ if(issuesOnly){
+  groups=groups.filter(group=>group.attention||group.incomplete);
+  groups.forEach(group=>group.rows.sort((a,b)=>
+   Number(b?.activity_state==='incomplete')-Number(a?.activity_state==='incomplete')||
+   Number(Boolean(b?.attention?.length))-Number(Boolean(a?.attention?.length))||
+   (Number(b?.cost)||0)-(Number(a?.cost)||0)||
+   (Number(b?.last_activity_at)||0)-(Number(a?.last_activity_at)||0)
+  ));
+ }
+ const sorters={
+  priority:(a,b)=>b.attention-a.attention||b.incomplete-a.incomplete||b.cost-a.cost||b.lastActivity-a.lastActivity||a.rootSessionId.localeCompare(b.rootSessionId),
+  recent:(a,b)=>b.lastActivity-a.lastActivity||b.attention-a.attention||a.rootSessionId.localeCompare(b.rootSessionId),
+  cost:(a,b)=>b.cost-a.cost||b.costCovered-a.costCovered||b.lastActivity-a.lastActivity,
+  tokens:(a,b)=>b.knownTokens-a.knownTokens||b.lastActivity-a.lastActivity,
+  elapsed:(a,b)=>b.maxElapsed-a.maxElapsed||b.lastActivity-a.lastActivity,
+  name:(a,b)=>a.project.localeCompare(b.project)||a.rootSessionId.localeCompare(b.rootSessionId),
+ };
+ groups.sort(sorters[sort]||sorters.priority);
+ return groups;
+}
+function buildSubagentRoleRows(rows){
+ const grouped=new Map();
+ (Array.isArray(rows)?rows:[]).forEach(row=>{
+  const role=String(row?.role||'').trim();
+  if(!role)return;
+  const runtime=String(row?.runtime||''),kind=String(row?.kind||'child'),key=`${runtime}\n${kind}\n${role}`;
+  const group=grouped.get(key)||{id:key,role,runtime,kind,agents:0,incomplete:0,attention:0,knownCost:0,costCovered:0,knownTokens:0,tokenCovered:0,costs:[],models:new Map()};
+  group.agents+=1;
+  if(row?.activity_state==='incomplete')group.incomplete+=1;
+  if(Array.isArray(row?.attention)&&row.attention.length)group.attention+=1;
+  if(row?.cost_available===true){const cost=Number(row.cost)||0;group.knownCost+=cost;group.costCovered+=1;group.costs.push(cost);}
+  if(row?.tokens_available===true){group.knownTokens+=Number(row.tokens)||0;group.tokenCovered+=1;}
+  const model=String(row?.model||'model unavailable');group.models.set(model,(group.models.get(model)||0)+1);
+  grouped.set(key,group);
+ });
+ return [...grouped.values()].map(group=>{
+  const costs=group.costs.slice().sort((a,b)=>a-b),middle=Math.floor(costs.length/2),medianCost=!costs.length?null:costs.length%2?costs[middle]:(costs[middle-1]+costs[middle])/2,p95Cost=!costs.length?null:costs[Math.max(0,Math.ceil(.95*costs.length)-1)];
+  const topModel=[...group.models].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]?.[0]||'model unavailable';
+  return {id:group.id,role:group.role,runtime:group.runtime,kind:group.kind,agents:group.agents,incomplete:group.incomplete,attention:group.attention,incompleteRate:group.agents?group.incomplete/group.agents:0,attentionRate:group.agents?group.attention/group.agents:0,knownCost:group.knownCost,costCovered:group.costCovered,medianCost,p95Cost,knownTokens:group.knownTokens,tokenCovered:group.tokenCovered,topModel};
+ }).sort((a,b)=>b.knownCost-a.knownCost||b.agents-a.agents||a.role.localeCompare(b.role)||a.runtime.localeCompare(b.runtime));
+}
+function subagentParentSessionMap(){
+ const rows=[...(allSessionInventory||[]),...(LATEST?.xsession?.sessions||[]),...(LATEST?.xsession?.current_sessions||[])],result=new Map();
+ rows.forEach(row=>{const id=String(row?.id||'');if(id&&!result.has(id))result.set(id,row);});
+ return result;
+}
+function subagentParentPresentation(rootSessionId,project,parentSessions=subagentParentSessionMap()){
+ const row=parentSessions.get(String(rootSessionId||'')),title=String(row?.title||row?.session_name||'').trim();
+ return {title:title||'Parent session',project:projectFilterLabel(project||row?.project)||'No project',runtime:appFilterLabel(row||{})};
+}
+function subagentGroupHtml(group,index,parentSessions,issuesOnly=false){
+ const parent=subagentParentPresentation(group.rootSessionId,group.project,parentSessions),attention=group.attention>0,selected=group.rows.some(row=>String(row?.id||'')===selectedSubagentId),open=selected||expandedSubagentRoot===group.rootSessionId||(expandedSubagentRoot===null&&index<1);
+ const cost=group.costCovered?money(group.cost):'--',tokens=group.tokenCovered?compactNumber(group.knownTokens):'--';
+ const badges=[attention?`<span class="subagentSessionBadge warn">${f(group.attention)} need review</span>`:'',group.incomplete?`<span class="subagentSessionBadge warn">${f(group.incomplete)} incomplete</span>`:'',group.working?`<span class=subagentSessionBadge>${f(group.working)} working</span>`:''].filter(Boolean).join('');
+ const visibleRows=issuesOnly?group.rows.filter(row=>row?.activity_state==='incomplete'||Array.isArray(row?.attention)&&row.attention.length):group.rows;
+ const children=visibleRows.map((row,rowIndex)=>{
+  const identity=agentIdentityPresentation(row,rowIndex),hasAttention=Array.isArray(row?.attention)&&row.attention.length,state=String(row?.activity_state||'unknown'),model=row?.model&&row.model!=='unknown'?row.model:'model unavailable',costValue=row?.cost_available===true?money(row.cost):'--',tokenValue=row?.tokens_available===true?compactNumber(row.tokens):'tokens --',elapsed=row?.elapsed_s==null?'elapsed --':durationShort(row.elapsed_s),id=String(row?.id||''),isSelected=id&&id===selectedSubagentId;
+  return `<button class="subagentChildRow${hasAttention?' attention':''}${isSelected?' selected':''}" type=button data-subagent-id="${esc(id)}"${isSelected?' aria-current=true':''} aria-label="Inspect ${esc(identity.primary)}"><span class=subagentChildIdentity><strong><span>${esc(identity.primary)}</span>${hasAttention?'<span class=agentAttentionBadge>Review</span>':''}</strong><small>${esc([identity.secondary,row.kind,tokenValue,elapsed].filter(Boolean).join(' · '))}</small></span><span class=subagentChildMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=subagentChildMetric>${esc(costValue)}</span></button>`;
+ }).join('');
+ const hiddenSiblings=group.agents-visibleRows.length,footer=issuesOnly&&hiddenSiblings?`<button class=subagentSiblingLink type=button data-subagent-show-session="${esc(group.rootSessionId)}">View ${f(hiddenSiblings)} other ${hiddenSiblings===1?'child':'children'} in Sessions</button>`:'',spawnedRunMetric=issuesOnly?'':`<span class=subagentSessionMetric><span>Spawned runs</span><b>${f(group.agents)}</b></span>`;
+ return `<details class="subagentSessionGroup${attention?' hasAttention':''}" data-subagent-root="${esc(group.rootSessionId)}"${open?' open':''}><summary aria-label="${esc(`${parent.title}, ${group.agents} child agents, ${group.attention} need review, ${group.incomplete} incomplete`)}"><div class=subagentSessionIdentity><strong><span title="${esc(parent.title)}">${esc(parent.title)}</span>${badges}</strong><small>${esc(parent.project)} · ${f(group.agents)} ${countWord(group.agents,'child agent')}</small></div><div class=subagentSessionMetrics>${spawnedRunMetric}<span class=subagentSessionMetric><span>Child cost</span><b>${esc(cost)}</b></span><span class=subagentSessionMetric><span>Tokens</span><b>${esc(tokens)}</b></span><span class=subagentSessionMetric><span>Latest</span><b>${group.lastActivity?esc(currentSessionAge({mtime:group.lastActivity})):'--'}</b></span></div></summary><div class=subagentChildHeader><span>Agent</span><span>Model</span><span>Status</span><span>Est. cost</span></div>${children}${footer}</details>`;
+}
+function renderSubagentInspector(row,allRows,parentSessions=subagentParentSessionMap()){
+ const inspector=$('subagent-inspector');
+ if(!row){inspector.innerHTML='<div class=subagentInspectorEmpty><div><svg viewBox="0 0 40 40" aria-hidden=true><circle cx="20" cy="11" r="5"/><circle cx="10" cy="29" r="4"/><circle cx="30" cy="29" r="4"/><path d="M20 16v6M10 25v-4h20v4"/></svg><strong>Select a child agent</strong><p>Inspect its parent context, cost evidence, lifecycle state, sibling position, and transparent attention reasons.</p></div></div>';return;}
+ const identity=agentIdentityPresentation(row,0),parent=subagentParentPresentation(row.root_session_id,row.project,parentSessions),siblings=(allRows||[]).filter(item=>String(item?.root_session_id||'')===String(row.root_session_id||'')),siblingIndex=Math.max(0,siblings.findIndex(item=>String(item?.id||'')===String(row.id||'')))+1;
+ const state=String(row.activity_state||'unknown'),model=row.model&&row.model!=='unknown'?row.model:'model unavailable',cost=row.cost_available===true?money(row.cost):'--',tokens=row.tokens_available===true?f(row.tokens):'--',elapsed=row.elapsed_s==null?'--':durationShort(row.elapsed_s),attempts=Number(row.retries||0)+Number(row.failed_attempts||0),attention=Array.isArray(row.attention)&&row.attention.length;
+ const peers=(allRows||[]).filter(item=>item?.cost_available===true&&item?.runtime===row.runtime&&item?.model===row.model&&item?.kind===row.kind&&Number(item?.depth||0)===Number(row.depth||0)).map(item=>Number(item.cost)||0).sort((a,b)=>a-b),middle=Math.floor(peers.length/2),peerMedian=!peers.length?null:peers.length%2?peers[middle]:(peers[middle-1]+peers[middle])/2,comparison=row.cost_available===true&&peerMedian>0&&peers.length>1?`${(Number(row.cost)/peerMedian).toFixed(1)}× cohort median · ${f(peers.length)} comparable agents`:'Comparable cost baseline unavailable';
+ const reasons=attention?`<ul>${row.attention.map(reason=>`<li><strong>${esc(String(reason?.code||'').replaceAll('_',' '))}:</strong> ${esc(reason?.explanation||'Evidence threshold met.')}</li>`).join('')}</ul>`:'<p>No deterministic attention signal is present in the available local evidence.</p>';
+ const metric=(label,value)=>`<div class=subagentInspectorMetric><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+ inspector.innerHTML=`<div class=subagentInspectorHead><div><h3>${esc(identity.primary)}</h3><p>${esc(identity.secondary?`Provider role · nickname ${identity.secondary}`:'Child-agent evidence')}</p></div><button class=subagentInspectorClose type=button data-subagent-close-detail aria-label="Close agent inspector">×</button></div><div class=subagentInspectorParent><span>Parent session</span><strong title="${esc(parent.title)}">${esc(parent.title)}</strong><small>${esc(parent.project)} · child ${f(siblingIndex)} of ${f(siblings.length)}</small></div><div class=subagentInspectorTags><span>${esc(appFilterLabel({provider:row.runtime}))}</span><span>${esc(model)}</span><span>${esc(row.kind||'child')}</span><span>${esc(state)}</span></div><div class=subagentInspectorGrid>${metric('Estimated cost',cost)}${metric('Tokens',tokens)}${metric('Elapsed',elapsed)}${metric('Executions',f(row.executions||0))}${metric('Tool calls',f(row.tool_calls||0))}${metric('Retry evidence',f(attempts))}</div><div class=subagentInspectorSignals><strong>${attention?'Why this needs review':'Attention evidence'}</strong>${reasons}<p>${esc(comparison)}</p></div><button class="subagentOpenParent subagentInspectorAction" type=button data-subagent-open-parent="${esc(row.root_session_id)}">Open parent session</button>`;
+}
+function renderSubagentRoles(rows){
+ const roles=buildSubagentRoleRows(rows);
+ if(!roles.length)return '<div class=subagentResultsEmpty><div><strong>No provider-reported roles match</strong>Adjust the filters or inspect Sessions for anonymous child agents.</div></div>';
+ const maximum=Math.max(.001,...roles.map(row=>row.knownCost));
+ return `<div class=subagentRoleTable><div class=subagentRoleHeader><span>Role</span><span>Runs</span><span>Total spend</span><span>Incomplete</span><span>Needs review</span><span>Median / P95</span><span>Tokens</span></div>${roles.map(row=>{const coverage=row.costCovered===row.agents?'complete':`${f(row.costCovered)} / ${f(row.agents)} covered`,tokenValue=row.tokenCovered?compactNumber(row.knownTokens):'--',totalSpend=row.costCovered?money(row.knownCost):'--';return `<div class=subagentRoleRow style="--role-share:${Math.max(0,Math.min(100,100*row.knownCost/maximum))}%"><div class=subagentRoleIdentity><strong>${esc(row.role)}</strong><small>${esc(appFilterLabel({provider:row.runtime}))} · ${esc(row.kind)} · ${esc(row.topModel)} · ${esc(coverage)}</small></div><div class=subagentRoleMetric><span>Runs</span><b>${f(row.agents)}</b></div><div class=subagentRoleMetric><span>Total spend</span><b>${esc(totalSpend)}</b></div><div class="subagentRoleMetric${row.incomplete?' warn':''}"><span>Incomplete</span><b>${pct(row.incompleteRate)}</b></div><div class="subagentRoleMetric${row.attention?' warn':''}"><span>Needs review</span><b>${pct(row.attentionRate)}</b></div><div class=subagentRoleMetric><span>Median / P95</span><b>${row.medianCost==null?'--':`${money(row.medianCost)} / ${money(row.p95Cost)}`}</b></div><div class=subagentRoleMetric><span>Tokens</span><b>${esc(tokenValue)}</b></div></div>`;}).join('')}</div>`;
+}
+function renderSubagentExplorer(usage){
+ const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],filters=subagentFilters;
+ const values=key=>[...new Set(inventory.map(row=>String(row?.[key]||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+ const runtimes=values('runtime'),projects=values('project'),models=values('model');
+ if(filters.runtime&&!runtimes.includes(filters.runtime))filters.runtime='';
+ if(filters.project&&!projects.includes(filters.project))filters.project='';
+ if(filters.model&&!models.includes(filters.model))filters.model='';
+ setLogSelectOptions($('subagent-filter-app'),'<option value="">All apps</option>'+runtimes.map(value=>`<option value="${esc(value)}">${esc(appFilterLabel({provider:value}))}</option>`).join(''),filters.runtime);
+ setLogSelectOptions($('subagent-filter-project'),'<option value="">All projects</option>'+projects.map(value=>`<option value="${esc(value)}">${esc(projectFilterLabel(value))}</option>`).join(''),filters.project);
+ setLogSelectOptions($('subagent-filter-model'),'<option value="">All models</option>'+models.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join(''),filters.model);
+ $('subagent-filter-search').value=filters.query;$('subagent-filter-status').value=filters.status;$('subagent-filter-signal').value=filters.signal;$('subagent-filter-time').value=filters.window;$('subagent-filter-sort').value=filters.sort;
+ const advancedCount=[filters.model,filters.status!=='all',filters.signal!=='all',filters.sort!=='recent'].filter(Boolean).length;
+ $('subagent-filter-advanced').hidden=!subagentAdvancedOpen;$('subagent-filter-more').setAttribute('aria-expanded',String(subagentAdvancedOpen));$('subagent-filter-more-count').textContent=advancedCount?String(advancedCount):'';
+ const filterItems=subagentActiveFilterItems(filters);
+ $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'<span>Showing all available child-agent evidence</span>';
+ $('subagent-filter-clear').disabled=!filterItems.length;
+ const contextFilters={...filters,status:'all',signal:'all'},context=filterSubagentInventory(usage,contextFilters),result=filterSubagentInventory(usage,filters),summary=result.summary,exact=summary.complete,parentSessions=subagentParentSessionMap();
+ const issueGroups=groupSubagentSessions(context.rows,true,'priority'),sessionGroups=groupSubagentSessions(context.rows,false,filters.sort),roleRows=buildSubagentRoleRows(context.rows);
+ $('subagent-view-issues-count').textContent=context.summary.complete?f(issueGroups.length):'--';$('subagent-view-sessions-count').textContent=context.summary.complete?f(sessionGroups.length):'--';$('subagent-view-roles-count').textContent=context.summary.complete?f(roleRows.length):'--';
+ [...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')].forEach(button=>{const active=button.dataset.subagentView===subagentView;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;if(active)$('subagent-results-panel').setAttribute('aria-labelledby',button.id);});
+ $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} recorded child agents`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child agents`;
+ const reviewAgents=context.rows.filter(row=>Array.isArray(row?.attention)&&row.attention.length).length,compact=(label,value,kind='',filter='')=>filter?`<button class="subagentCompactMetric actionable ${kind}" type=button data-subagent-summary-filter="${esc(filter)}" aria-pressed="${String(filter==='incomplete'?filters.status==='incomplete':filters.signal===filter)}"><span>${esc(label)}</span><b>${esc(value)}</b></button>`:`<span class="subagentCompactMetric ${kind}"><span>${esc(label)}</span><b>${esc(value)}</b></span>`;
+ const signalLabels={peer_cost_outlier:'cost outliers',active_cost_concentration:'active concentrations',retry_pressure:'retry pressure'};
+ const signalPills=Object.entries(context.signalCounts).filter(([,count])=>count>0).map(([code,count])=>compact(signalLabels[code]||code.replaceAll('_',' '),f(count),'warn',code));
+ $('subagent-compact-summary').innerHTML=[compact('Needs review',context.summary.complete?f(reviewAgents):'--',reviewAgents?'warn':'dim','attention'),compact('Incomplete',context.summary.complete?f(context.summary.incomplete):'--',context.summary.incomplete?'warn':'dim','incomplete'),compact('Matching child cost',exact&&summary.costCovered?money(summary.cost):'--'),compact('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--'),...signalPills].join('');
+ const warning=$('subagent-inventory-warning');warning.hidden=!result.truncated;warning.textContent=result.truncated?'The child-agent inventory reached its privacy-safe display limit. Visible rows remain filterable, but exact filtered totals are withheld.':'';
+ if(selectedSubagentId&&!result.rows.some(row=>String(row?.id||'')===selectedSubagentId))selectedSubagentId='';
+ const copy={issues:['Review queue','Parent sessions with incomplete work or deterministic attention signals.'],sessions:['Parent sessions','Every matching child grouped under the session that started it.'],roles:['Role comparison','Provider-reported roles compared across the current filters.']}[subagentView];
+ $('subagent-results-title').textContent=copy[0];$('subagent-results-description').textContent=copy[1];
+ const roleView=subagentView==='roles';$('subagent-workspace').classList.toggle('roleView',roleView);$('subagent-inspector').hidden=roleView;
+ if(subagentView==='roles'){
+  const roles=buildSubagentRoleRows(result.rows);$('subagent-results-count').textContent=`${f(roles.length)} ${countWord(roles.length,'role')}`;$('subagent-results').innerHTML=renderSubagentRoles(result.rows);
+ }else{
+  const groups=groupSubagentSessions(result.rows,subagentView==='issues',subagentView==='issues'?'priority':filters.sort),agentCount=groups.reduce((total,group)=>total+group.agents,0);
+  const reviewCount=groups.reduce((total,group)=>total+group.attention,0),incompleteCount=groups.reduce((total,group)=>total+group.incomplete,0);
+  $('subagent-results-count').textContent=subagentView==='issues'?`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(reviewCount)} need review · ${f(incompleteCount)} incomplete · ${f(agentCount)} total children`:`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(agentCount)} ${countWord(agentCount,'agent')}`;
+  $('subagent-results').innerHTML=groups.length?groups.map((group,index)=>subagentGroupHtml(group,index,parentSessions,subagentView==='issues')).join(''):`<div class=subagentResultsEmpty><div><strong>${subagentView==='issues'?'Nothing needs review':'No parent sessions match'}</strong>${subagentView==='issues'?'No incomplete children or deterministic attention signals are present in this filtered evidence.':'Adjust the filters to restore child-agent sessions.'}</div></div>`;
+ }
+ const selected=result.rows.find(row=>String(row?.id||'')===selectedSubagentId)||null;
+ renderSubagentInspector(selected,result.rows,parentSessions);
+}
+function selectSubagentUsageScope(usage,runtime,window,project,hasTextFilter){
+ if(hasTextFilter)return {usage:null,reason:'filtered'};
+ if(!usage||typeof usage!=='object')return {usage:null,reason:'unavailable'};
+ runtime=String(runtime||'');
+ window=String(window||'all');
+ project=String(project||'');
+ const scopes=Array.isArray(usage.scopes)?usage.scopes:[];
+ if(scopes.length){
+  const selected=scopes.find(item=>String(item?.runtime||'')===runtime&&String(item?.window||'all')===window&&String(item?.project||'')===project);
+  if(selected)return {usage:selected,reason:null};
+  return {usage:null,reason:usage.scope_truncated===true?'unavailable':'empty'};
+ }
+ return !runtime&&window==='all'&&!project?{usage,reason:null}:{usage:null,reason:'empty'};
+}
+function renderSubagentUsage(usage,filters=subagentFilters,hasRowFilters=false){
+ const module=$('subagent-usage'),baseAgentCount=Number(usage?.totals?.agents)||0;
+ if(!usage||baseAgentCount<1){module.hidden=true;return;}
+ module.hidden=false;
+ [...$('subagent-usage-dimension').querySelectorAll('[data-subagent-dimension]')].forEach(button=>{
+  const active=button.dataset.subagentDimension===subagentUsageDimension;
+  button.classList.toggle('on',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ [...$('subagent-usage-sort').querySelectorAll('[data-subagent-sort]')].forEach(button=>{
+  const active=button.dataset.subagentSort===subagentUsageSort;
+  button.classList.toggle('on',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ const selection=selectSubagentUsageScope(usage,filters.runtime,filters.window,filters.project,hasRowFilters);
+ if(!selection.usage){
+  $('subagent-usage-summary').innerHTML='';
+  const message=selection.reason==='filtered'
+   ?'Usage patterns are shown when role, nickname, model, status, and signal filters are clear.'
+   :selection.reason==='empty'
+    ?'No child-agent usage matches the selected project, app, and activity window.'
+    :'Subagent statistics are unavailable for this filter.';
+  $('subagent-usage-rows').innerHTML=`<div class=subagentUsageEmpty>${message}</div>`;
+  return;
+ }
+ const scoped=selection.usage,totals=scoped.totals||{},agentCount=Number(totals.agents)||0;
+ if(!agentCount){
+  $('subagent-usage-summary').innerHTML='';
+  $('subagent-usage-rows').innerHTML='<div class=subagentUsageEmpty>No child-agent usage matches the selected app and activity window.</div>';
+  return;
+ }
+ const costSummary=totals.cost_available===true
+  ? money(totals.cost)
+  : Number(totals.known_cost)>0?`${money(totals.known_cost)} known`:'--';
+ const tokenSummary=totals.tokens_available===true
+  ? f(totals.tokens)
+  : Number(totals.known_tokens)>0?`${f(totals.known_tokens)} known`:'--';
+ const metric=(label,value,note)=>`<div class=subagentUsageStat><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
+ const share=totals.agent_spend_share==null?'--':pct(totals.agent_spend_share),coveredGroups=Number(totals.group_cost_covered_sessions)||0,totalGroups=Number(totals.parent_sessions)||0,shareNote=coveredGroups===totalGroups?'of covered group spend':`${f(coveredGroups)} of ${f(totalGroups)} parent sessions have complete group cost`;
+ const median=totals.median_cost==null?'--':money(totals.median_cost),p95=totals.p95_cost==null?'cost distribution unavailable':`P95 ${money(totals.p95_cost)} API-rate estimate`;
+ const outputPerDollar=totals.output_per_dollar==null?'--':compactNumber(totals.output_per_dollar);
+ const input=totals.input_tokens==null?'--':f(totals.input_tokens),output=totals.output_tokens==null?'--':f(totals.output_tokens),cache=totals.cache_read_tokens==null?'--':f(Number(totals.cache_read_tokens||0)+Number(totals.cache_write_tokens||0));
+ $('subagent-usage-summary').innerHTML=[
+  metric('Child agents',f(agentCount),`${f(totals.parent_sessions||0)} ${countWord(totals.parent_sessions||0,'parent session')}`),
+  metric('Estimated cost',costSummary,totals.cost_available===true?'complete cost coverage':`${f(totals.cost_covered_agents||0)} of ${f(agentCount)} cost-covered`),
+  metric('Tokens',tokenSummary,`${input} in · ${output} out · ${cache} cache`),
+  metric('Child spend share',share,shareNote),
+  metric('Median / agent',median,p95),
+  metric('Output / $',outputPerDollar,totals.output_per_dollar==null?'complete output and cost required':'covered output tokens per dollar'),
+  metric('Needs attention',f(totals.attention_agents||0),'server evidence signals'),
+ ].join('');
+ let rows=Array.isArray(scoped[subagentUsageDimension])?[...scoped[subagentUsageDimension]]:[];
+ if(!rows.length){
+  $('subagent-usage-rows').innerHTML=`<div class=subagentUsageEmpty>${subagentUsageDimension==='roles'?'No provider-reported roles are available.':'No child-agent usage is available for this grouping.'}</div>`;
+  return;
+ }
+ const rowMetric=row=>({cost:Number(row?.known_cost)||0,tokens:Number(row?.known_tokens)||0,agents:Number(row?.agents)||0,output:Number(row?.output_per_dollar)||0}[subagentUsageSort]||0);
+ rows.sort((left,right)=>rowMetric(right)-rowMetric(left)||String(left.id||'').localeCompare(String(right.id||'')));
+ const maximum=Math.max(1,...rows.map(rowMetric));
+ $('subagent-usage-rows').innerHTML=rows.map(row=>{
+  const identity=subagentUsageIdentity(row,subagentUsageDimension),agents=Number(row.agents)||0,width=100*rowMetric(row)/maximum;
+  const tokens=row.tokens_available===true?f(row.tokens):Number(row.known_tokens)>0?`${f(row.known_tokens)} known`:'--';
+  const cost=row.cost_available===true?money(row.cost):Number(row.known_cost)>0?`${money(row.known_cost)} known`:'--';
+  const efficiency=row.output_per_dollar==null?'--':compactNumber(row.output_per_dollar);
+  return `<div class=subagentUsageRow><div class=subagentUsageIdentity><strong>${esc(identity.label)}</strong><small>${esc(identity.detail)}</small></div><div class=subagentUsageBar aria-hidden=true><i style="width:${Math.max(0,Math.min(100,width))}%"></i></div><div class=subagentUsageValue><span>Agents</span><b>${f(agents)}</b></div><div class=subagentUsageValue><span>Tokens</span><b>${esc(tokens)}</b></div><div class=subagentUsageValue><span>Cost</span><b>${esc(cost)}</b></div><div class=subagentUsageValue><span>Output / $</span><b>${esc(efficiency)}</b></div></div>`;
+ }).join('');
+}
+$('subagent-usage-dimension')?.addEventListener('click',event=>{
+ const dimension=event.target.closest('[data-subagent-dimension]')?.dataset.subagentDimension;
+ if(!['runtimes','models','depths','kinds','roles'].includes(dimension))return;
+ subagentUsageDimension=dimension;
+ localStorage.setItem('tm_subagent_usage_dimension',dimension);
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+});
+$('subagent-usage-sort')?.addEventListener('click',event=>{
+ const sort=event.target.closest('[data-subagent-sort]')?.dataset.subagentSort;
+ if(!['cost','tokens','agents','output'].includes(sort))return;
+ subagentUsageSort=sort;
+ localStorage.setItem('tm_subagent_usage_sort',sort);
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+});
+const subagentFilterBindings={
+ 'subagent-filter-app':['runtime','tm_subagent_filter_app'],
+ 'subagent-filter-project':['project','tm_subagent_filter_project'],
+ 'subagent-filter-model':['model','tm_subagent_filter_model'],
+ 'subagent-filter-status':['status','tm_subagent_filter_status'],
+ 'subagent-filter-signal':['signal','tm_subagent_filter_signal'],
+ 'subagent-filter-time':['window','tm_subagent_filter_time'],
+ 'subagent-filter-sort':['sort','tm_subagent_filter_sort'],
+};
+const subagentFilterStorage={query:'tm_subagent_filter_search',runtime:'tm_subagent_filter_app',project:'tm_subagent_filter_project',model:'tm_subagent_filter_model',status:'tm_subagent_filter_status',signal:'tm_subagent_filter_signal',window:'tm_subagent_filter_time',sort:'tm_subagent_filter_sort'};
+const subagentFilterDefaults={query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'};
+function persistSubagentFilter(key){
+ const storage=subagentFilterStorage[key],value=subagentFilters[key],fallback=subagentFilterDefaults[key];
+ if(!storage)return;
+ if(value===fallback)localStorage.removeItem(storage);else localStorage.setItem(storage,value);
+}
+function resetSubagentResultView(){subagentVisibleLimit=SUBAGENT_PAGE_SIZE;selectedSubagentId='';}
+$('subagent-filter-search').addEventListener('input',event=>{
+ subagentFilters.query=event.target.value;persistSubagentFilter('query');resetSubagentResultView();renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+});
+Object.entries(subagentFilterBindings).forEach(([id,[key,storage]])=>$(id).addEventListener('change',event=>{
+ subagentFilters[key]=event.target.value;persistSubagentFilter(key);resetSubagentResultView();renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+}));
+$('subagent-filter-more').onclick=()=>{
+ subagentAdvancedOpen=!subagentAdvancedOpen;
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+ if(subagentAdvancedOpen)requestAnimationFrame(()=>$('subagent-filter-advanced').querySelector('select')?.focus());
+};
+$('subagent-view-tabs').onclick=event=>{
+ const view=event.target.closest('[data-subagent-view]')?.dataset.subagentView;
+ if(!['issues','sessions','roles'].includes(view))return;
+ subagentView=view;localStorage.setItem('tm_subagent_view',view);selectedSubagentId='';expandedSubagentRoot=null;renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+};
+$('subagent-view-tabs').onkeydown=event=>{
+ if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+ event.preventDefault();
+ const buttons=[...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')],index=buttons.indexOf(event.target.closest('[data-subagent-view]'));
+ if(index<0)return;
+ const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
+ buttons[next].focus();buttons[next].click();
+};
+$('subagent-compact-summary').onclick=event=>{
+ const filter=event.target.closest('[data-subagent-summary-filter]')?.dataset.subagentSummaryFilter;
+ if(!filter)return;
+ subagentFilters=toggleSubagentSummaryFilter(subagentFilters,filter);
+ persistSubagentFilter('status');persistSubagentFilter('signal');resetSubagentResultView();
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+};
+$('subagent-active-filters').onclick=event=>{
+ const key=event.target.closest('[data-subagent-clear-filter]')?.dataset.subagentClearFilter;
+ if(!(key in subagentFilterDefaults))return;
+ subagentFilters[key]=subagentFilterDefaults[key];persistSubagentFilter(key);resetSubagentResultView();
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+};
+$('subagent-filter-clear').onclick=()=>{
+ subagentFilters={...subagentFilterDefaults};
+ ['tm_subagent_filter_search',...Object.values(subagentFilterBindings).map(([,storage])=>storage)].forEach(key=>localStorage.removeItem(key));
+ subagentAdvancedOpen=false;
+ resetSubagentResultView();
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+};
+$('subagent-results').onclick=event=>{
+ const root=event.target.closest('[data-subagent-show-session]')?.dataset.subagentShowSession;
+ if(root){
+  subagentView='sessions';localStorage.setItem('tm_subagent_view',subagentView);selectedSubagentId='';expandedSubagentRoot=root;renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+  const group=[...$('subagent-results').querySelectorAll('[data-subagent-root]')].find(item=>item.dataset.subagentRoot===root);group?.scrollIntoView({block:'start'});return;
+ }
+ const row=event.target.closest('[data-subagent-id]');
+ if(!row)return;
+ selectedSubagentId=selectedSubagentId===row.dataset.subagentId?'':row.dataset.subagentId;
+ renderSubagentExplorer(LATEST?.xsession?.agent_usage);
+};
+$('subagent-results').addEventListener('toggle',event=>{
+ const group=event.target;if(!(group instanceof HTMLDetailsElement)||!group.matches('[data-subagent-root]'))return;
+ if(group.open)expandedSubagentRoot=group.dataset.subagentRoot;else if(expandedSubagentRoot===group.dataset.subagentRoot)expandedSubagentRoot='';
+},true);
+$('subagent-inspector').onclick=event=>{
+ const root=event.target.closest('[data-subagent-open-parent]')?.dataset.subagentOpenParent;
+ if(root){selectSession(root,{returnScope:'subagents'});return;}
+ if(event.target.closest('[data-subagent-close-detail]')){selectedSubagentId='';renderSubagentExplorer(LATEST?.xsession?.agent_usage);}
+};
 function renderAllSessions(xs){
  if(!xs)return;
  const generatedAt=Number(xs.generated_at||0);
@@ -5929,8 +6590,8 @@ function renderAllSessions(xs){
  setLogSelectOptions($('g-app'),'<option value="">All apps</option>'+apps.map(app=>`<option value="${esc(app.id)}">${esc(app.label)}</option>`).join(''),globalApp);
  const projects=[...new Set(all.map(s=>projectFilterValue(s.project)))].sort((a,b)=>projectFilterLabel(a).localeCompare(projectFilterLabel(b),undefined,{sensitivity:'base'}));
  if(globalProject&&!projects.includes(globalProject)){
-  globalProject='';
-  localStorage.removeItem('tm_global_project');
+ globalProject='';
+ localStorage.removeItem('tm_global_project');
  }
  setLogSelectOptions($('g-project'),'<option value="">All projects</option>'+projects.map(project=>`<option value="${esc(project)}">${esc(projectFilterLabel(project))}</option>`).join(''),globalProject);
  paintGlobalFilters();
@@ -5965,8 +6626,8 @@ function renderAllSessions(xs){
 	  wait:(a,b)=>Number(b.wait_time?.total_s||0)-Number(a.wait_time?.total_s||0)||(b.mtime||0)-(a.mtime||0),
  };
  sessions=sessions.slice().sort(sorters[globalSort]||sorters.recent);
- const shownCost=sessions.reduce((a,b)=>a+(b.cost||0),0),localEstimates=sessions.filter(row=>hasLocalEstimate(row)&&metricAvailable(row,'cost')).length;
-	 setLogText($('g-count'),`${f(sessions.length)} of ${f(all.length)} sessions · ${money(shownCost)}${sessions.some(row=>!metricAvailable(row,'cost'))?' covered spend · partial':''}${localEstimates?` · ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}`);
+ const shownCost=sessions.reduce((a,b)=>a+(b.cost||0),0),localEstimates=sessions.filter(row=>hasLocalEstimate(row)&&metricAvailable(row,'cost')).length,costCovered=sessions.filter(row=>metricAvailable(row,'cost')).length;
+	 setLogText($('g-count'),`${f(sessions.length)} of ${f(all.length)} sessions · ${money(shownCost)} covered spend · ${f(costCovered)} of ${f(sessions.length)} cost-covered${localEstimates?` · includes ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}`);
  const maxCost=Math.max(.001,...sessions.map(s=>s.cost||0));
  reconcileLogRows(sessions,maxCost,liveSessionIds);
 }
@@ -5994,19 +6655,24 @@ $('slist').onkeydown=event=>{
  event.preventDefault();
  selectSession(row.dataset.id);
 };
+function sessionCoverageCopy(totals,sessionCount,localEstimates){
+ const costCovered=Number(totals?.costCovered)||0,tokenCovered=Number(totals?.tokenCovered)||0,estimateNote=localEstimates?` · includes ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:'';
+ return {
+  costNote:sessionCount?(costCovered?`${f(costCovered)} of ${f(sessionCount)} cost-covered sessions · ${money(Number(totals?.cost||0)/costCovered)}/covered session${estimateNote}`:'cost unavailable for matching sessions'):'no matching sessions',
+  tokenTitle:tokenCovered?`${f(tokenCovered)} of ${f(sessionCount)} token-covered sessions${estimateNote}`:'token evidence unavailable',
+ };
+}
 function renderAllSessionStats(sessions){
 	 const localEstimates=sessions.filter(row=>hasLocalEstimate(row)&&metricAvailable(row,'cost')).length;
 	 const totals=sessions.reduce((sum,row)=>{
 	  sum.cost+=Number(row.cost||0);sum.input+=Number(row.input_tokens||0);sum.output+=Number(row.output_tokens||0);sum.executions+=Number(row.turns||0);sum.wait+=Number(row.wait_time?.total_s||0);sum.waitSamples+=Number(row.wait_time?.sample_count||0);sum.costCovered+=metricAvailable(row,'cost')?1:0;sum.tokenCovered+=metricAvailable(row,'tokens')?1:0;
 	  return sum;
 	 },{cost:0,input:0,output:0,executions:0,wait:0,waitSamples:0,costCovered:0,tokenCovered:0});
- const costPartial=totals.costCovered<sessions.length,tokenPartial=totals.tokenCovered<sessions.length;
- const filteredEstimateSuffix=localEstimates?(localEstimates===totals.costCovered?' est':' incl. est'):'';
- const filteredCostEstimateSuffix=localEstimates===totals.costCovered&&totals.costCovered?' est':'';
- setLogHtml($('lf-cost'),costValueHtml(money(totals.cost)+(costPartial?' partial':'')+filteredCostEstimateSuffix,Boolean(totals.costCovered)));
- setLogText($('lf-cost-note'),sessions.length?(totals.costCovered?`${f(totals.costCovered)} of ${f(sessions.length)} cost-covered sessions · ${money(totals.cost/totals.costCovered)}/covered session${localEstimates?` · ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}`:'cost unavailable for matching sessions'):'no matching sessions');
- setLogText($('lf-input'),totals.tokenCovered?compactNumber(totals.input)+(tokenPartial?' partial':'')+filteredEstimateSuffix:'--');setLogAttribute($('lf-input'),'title',totals.tokenCovered?f(totals.input)+' reported or locally estimated input/context tokens':'input evidence unavailable');
- setLogText($('lf-output'),totals.tokenCovered?compactNumber(totals.output)+(tokenPartial?' partial':'')+filteredEstimateSuffix:'--');setLogAttribute($('lf-output'),'title',totals.tokenCovered?f(totals.output)+' reported or locally estimated output tokens':'output evidence unavailable');
+ const coverageCopy=sessionCoverageCopy(totals,sessions.length,localEstimates);
+ setLogHtml($('lf-cost'),costValueHtml(money(totals.cost),Boolean(totals.costCovered)));
+ setLogText($('lf-cost-note'),coverageCopy.costNote);
+ setLogText($('lf-input'),totals.tokenCovered?compactNumber(totals.input):'--');setLogAttribute($('lf-input'),'title',totals.tokenCovered?`${f(totals.input)} reported or locally estimated input/context tokens · ${coverageCopy.tokenTitle}`:'input evidence unavailable');
+ setLogText($('lf-output'),totals.tokenCovered?compactNumber(totals.output):'--');setLogAttribute($('lf-output'),'title',totals.tokenCovered?`${f(totals.output)} reported or locally estimated output tokens · ${coverageCopy.tokenTitle}`:'output evidence unavailable');
 	 setLogText($('lf-executions'),f(totals.executions));
 	 setLogText($('lf-executions-note'),sessions.length?`${(totals.executions/sessions.length).toFixed(1)} average / session`:'no matching executions');
 	 setLogText($('lf-wait'),totals.waitSamples?waitFmt(totals.wait):'--');
@@ -6022,7 +6688,7 @@ function renderAllSessionStats(sessions){
  });
  const ranked=[...models.values()].sort((a,b)=>b.cost-a.cost||b.tokens-a.tokens||a.model.localeCompare(b.model));
  setLogText($('lf-model-count'),`${f(ranked.length)} ${countWord(ranked.length,'model')}`);
- setLogHtml($('lf-models'),ranked.length?ranked.slice(0,4).map(row=>`<div class=logModelRow><div><div class=logModelName title="${esc(row.model)} · ${esc(row.runtime)}">${esc(row.model)} · ${esc(row.runtime)}</div><div class=logModelMeta>${f(row.sessions)} ${countWord(row.sessions,'session')} · ${f(row.executions)} execs · ${row.tokenCovered?compactNumber(row.input)+' in · '+compactNumber(row.output)+' out'+(row.estimated?' · includes local est':''):'token evidence unavailable'}</div></div><div class=logModelValue><b class=mono>${costValueHtml(money(row.cost)+(row.estimated?' est':''),Boolean(row.costCovered))}</b><span>${row.costCovered?pct(totals.cost?row.cost/totals.cost:0)+' of covered cost':'billing unavailable'}</span></div></div>`).join('')+(ranked.length>4?`<div class=logModelEmpty>+${f(ranked.length-4)} more ${countWord(ranked.length-4,'model runtime')}</div>`:''):'<div class=logModelEmpty>No model data for these filters</div>');
+ setLogHtml($('lf-models'),ranked.length?ranked.slice(0,4).map(row=>`<div class=logModelRow><div><div class=logModelName title="${esc(row.model)} · ${esc(row.runtime)}">${esc(row.model)} · ${esc(row.runtime)}</div><div class=logModelMeta>${f(row.sessions)} ${countWord(row.sessions,'session')} · ${f(row.executions)} execs · ${row.tokenCovered?compactNumber(row.input)+' in · '+compactNumber(row.output)+' out'+(row.estimated?' · includes local estimates':''):'token evidence unavailable'}</div></div><div class=logModelValue><b class=mono>${costValueHtml(money(row.cost),Boolean(row.costCovered))}</b><span>${row.costCovered?pct(totals.cost?row.cost/totals.cost:0)+' of covered cost'+(row.estimated?' · API-rate estimate':''):'billing unavailable'}</span></div></div>`).join('')+(ranked.length>4?`<div class=logModelEmpty>+${f(ranked.length-4)} more ${countWord(ranked.length-4,'model runtime')}</div>`:''):'<div class=logModelEmpty>No model data for these filters</div>');
 }
 
 function currentSessionAge(row){
@@ -6644,6 +7310,11 @@ function applyLiveState(state){
   const inventoryStale=!allSessionInventory||allSessionInventoryAt!==Number(LATEST.xsession?.generated_at||0);
   if(inventoryStale)loadAllSessions();
   else renderAllSessions(LATEST.xsession);
+ }
+ if(sessionSurfaceActive&&currentPanel==='sessions'&&sessionScope==='subagents'){
+  const inventoryStale=!allSessionInventory||allSessionInventoryAt!==Number(LATEST.xsession?.generated_at||0);
+  renderSubagentExplorer(LATEST.xsession?.agent_usage);
+  if(inventoryStale)loadAllSessions();
  }
 	 if($('view-models').classList.contains('on')){renderActiveModelStats();renderFrustration(LATEST.xsession?.language_signals,LATEST.xsession?.sessions);}
 	 if($('view-daily').classList.contains('on'))renderSpend(LATEST.xsession);

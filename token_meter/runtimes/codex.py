@@ -1,6 +1,7 @@
 """Native adapter for Codex JSONL session evidence."""
 
 import glob
+import hashlib
 import json
 import math
 import os
@@ -233,6 +234,38 @@ def _compact(value, limit=90):
     return value[:limit - 1] + "…" if len(value) > limit else value
 
 
+def _safe_agent_display(value, limit):
+    """Accept a bounded structural label, not path/URL/credential-shaped text."""
+    if not isinstance(value, str):
+        return ""
+    text = _compact(value, limit)
+    lowered = text.lower()
+    if not text or any(ord(char) < 32 or ord(char) == 127 for char in text):
+        return ""
+    if (
+        text.startswith(("/", "\\", "~", "./", "../"))
+        or re.match(r"^[A-Za-z]:[\\/]", text)
+        or "://" in text
+        or lowered.startswith(("bearer ", "sk-", "-----begin "))
+        or any(marker in lowered for marker in (
+            "api_key=", "api-key=", "secret=", "token=",
+        ))
+    ):
+        return ""
+    return text
+
+
+def _opaque_agent_id(physical_trace_id):
+    """Return a stable public agent ID without exposing provider trace identity."""
+    physical = str(physical_trace_id or "")
+    if not physical:
+        return ""
+    digest = hashlib.sha256(
+        b"token-meter:codex-agent:v1\0" + physical.encode("utf-8", "replace")
+    ).hexdigest()
+    return "codex-agent-" + digest
+
+
 def _catalog(dynamic_tools):
     result = []
     for item in dynamic_tools or []:
@@ -311,6 +344,7 @@ class CodexRuntimeAdapter:
         self._index_rows = {}
         self._records_by_path = {}
         self._record_by_physical_id = {}
+        self._agent_record_by_physical_id = {}
 
     def _paths(self):
         pattern = str(self.sessions_root / "*" / "*" / "*" / "*.jsonl")
@@ -363,6 +397,38 @@ class CodexRuntimeAdapter:
         )
         return payload.get("parent_thread_id") or spawn.get("parent_thread_id")
 
+    @staticmethod
+    def _agent_metadata(payload):
+        """Keep only documented, content-free relationship metadata."""
+        source = payload.get("source") if isinstance(payload.get("source"), dict) else {}
+        subagent = source.get("subagent") if isinstance(source.get("subagent"), dict) else {}
+        spawn = (
+            subagent.get("thread_spawn")
+            if isinstance(subagent.get("thread_spawn"), dict)
+            else {}
+        )
+        direct_parent = str(payload.get("parent_thread_id") or "").strip()
+        spawn_parent = str(spawn.get("parent_thread_id") or "").strip()
+        raw_depth = spawn.get("depth")
+        depth = None
+        if not isinstance(raw_depth, bool):
+            try:
+                parsed_depth = int(raw_depth)
+                depth = parsed_depth if 0 <= parsed_depth <= 64 else None
+            except (TypeError, ValueError, OverflowError):
+                pass
+        return {
+            "agent_kind": (
+                "spawned" if spawn else "internal" if direct_parent else "root"
+            ),
+            "agent_parent_physical_id": direct_parent or spawn_parent or None,
+            "agent_depth": depth,
+            "agent_label": _safe_agent_display(
+                spawn.get("agent_nickname"), 80,
+            ),
+            "agent_role": _safe_agent_display(spawn.get("agent_role"), 64),
+        }
+
     def metadata(self, path):
         path = os.path.abspath(os.path.expanduser(str(path)))
         try:
@@ -389,6 +455,11 @@ class CodexRuntimeAdapter:
             "forked_from_id": None,
             "parent_thread_id": None,
             "lineage_parent_id": None,
+            "agent_kind": "root",
+            "agent_parent_physical_id": None,
+            "agent_depth": None,
+            "agent_label": "",
+            "agent_role": "",
             "cwd": None,
             "model": None,
             "model_provider": None,
@@ -423,6 +494,7 @@ class CodexRuntimeAdapter:
                             logical = str(payload.get("session_id") or physical)
                             forked = str(payload.get("forked_from_id") or "") or None
                             parent = str(self._parent_thread_id(payload) or "") or None
+                            agent_metadata = self._agent_metadata(payload)
                             metadata.update({
                                 "session_id": logical,
                                 "physical_trace_id": physical,
@@ -430,6 +502,7 @@ class CodexRuntimeAdapter:
                                 "forked_from_id": forked,
                                 "parent_thread_id": parent,
                                 "lineage_parent_id": forked or parent,
+                                **agent_metadata,
                             })
                             identity_seen = True
                         metadata["cwd"] = payload.get("cwd") or metadata["cwd"]
@@ -492,6 +565,17 @@ class CodexRuntimeAdapter:
                 "forked_from_id": metadata.get("forked_from_id"),
                 "parent_thread_id": metadata.get("parent_thread_id"),
                 "lineage_parent_id": metadata.get("lineage_parent_id"),
+                "agent_kind": metadata.get("agent_kind") or "root",
+                "agent_parent_physical_id": metadata.get(
+                    "agent_parent_physical_id"
+                ),
+                "agent_parent_session_id": None,
+                "agent_id": _opaque_agent_id(physical_id),
+                "agent_parent_id": None,
+                "agent_session_id": None,
+                "agent_depth": metadata.get("agent_depth"),
+                "agent_label": metadata.get("agent_label") or "",
+                "agent_role": metadata.get("agent_role") or "",
                 "path": path,
                 "project": self.project_resolver(cwd),
                 "mtime": os.path.getmtime(path) if os.path.exists(path) else 0.0,
@@ -520,7 +604,53 @@ class CodexRuntimeAdapter:
             for physical_id, matches in records_by_physical_id.items()
             if len(matches) == 1
         }
+        self._agent_record_by_physical_id = {}
+        for physical_id, matches in records_by_physical_id.items():
+            identities = {
+                (
+                    str(match.get("logical_session_id") or ""),
+                    str(match.get("agent_parent_physical_id") or ""),
+                    str(match.get("agent_kind") or "root"),
+                    str(match.get("project") or ""),
+                    match.get("agent_depth"),
+                    str(match.get("agent_label") or ""),
+                    str(match.get("agent_role") or ""),
+                )
+                for match in matches
+            }
+            if len(identities) != 1:
+                continue
+            self._agent_record_by_physical_id[physical_id] = min(
+                matches,
+                key=lambda match: (
+                    not bool(match.get("_aggregation_canonical")),
+                    -float(match.get("mtime") or 0),
+                    -float(match.get("signature_mtime") or 0),
+                    str(match.get("path") or ""),
+                ),
+            )
         self._records_by_path = {record["path"]: record for record in records}
+        physical_ids_by_session = defaultdict(set)
+        for record in records:
+            physical_ids_by_session[record["id"]].add(
+                record["physical_trace_id"]
+            )
+        for record in records:
+            parent = self._agent_record_by_physical_id.get(
+                record.get("agent_parent_physical_id")
+            )
+            if (
+                parent
+                and parent.get("physical_trace_id") != record.get("physical_trace_id")
+                and not self._has_agent_cycle(record)
+            ):
+                record["agent_parent_id"] = parent.get("agent_id")
+                if parent.get("id") != record.get("id"):
+                    record["agent_parent_session_id"] = parent.get("id")
+            if record.get("agent_kind") == "root" or len(
+                physical_ids_by_session[record["id"]]
+            ) == 1:
+                record["agent_session_id"] = record["id"]
         for record in records:
             if record.get("observed_model") == AUTO_REVIEW_MODEL:
                 if self._has_auto_review_identity_cycle(record):
@@ -595,6 +725,14 @@ class CodexRuntimeAdapter:
             "parent_thread_id": record["parent_thread_id"],
             "lineage_parent_id": record["lineage_parent_id"],
             "lineage_revision": record["lineage_revision"],
+            "agent_kind": record["agent_kind"],
+            "agent_parent_session_id": record["agent_parent_session_id"],
+            "agent_id": record["agent_id"],
+            "agent_parent_id": record["agent_parent_id"],
+            "agent_session_id": record["agent_session_id"],
+            "agent_depth": record["agent_depth"],
+            "agent_label": record["agent_label"],
+            "agent_role": record["agent_role"],
             "session": os.path.basename(record["path"]),
             "path": record["path"],
             "project": record["project"],
@@ -705,6 +843,21 @@ class CodexRuntimeAdapter:
             if not parent_id:
                 return False
             current = self._record_by_physical_id.get(parent_id)
+        return False
+
+    def _has_agent_cycle(self, record):
+        """Reject cycles in explicit agent parentage independently of forks."""
+        seen = set()
+        current = record
+        while current:
+            physical_id = current.get("physical_trace_id")
+            if not physical_id or physical_id in seen:
+                return True
+            seen.add(physical_id)
+            parent_id = current.get("agent_parent_physical_id")
+            if not parent_id:
+                return False
+            current = self._agent_record_by_physical_id.get(parent_id)
         return False
 
     def _has_auto_review_identity_cycle(self, record):
@@ -1512,6 +1665,61 @@ class CodexRuntimeAdapter:
         )
         attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(codex_tool_call_evidence(objs), source.get("tool_catalog") or [])
+        model_rows = row.get("model_stats") or []
+        cache_read_tokens = sum(
+            int(item.get("cache_read_tokens") or 0) for item in model_rows
+        )
+        cache_write_tokens = sum(
+            int(item.get("cache_write_tokens") or 0) for item in model_rows
+        )
+        reasoning_tokens = sum(
+            int(item.get("reasoning_tokens") or 0) for item in model_rows
+        )
+        tool_calls = sum(
+            1 for obj in objs
+            if isinstance(obj.get("payload"), dict)
+            and obj["payload"].get("type") in (
+                "function_call", "custom_tool_call", "web_search_call",
+                "tool_search_call",
+            )
+        )
+        activity_state = (
+            "complete" if terminal
+            else "working" if time.time() - float(source.get("mtime") or 0) <= 90
+            else "incomplete"
+        )
+        row["_agent_records"] = [{
+            "id": source.get("agent_id") or _opaque_agent_id(
+                source.get("physical_trace_id")
+            ),
+            "parent_id": source.get("agent_parent_id"),
+            "session_id": source.get("agent_session_id"),
+            "runtime": "codex",
+            "client": "Codex",
+            "kind": source.get("agent_kind") or "root",
+            "depth": source.get("agent_depth"),
+            "label": source.get("agent_label") or "",
+            "role": source.get("agent_role") or None,
+            "model": model,
+            "started_at": first_ts,
+            "ended_at": last_ts if terminal else None,
+            "last_activity_at": last_ts or source.get("mtime"),
+            "activity_state": activity_state,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cache_read_tokens": cache_read_tokens,
+            "cache_write_tokens": cache_write_tokens,
+            "reasoning_tokens": reasoning_tokens,
+            "tokens": tokens,
+            "tokens_available": bool(row["availability"].get("tokens")),
+            "cost": cost,
+            "cost_available": bool(row["availability"].get("cost")),
+            "executions": turns,
+            "attempts": turns,
+            "retries": 0,
+            "failed_attempts": 0,
+            "tool_calls": tool_calls,
+        }]
         return row
 
     def deletion_plan(self, source):

@@ -42,12 +42,12 @@ executable and import-compatibility facade; current composition lives in
 | --- | --- | --- |
 | Runtime identity and discovery | `token_meter/runtimes/` | Find sources, compute revisions, read inputs safely, parse runtime formats, and return normalized evidence. |
 | Shared evidence contracts | `token_meter/contracts.py`, `token_meter/compat.py` | Keep runtime, model provider, account provider, source locator, availability, and provenance distinct; preserve bounded compatibility shapes. |
-| Usage and analytics | `token_meter/domain/` | Calculate costs, timing, throughput, tools, insights, daily/model/session aggregates, and evidence coverage without runtime dispatch. |
+| Usage and analytics | `token_meter/domain/` | Calculate costs, timing, throughput, tools, agent relationships, insights, daily/model/session aggregates, and evidence coverage without runtime dispatch. |
 | Model identity and prices | `token_meter/models/` | Resolve provider-scoped model names and effective-dated prices. |
 | Provider limits | `token_meter/quotas/` | Make bounded, read-only account-usage requests and normalize available quota windows. |
 | Operating-system behavior | `token_meter/platforms/` | Own host paths, process policy, updates, service integration, and recoverable trash behavior. |
 | Application lifecycle | `token_meter/app.py`, `token_meter/services/` | Compose registries, manage caches/settings/watchers, and serve application jobs. |
-| Public projections | `token_meter/projections.py` | Allowlist fields for session, state, model, menu-bar, and MCP consumers. |
+| Public projections | `token_meter/projections.py` | Allowlist fields for session, state, model, browser-only agent, menu-bar, and MCP consumers. |
 | MCP query layer | `token_meter/mcp/` | Validate filters, bind opaque cursors to query revisions, positively allowlist standardized and native-structure fields, aggregate metrics, and publish schema metadata. |
 | HTTP transport | `token_meter/web/`, `page.html` | Serve the loopback API, routes, actions, and the single-file dashboard. |
 | Native clients | `menubar/`, Windows scripts | Render the compact `/menubar` payload and delegate deep review to the browser. |
@@ -97,6 +97,21 @@ model-and-numeric-usage prefixes before native load, legacy detail, or legacy
 summary parsing. Ambiguous lineage retains all evidence. Runtime-neutral
 aggregation never reopens traces or performs a second deduplication.
 
+Subagent observability reuses each adapter's corrected accounting. Codex adds
+an agent edge only for an explicit bounded `thread_spawn` relationship, hashes
+private physical identities into separate opaque agent identities, and keeps
+public session identity only as optional navigation. Structurally consistent
+duplicate physical parent records collapse in the relationship overlay while
+remaining ambiguous to accounting lineage; fork-only lineage remains
+accounting lineage rather than a visible agent edge.
+Claude assigns each canonical message UUID to one structurally nested owner,
+keeps the first owner while allowing a later duplicate/update to improve usage,
+and reconciles component totals to the existing grouped session before
+publishing a hierarchy. A reconciliation mismatch omits the breakdown instead
+of changing the established total. Stale nonterminal provider traces are
+classified as `incomplete`; that lifecycle state is independent of the
+deterministic cost/retry attention signals.
+
 The Pi adapter reads only Pi-owned JSONL session files and accepts a source only
 when it has the expected Pi session header. It projects recorded usage, local
 cost, structural tool evidence (including per-call error status), and inferred
@@ -116,6 +131,10 @@ effective-dated prices, estimates, availability, and provenance. Timing and
 throughput live in `domain/timing.py`; tool/capability evidence in
 `domain/tools.py`; derived guidance in `domain/insights.py`; and cross-session,
 daily, model, language, and tool aggregation in `domain/aggregates.py`.
+`domain/agents.py` resolves only adapter-supplied opaque relationships, rejects
+ambiguous or cyclic graphs, preserves exact full-group totals behind a
+100-agent display bound, and aggregates child-only cohorts. Runtime adapters
+remain responsible for identity, attribution, deduplication, and pricing.
 
 Exact totals are not truncated. Lists used for workload shape, pace matching,
 UI previews, or response-size control are bounded and must disclose their
@@ -133,6 +152,10 @@ contracts.
 the background watcher. Runtime revisions invalidate only affected source
 summaries. Cross-session state is reused by `/state`, `/session`, Models, Daily,
 Tools, the menu bar, and MCP instead of being recomputed per request.
+The same cache holds private resolved agent groups. `/state` exposes only
+anonymous child-agent cohorts and `/session` exposes only the selected
+allowlisted group; neither native nor MCP projections receive these browser
+fields.
 
 Filesystem modification time is a revision signal, not automatically user/model
 activity. Adapters derive semantic activity from trace events or authoritative
@@ -154,7 +177,7 @@ allowlisted fields or discovered canonical identifiers.
 
 The browser polls live state and renders all top-level review surfaces from
 `page.html`. Dashboard order is `Sessions → Spend → Models → Efficiency → Git →
-Learn → Tools → Settings`; Sessions owns Current and All session modes. Efficiency derives
+Learn → Tools → Settings`; Sessions owns Current, All, and Subagents modes. Efficiency derives
 mechanical token-efficiency ratios and daily trends from the same runtime-scoped
 model aggregates. Its sortable model table defaults to spend descending and
 preserves unavailable and partial evidence. A Claude thinking-block observation
@@ -163,7 +186,21 @@ output for an unavailable thinking-token split. The selected-session Run surface
 reuses those same aggregate formulas for a compact Output/$ and Reasoning ratio
 module. `/session` projects that selected source's bounded model statistics
 directly, so older All Sessions entries do not depend on the 60-row cross-session
-preview. Charts and model comparison remain on the top-level Efficiency route.
+preview. Agent activity is contained in the selected-session Run surface, and
+child-only filtering and aggregate statistics are contained in Sessions
+Subagents. A content-free inventory is positively allowlisted and bounded to
+1,000 child rows; the browser withholds exact filtered totals when that bound
+is reached. Server-side
+attention signals use explicit thresholds for covered cost concentration,
+comparable-peer outliers, and reported retry pressure. The browser may add the
+saved session-cap and observed-live-growth reasons only when group cost is
+fully covered. Every reason is explanatory and non-mutating. Charts and model
+comparison remain on the top-level Efficiency route. Child usage is
+pre-aggregated into bounded all-history and fixed activity-window scopes, with
+exact project and runtime variants rooted in the initiating session, so
+supported Sessions Subagents project/runtime/time comparisons never aggregate
+from the visible All Sessions row slice. Role, nickname, model, status, signal,
+and text filters operate only on the bounded child inventory.
 Git reads bounded local remote-tracking reflogs. The installer seeds
 readable history in its invoking app's context, then the background service
 rechecks accessible repositories every five minutes. This preserves useful

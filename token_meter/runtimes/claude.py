@@ -766,12 +766,25 @@ class ClaudeRuntimeAdapter:
         )
         return self._source_revision(paths, metadata_path, title)
 
-    def load_rows(self, path):
+    @staticmethod
+    def _ordered_trace_paths(paths, main_path=""):
+        main_path = str(main_path or "")
+
+        def rank(path):
+            path = str(path)
+            depth = sum(1 for part in Path(path).parts if part == "subagents")
+            return (0 if path == main_path else 1, depth, path)
+
+        return tuple(sorted({str(path) for path in paths if path}, key=rank))
+
+    def load_owned_rows(self, path, main_path=""):
+        """Load exact-deduplicated rows while retaining private trace ownership."""
         paths = (
             tuple(path)
             if isinstance(path, (tuple, list))
             else (path,)
         )
+        paths = self._ordered_trace_paths(paths, main_path=main_path)
         rows = []
         corrupt = 0
         available = False
@@ -795,7 +808,7 @@ class ClaudeRuntimeAdapter:
                             corrupt += 1
                             continue
                         if isinstance(row, dict):
-                            rows.append(row)
+                            rows.append((row, str(item)))
                         else:
                             corrupt += 1
             except OSError:
@@ -805,11 +818,33 @@ class ClaudeRuntimeAdapter:
                     continue
         return tuple(rows), corrupt, available
 
-    def logical_messages(self, rows, timestamp_parser=None):
-        timestamp_parser = timestamp_parser or _timestamp
+    def load_rows(self, path):
+        rows, corrupt, available = self.load_owned_rows(path)
+        return tuple(row for row, _owner in rows), corrupt, available
+
+    @staticmethod
+    def _logical_messages(rows, timestamp_parser, include_owner):
         by_id = {}
         order = []
-        for row in _without_zero_usage_synthetic_markers(rows):
+        for entry in rows:
+            if (
+                isinstance(entry, tuple) and len(entry) == 2
+                and isinstance(entry[0], dict)
+            ):
+                row, owner = entry
+            else:
+                row, owner = entry, None
+            if not isinstance(row, dict):
+                continue
+            if (
+                row.get("type") == "assistant"
+                and isinstance(row.get("message"), dict)
+                and _zero_usage_synthetic_marker(
+                    row["message"].get("model"),
+                    row["message"].get("usage"),
+                )
+            ):
+                continue
             if row.get("type") != "assistant":
                 continue
             message = row.get("message") if isinstance(row.get("message"), dict) else {}
@@ -830,6 +865,7 @@ class ClaudeRuntimeAdapter:
                     "last_ts": timestamp_parser(row.get("timestamp")) or 0,
                     "side": bool(row.get("isSidechain")),
                     "content": [],
+                    "_owner_path": owner,
                 }
                 by_id[logical_key] = logical
                 order.append(logical_key)
@@ -853,7 +889,232 @@ class ClaudeRuntimeAdapter:
                 float(logical.get("last_ts") or 0),
                 timestamp_parser(row.get("timestamp")) or 0,
             )
-        return tuple(by_id[logical_key] for logical_key in order)
+        messages = tuple(by_id[logical_key] for logical_key in order)
+        if include_owner:
+            return messages
+        return tuple({
+            key: value for key, value in message.items()
+            if key != "_owner_path"
+        } for message in messages)
+
+    def logical_messages(self, rows, timestamp_parser=None):
+        timestamp_parser = timestamp_parser or _timestamp
+        return self._logical_messages(rows, timestamp_parser, False)
+
+    def owned_logical_messages(self, rows, timestamp_parser=None):
+        timestamp_parser = timestamp_parser or _timestamp
+        return self._logical_messages(rows, timestamp_parser, True)
+
+    @staticmethod
+    def _component_parent_path(path, known_paths):
+        path = Path(path)
+        if path.parent.name != "subagents":
+            return None
+        candidate = str(path.parent.parent) + ".jsonl"
+        return candidate if candidate in known_paths else None
+
+    def _component_layout(self, source, owned_messages):
+        """Return private path relationships and their canonical messages."""
+        main_path = str(source.get("path") or "")
+        paths = self._ordered_trace_paths(
+            source.get("_trace_paths") or (main_path,), main_path=main_path,
+        )
+        known_paths = set(paths)
+        resolved = {main_path: (None, 0)}
+        pending = [path for path in paths if path != main_path]
+        while pending:
+            progressed = False
+            for path in tuple(pending):
+                parent = self._component_parent_path(path, known_paths)
+                if parent not in resolved:
+                    continue
+                resolved[path] = (parent, resolved[parent][1] + 1)
+                pending.remove(path)
+                progressed = True
+            if not progressed:
+                break
+
+        messages_by_path = defaultdict(list)
+        for message in owned_messages:
+            owner = str(message.get("_owner_path") or "")
+            messages_by_path[owner if owner in resolved else main_path].append(message)
+        required = {main_path}
+        for path in messages_by_path:
+            current = path
+            while current in resolved and current not in required:
+                required.add(current)
+                current = resolved[current][0]
+
+        def agent_id(path):
+            if path == main_path:
+                return str(source.get("id") or "")
+            digest = hashlib.sha256(
+                ("claude-agent-v1\0{}\0{}".format(
+                    source.get("id") or "", path,
+                )).encode("utf-8", "surrogatepass")
+            ).hexdigest()[:24]
+            return "claude-agent:" + digest
+
+        layout = []
+        for path in sorted(required, key=lambda item: (resolved[item][1], item)):
+            parent_path, depth = resolved[path]
+            layout.append({
+                "id": agent_id(path),
+                "parent_id": agent_id(parent_path) if parent_path else None,
+                "depth": depth,
+                "messages": tuple(messages_by_path.get(path) or ()),
+            })
+        return tuple(layout)
+
+    def _legacy_agent_records(self, source, owned_messages, summary, compat):
+        add_model_summary = compat["add_model_summary"]
+        claude_billing_supported = compat["claude_billing_supported"]
+        cost_of = compat["cost_of"]
+        price_for = compat["price_for"]
+        usage_tokens = compat["usage_tokens"]
+        records = []
+        for component in self._component_layout(source, owned_messages):
+            messages = component["messages"]
+            component_cost = 0.0
+            component_tokens = 0
+            component_input = 0
+            component_output = 0
+            component_model_stats = {}
+            input_complete = True
+            output_complete = True
+            price_complete = True
+            first_ts = last_ts = None
+            model = source.get("model") or "unknown-model"
+            for message in messages:
+                usage = _with_thinking_observation(
+                    _normalized_usage(message.get("usage")),
+                    message.get("content"),
+                )
+                if not usage:
+                    continue
+                input_complete = input_complete and usage["input_available"]
+                output_complete = output_complete and usage["output_available"]
+                model = message.get("model") or model
+                _, missing = price_for(model, "claude", at=message.get("ts"))
+                priced = (
+                    not missing
+                    and usage["input_available"]
+                    and usage["output_available"]
+                    and usage["billing_available"]
+                    and claude_billing_supported(
+                        usage, model, at=message.get("ts"),
+                    )
+                )
+                price_complete = price_complete and _cost_coverage_complete(
+                    usage, priced,
+                )
+                cost = sum(
+                    cost_of(
+                        usage, model, "claude", at=message.get("ts"),
+                    ).values()
+                ) if priced else 0.0
+                component_cost += cost
+                component_tokens += usage_tokens(usage)
+                input_count, output_count = add_model_summary(
+                    component_model_stats, model, usage, cost,
+                    cost_available=priced,
+                )
+                component_input += input_count
+                component_output += output_count
+                timestamp = float(message.get("ts") or 0)
+                if timestamp:
+                    first_ts = (
+                        timestamp if first_ts is None else min(first_ts, timestamp)
+                    )
+                message_last = float(message.get("last_ts") or timestamp or 0)
+                if message_last:
+                    last_ts = (
+                        message_last if last_ts is None else max(last_ts, message_last)
+                    )
+
+            cache_read = sum(
+                int(item.get("cache_read_tokens") or 0)
+                for item in component_model_stats.values()
+            )
+            cache_write = sum(
+                int(item.get("cache_write_tokens") or 0)
+                for item in component_model_stats.values()
+            )
+            reasoning = sum(
+                int(item.get("reasoning_tokens") or 0)
+                for item in component_model_stats.values()
+            )
+            terminal = bool(
+                messages and messages[-1].get("stop_reason") == "end_turn"
+            )
+            last_activity = last_ts or (
+                float(source.get("mtime") or 0) if component["depth"] == 0 else None
+            )
+            activity_state = (
+                "complete" if terminal
+                else "working" if last_activity and time.time() - last_activity <= 90
+                else "incomplete"
+            )
+            has_component_evidence = bool(messages)
+            tokens_available = (
+                input_complete and output_complete
+                if has_component_evidence else True
+            )
+            cost_available = price_complete if has_component_evidence else True
+            tool_calls = sum(
+                1 for message in messages
+                for block in message.get("content") or ()
+                if isinstance(block, dict)
+                and block.get("type") in ("tool_use", "server_tool_use")
+            )
+            records.append({
+                "id": component["id"],
+                "parent_id": component["parent_id"],
+                "session_id": (
+                    source.get("id") if component["depth"] == 0 else None
+                ),
+                "runtime": "claude",
+                "client": source.get("label") or "Claude",
+                "kind": "root" if component["depth"] == 0 else "spawned",
+                "depth": component["depth"],
+                "label": "",
+                "role": None,
+                "model": model,
+                "started_at": first_ts,
+                "ended_at": last_ts if terminal else None,
+                "last_activity_at": last_activity,
+                "activity_state": activity_state,
+                "input_tokens": component_input,
+                "output_tokens": component_output,
+                "cache_read_tokens": cache_read,
+                "cache_write_tokens": cache_write,
+                "reasoning_tokens": reasoning,
+                "tokens": component_tokens,
+                "tokens_available": tokens_available,
+                "cost": component_cost,
+                "cost_available": cost_available,
+                "executions": len(messages),
+                "attempts": len(messages),
+                "retries": 0,
+                "failed_attempts": 0,
+                "tool_calls": tool_calls,
+            })
+
+        reconciled = (
+            sum(record["tokens"] for record in records)
+            == int(summary.get("tokens") or 0)
+            and sum(record["input_tokens"] for record in records)
+            == int(summary.get("input_tokens") or 0)
+            and sum(record["output_tokens"] for record in records)
+            == int(summary.get("output_tokens") or 0)
+            and math.isclose(
+                sum(record["cost"] for record in records),
+                float(summary.get("cost") or 0),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+        )
+        return tuple(records) if reconciled else ()
 
     @staticmethod
     def _evidence(value, available):
@@ -1297,10 +1558,13 @@ class ClaudeRuntimeAdapter:
 
     def summarize_legacy(self, source, objs=None):
         compat = self._require_compatibility()
+        owned_rows = None
         if objs is None:
-            objs, _corrupt, _available = self.load_rows(
-                source.get("_trace_paths") or (source.get("path") or "",)
+            owned_rows, _corrupt, _available = self.load_owned_rows(
+                source.get("_trace_paths") or (source.get("path") or "",),
+                main_path=source.get("path") or "",
             )
+            objs = tuple(row for row, _owner in owned_rows)
         objs = _without_zero_usage_synthetic_markers(objs)
         CURRENT_SESSION_CONTEXT_SAMPLES = compat["context_sample_limit"]
         add_model_daily = compat["add_model_daily"]
@@ -1321,7 +1585,17 @@ class ClaudeRuntimeAdapter:
         summarize_tool_evidence = compat["summarize_tool_evidence"]
         summary_row = compat["summary_row"]
         usage_tokens = compat["usage_tokens"]
-        msgs = self.logical_messages(objs, timestamp_parser=parse_iso)
+        if owned_rows is None:
+            owned_rows = tuple(
+                (obj, str(source.get("path") or "")) for obj in objs
+            )
+        owned_msgs = self.owned_logical_messages(
+            owned_rows, timestamp_parser=parse_iso,
+        )
+        msgs = tuple({
+            key: value for key, value in message.items()
+            if key != "_owner_path"
+        } for message in owned_msgs)
         cost = 0.0
         tokens = 0
         first_ts = last_ts = None
@@ -1449,6 +1723,13 @@ class ClaudeRuntimeAdapter:
         )
         attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(claude_tool_call_evidence(objs, msgs))
+        agent_records = self._legacy_agent_records(
+            source, owned_msgs, row, compat,
+        )
+        if agent_records:
+            row["_agent_records"] = list(agent_records)
+        else:
+            row["_agent_breakdown_reason"] = "attribution_unreconciled"
         return row
 
     def deletion_plan(self, source):

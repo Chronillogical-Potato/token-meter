@@ -104,11 +104,69 @@ and select it from **Sessions**.
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches
-history by project, application, or activity window. Selecting a session opens
-a durable local URL such as `/sessions/<id>#summary`.
+history by project, application, or activity window. **Subagents** is the
+dedicated cross-session child-agent explorer. Selecting a session opens a
+durable local URL such as `/sessions/<id>#summary`.
 
 Within a session, **Run** shows usage, timing, tool activity, and the session
-budget cap in one view.
+budget cap in one view. When local Claude or Codex evidence establishes a
+parent-child relationship, **Agent activity** adds the main session and its
+descendants with model, activity state, tokens, estimated cost, group share,
+and elapsed time. A navigable Codex child opens its own session detail. Claude
+child work stays a structural component of the grouped Claude session, so it
+does not become duplicate top-level spend.
+
+**Needs attention** is an explained investigation signal, not a diagnosis.
+Depending on available evidence, reasons can include active cost concentration,
+a comparable-peer cost outlier, provider-reported retry or failed-attempt
+pressure, spend above the browser-local session cap, or covered estimated cost
+that increased by at least $0.25 while a child remained active. Cost-derived
+signals are withheld unless the group has complete cost coverage. Token Meter
+does not stop, pause, or change an agent.
+
+Completion state is separate. A stale trace with no terminal provider event is
+shown as **Incomplete**; a terminal trace is **Complete**. An incomplete agent
+does not automatically need attention, and a complete agent can still carry a
+cost-outlier or retry signal. When Codex reports a safe role such as
+`token_meter_reviewer`, that role is the primary name and the provider nickname
+is secondary. If no role exists, the nickname or a neutral ordinal is used.
+
+The hierarchy displays at most 100 agents and reports any hidden count, while
+its totals continue to cover the full resolved group. Ambiguous, unresolved,
+or cyclic relationships are excluded and relationship coverage becomes
+partial. Missing token or cost evidence remains partial or unavailable rather
+than becoming zero.
+
+**Subagents** counts child work only and groups it by application,
+runtime-scoped model, depth, kind, or provider-reported role. Its bounded
+inventory can be filtered by role or nickname, project, application, model,
+status, attention reason, and activity window. A compact evidence strip keeps
+incomplete agents, **Needs attention** signals, matching child cost, and cost
+coverage visible without treating a zero-valued signal as a finding. Select an
+**Incomplete**, **Needs review**, or attention-reason tag to apply that filter;
+select the active tag again to remove it. Spawned
+and internal Codex children remain separate in model, depth, role, and kind
+cohorts. A role is never inferred from a prompt, filename, or conversation. If
+the inventory reaches its bound, visible rows remain filterable but exact
+filtered totals are withheld.
+
+The Subagents workspace has three views. **Roles** is first and is the default
+for new installations. It compares provider-reported roles within their
+application and child kind, including run count, total covered spend,
+incomplete and attention rates, median and p95 estimated cost, tokens, and the
+most common observed model. **Sessions** keeps every matching child under the
+parent session that started it and shows the spawned-run count for each parent.
+**Issues** shows only parent sessions containing an incomplete child or a
+deterministic attention signal. Filters apply across all three views; a saved
+view preference is preserved.
+
+Select a child in Issues or Sessions to keep the parent list visible while the
+inspector shows identity, lifecycle, cost, tokens, elapsed time, executions,
+tool calls, retry evidence, sibling position, comparable-agent cost evidence,
+and the exact reasons for a review signal. **Open parent session** moves to the
+normal session detail and its full Agent activity hierarchy. Parent titles are
+resolved from the existing local session history; no prompt or response text
+is added to the child-agent projection.
 
 Session deletion is available only where the runtime and platform expose a
 safe, recoverable target.
@@ -369,6 +427,11 @@ The dashboard can display local project paths, runtime/model names, capability
 names, and derived metrics. See [SECURITY.md](SECURITY.md) and the
 [architecture privacy invariants](ARCHITECTURE.md#privacy-and-security-invariants)
 for the complete boundary.
+
+Agent activity and subagent statistics project only opaque relationships,
+bounded provider-reported labels and roles, model/activity fields, and numeric
+usage evidence. Prompts, responses, reasoning, tool contents, commands, raw
+provider events, agent-definition paths, and trace paths are excluded.
 
 ## Troubleshooting
 

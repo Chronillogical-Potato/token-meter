@@ -66,8 +66,8 @@ troubleshooting, see the [User guide](specs/USER_GUIDE.md).
 
 | Goal | Token Meter helps you |
 | --- | --- |
-| **Understand a live run** | Follow estimated cost, tokens, context pressure, wait, output pace, tool calls, execution evidence, and session-budget alerts. |
-| **Review history and spend** | Find expensive or slow work across sessions, projects, runtimes, platforms, and calendar ranges. |
+| **Understand a live run** | Follow estimated cost, tokens, context pressure, wait, output pace, tool calls, execution evidence, session-budget alerts, and supported Claude or Codex child-agent activity. |
+| **Review history and spend** | Find expensive or slow work across sessions, projects, runtimes, platforms, calendar ranges, and child-agent cohorts. |
 | **Compare models and execution** | Compare input, output, pace, wait, and workload shape without presenting weak matches as meaningful results. |
 | **Investigate tools and skills** | Find high-output, failing, repeated, unobserved, or deferred capabilities while keeping incomplete evidence explicit. |
 | **Manage usage** | Check provider-reported limits, allocate a monthly budget, receive threshold notifications, and let Codex or Claude query bounded evidence through the local MCP. |
@@ -94,6 +94,8 @@ not be available to Token Meter.
 
 1. Open **Sessions → Current sessions** and select an active run.
 2. Under **Run**, check cost, context pressure, Output/$, and Reasoning ratio.
+   For a supported Claude or Codex run, use **Agent activity** to inspect its
+   child hierarchy, covered estimated cost, and explained attention signals.
    Add a session budget if the run needs an attention limit.
 3. After more sessions accumulate, use **Spend**, **Models**, **Tools**,
    **Efficiency**, and **Git** to review longer-term patterns.
@@ -102,8 +104,16 @@ not be available to Token Meter.
 
 ### Follow a session
 
-Run keeps usage, execution, tool, and budget evidence together on one focused
-session page.
+Run keeps usage, execution, tool, budget, and supported child-agent evidence
+together on one focused session page. **Agent activity** shows a bounded local
+hierarchy for Claude and Codex when their traces establish one. Its **Needs
+attention** label identifies transparent cost or retry conditions to inspect;
+it is not a diagnosis and never stops or changes an agent. **Sessions →
+Subagents** filters child-agent activity by project, application, model,
+completion state, attention signal, and time. Provider-reported roles such as
+`token_meter_reviewer` are shown as the primary identity when available;
+provider nicknames remain a fallback. A stale nonterminal trace is labeled
+**Incomplete**, independently of any attention signal.
 
 <p align="center">
   <img src="images/dashboard.png" alt="Token Meter session detail with live cost, token, context, and execution metrics" width="900">
@@ -217,6 +227,11 @@ Costs and selected token values can be estimates. Codex cost uses public
 API-equivalent rates, which can differ from subscription billing; Cursor usage
 includes local proxies where authoritative values are unavailable; Pi cost are
 estimates based on model API pricing.
+
+Subagent views use only content-free structural relationships and existing
+usage evidence. They do not expose prompts, responses, reasoning, tool
+contents, commands, or trace paths. Partial relationship, token, or cost
+coverage stays explicitly partial or unavailable.
 
 The optional MCP returns bounded derived evidence, not prompts, responses,
 reasoning, tool contents, credentials, settings, or trace paths. A result sent
