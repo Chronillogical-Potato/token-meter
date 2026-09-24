@@ -203,11 +203,12 @@ from the visible All Sessions row slice. Non-all scopes also carry the
 immediately preceding equal-duration comparison body. Named provider roles are
 additionally aggregated into a content-free local-calendar daily series,
 bounded to 4,000 role/day/project/runtime/kind rows with explicit truncation
-metadata. The Roles workspace uses those structures for spend, average
-cost-per-run, volume, and guardrail trends; it never derives exact trend totals
-from the 1,000-row visible inventory. Role, nickname, model, status, signal,
-and text filters operate only on that bounded child inventory, so the browser
-suspends role trends while a filter not represented by the aggregate is active.
+metadata. The Roles workspace uses those structures to render one spend,
+average-cost-per-run, or volume trend per role; it never derives exact trend
+totals from the 1,000-row visible inventory. Role, nickname, model, status,
+signal, and text filters operate only on that bounded child inventory, so the
+browser suspends role trends while a filter not represented by the aggregate is
+active.
 Git reads bounded local remote-tracking reflogs. The installer seeds
 readable history in its invoking app's context, then the background service
 rechecks accessible repositories every five minutes. This preserves useful

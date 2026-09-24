@@ -20,16 +20,16 @@ compared periods has cost evidence.
 
 ## Page structure
 
-Roles remains the first Subagents tab. Its results area becomes a role-economics
-workspace with four layers:
+Roles remains the first Subagents tab. Its results area becomes a compact
+role-economics workspace with three layers:
 
-1. A KPI strip for named-role spend, median cost per run, spawned runs, and cost
-   coverage.
-2. A daily trend chart with Spend, Cost/run, and Runs modes.
-3. A “What changed” panel that separates cost-per-run movement, run-volume
-   movement, and long-tail concentration.
-4. The role comparison table, retaining total spend, run count, incomplete and
-   review rates, median/P95 cost, and tokens.
+1. A three-metric strip for named-role spend, average cost per run, and spawned
+   runs, with cost coverage kept in supporting copy.
+2. A shared Spend, Cost/run, and Runs control that renders a distinct daily
+   chart for every provider-reported role.
+3. Compact role rows retaining run count, cost coverage, average/P95 cost,
+   incomplete and review counts, and a View runs drill-down. That drill-down is
+   a browser-history transition so Back restores the prior Roles state.
 
 The existing App, Project, and Time range filters apply to the analytics.
 Search, Model, Status, and Signal remain inventory-level filters. When any of

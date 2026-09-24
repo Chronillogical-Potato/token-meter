@@ -5999,6 +5999,40 @@ else{{
         self.assertEqual(payload["outlier"]["query"], "reviewer")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_drilldown_adds_restorable_browser_history(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const calls=[];
+const history={{state:{{sessionScope:'all'}},replaceState(state,title,url){{this.state=state;calls.push(['replace',state.subagent]);}},pushState(state,title,url){{this.state=state;calls.push(['push',state.subagent]);}}}};
+const location={{href:'http://127.0.0.1:8722/#sessions-subagents'}};
+const localStorage={{setItem(){{}},removeItem(){{}}}};
+const subagentFilterDefaults={{query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+let subagentView='roles',subagentFilters={{...subagentFilterDefaults,project:'/token-meter',window:'30d'}},selectedSubagentId='child',expandedSubagentRoot='root';
+const persistSubagentFilter=()=>{{}},resetSubagentResultView=()=>{{}};
+eval(['normalizedSubagentNavigationState','restoreSubagentNavigationState','openSubagentRoleRuns'].map(extract).join('\\n'));
+openSubagentRoleRuns('token_meter_reviewer','codex');
+const drilldown={{view:subagentView,filters:subagentFilters}};
+restoreSubagentNavigationState(calls[0][1]);
+process.stdout.write(JSON.stringify({{calls,drilldown,restored:{{view:subagentView,filters:subagentFilters}},sessionScope:history.state.sessionScope}}));
+"""
+        completed = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+
+        self.assertEqual([call[0] for call in payload["calls"]], ["replace", "push"])
+        self.assertEqual(payload["calls"][0][1]["view"], "roles")
+        self.assertEqual(payload["calls"][0][1]["filters"]["project"], "/token-meter")
+        self.assertEqual(payload["drilldown"]["view"], "sessions")
+        self.assertEqual(payload["drilldown"]["filters"]["query"], "token_meter_reviewer")
+        self.assertEqual(payload["restored"]["view"], "roles")
+        self.assertEqual(payload["restored"]["filters"]["window"], "30d")
+        self.assertEqual(payload["sessionScope"], "all")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_session_rows_keep_spawned_run_count(self):
         script = f"""
 const fs=require('fs');
@@ -6091,19 +6125,22 @@ process.stdout.write(JSON.stringify({{result,partial,filtered}}));
         self.assertEqual(payload["filtered"]["reason"], "filtered")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_subagent_role_economics_renders_chart_insights_and_drilldown(self):
+    def test_subagent_role_economics_renders_a_clear_chart_for_each_role(self):
         script = f"""
 const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),appFilterLabel=({{provider}})=>provider;
+const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,appFilterLabel=({{provider}})=>provider;
 let subagentRoleChartMode='spend';
-eval(['subagentRoleKey','renderSubagentRoleChart','renderSubagentRoleEconomics'].map(extract).join('\\n'));
+eval(['subagentRoleKey','renderSubagentRoleSparkline','renderSubagentRoleEconomics'].map(extract).join('\\n'));
 const economics={{reason:null,window:'7d',runs:3,cost:8,averageCost:8/3,costCovered:3,previousRuns:1,previousCost:8,costChange:0,averageCostChange:-2/3,runChange:2,incomplete:1,attention:1,previousIncomplete:0,roles:[
  {{id:'reviewer::codex::spawned',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost:6,cost_available:true,cost_covered_agents:2,known_tokens:600,tokens_available:true,token_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:1,attention_agents:1,costChange:-.25,runChange:1,averageCostChange:-.625}},
+ {{id:'tester::codex::spawned',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:2,cost:2,cost_available:true,cost_covered_agents:1,known_tokens:200,tokens_available:true,token_covered_agents:1,median_cost:2,p95_cost:2,incomplete_agents:0,attention_agents:0,costChange:.2,runChange:0,averageCostChange:.2}},
 ],days:[
  {{day:'2026-09-23',runtime:'codex',kind:'spawned',role:'reviewer',agents:1,known_cost:4,cost_available:true,cost_covered_agents:1}},
  {{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2}},
+ {{day:'2026-09-23',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:1,cost_available:true,cost_covered_agents:1}},
+ {{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:2,cost_available:true,cost_covered_agents:1}},
 ]}};
 process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics)}}));
 """
@@ -6114,12 +6151,17 @@ process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics
         payload = json.loads(completed.stdout)
 
         html = payload["html"]
-        self.assertIn("Role spend over time", html)
+        self.assertIn("Role trends", html)
         self.assertIn("Cost / run", html)
-        self.assertIn("What changed", html)
-        self.assertIn("<svg", html)
+        self.assertEqual(html.count("<svg"), 2)
+        self.assertIn('aria-label="reviewer spend trend"', html)
+        self.assertIn('aria-label="tester spend trend"', html)
         self.assertIn("data-subagent-inspect-role=", html)
         self.assertIn("reviewer", html)
+        self.assertIn("tester", html)
+        self.assertIn("View runs", html)
+        self.assertNotIn("What changed", html)
+        self.assertNotIn("Role spend over time", html)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_role_economics_withholds_truncated_period_insights(self):
@@ -6129,7 +6171,7 @@ const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
 const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,appFilterLabel=({{provider}})=>provider;
 let subagentRoleChartMode='spend';
-eval(['subagentRoleKey','renderSubagentRoleChart','renderSubagentRoleEconomics'].map(extract).join('\\n'));
+eval(['subagentRoleKey','renderSubagentRoleSparkline','renderSubagentRoleEconomics'].map(extract).join('\\n'));
 const economics={{reason:null,window:'7d',runs:2,cost:6,averageCost:3,costCovered:2,previousRuns:1,previousCost:2,costChange:2,averageCostChange:.5,runChange:1,incomplete:0,attention:0,previousIncomplete:0,trendTruncated:true,roles:[
  {{runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:0,attention_agents:0,costChange:2,runChange:1}},
 ],days:[{{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true}}]}};
@@ -6139,31 +6181,32 @@ process.stdout.write(renderSubagentRoleEconomics(economics));
             ["node", "-e", script], capture_output=True, text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("Role trend is unavailable", completed.stdout)
-        self.assertIn("Period insights unavailable", completed.stdout)
+        self.assertIn("Trend unavailable", completed.stdout)
+        self.assertIn("daily history was truncated", completed.stdout)
         self.assertNotIn("What changed", completed.stdout)
         self.assertNotIn("Higher spend for reviewer", completed.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_subagent_role_chart_groups_lower_spend_roles(self):
+    def test_subagent_role_charts_do_not_hide_lower_spend_roles(self):
         script = f"""
 const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-const esc=value=>String(value),appFilterLabel=({{provider}})=>provider;
+const esc=value=>String(value);
 let subagentRoleChartMode='spend';
-eval(['subagentRoleKey','renderSubagentRoleChart'].map(extract).join('\\n'));
-const days=Array.from({{length:6}},(_,index)=>({{day:'2026-09-24',runtime:'codex',kind:'spawned',role:`role_${{index+1}}`,agents:1,known_cost:6-index,cost_available:true}}));
-process.stdout.write(renderSubagentRoleChart({{trendTruncated:false,days}}));
+eval(['subagentRoleKey','renderSubagentRoleSparkline'].map(extract).join('\\n'));
+const roles=Array.from({{length:6}},(_,index)=>({{runtime:'codex',kind:'spawned',role:`role_${{index+1}}`}}));
+const days=roles.map((row,index)=>({{day:'2026-09-24',...row,agents:1,known_cost:6-index,cost_available:true}}));
+process.stdout.write(roles.map(row=>renderSubagentRoleSparkline({{trendTruncated:false,days}},row)).join(''));
 """
         completed = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("Other roles", completed.stdout)
-        self.assertIn("role_4", completed.stdout)
-        self.assertNotIn("role_5", completed.stdout)
-        self.assertNotIn("role_6", completed.stdout)
+        self.assertEqual(completed.stdout.count("<svg"), 6)
+        self.assertIn('aria-label="role_5 spend trend"', completed.stdout)
+        self.assertIn('aria-label="role_6 spend trend"', completed.stdout)
+        self.assertNotIn("Other roles", completed.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_workspace_groups_parent_sessions_and_prioritizes_issues(self):
