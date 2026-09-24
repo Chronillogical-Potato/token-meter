@@ -6122,6 +6122,50 @@ process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics
         self.assertIn("reviewer", html)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_economics_withholds_truncated_period_insights(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,appFilterLabel=({{provider}})=>provider;
+let subagentRoleChartMode='spend';
+eval(['subagentRoleKey','renderSubagentRoleChart','renderSubagentRoleEconomics'].map(extract).join('\\n'));
+const economics={{reason:null,window:'7d',runs:2,cost:6,averageCost:3,costCovered:2,previousRuns:1,previousCost:2,costChange:2,averageCostChange:.5,runChange:1,incomplete:0,attention:0,previousIncomplete:0,trendTruncated:true,roles:[
+ {{runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:0,attention_agents:0,costChange:2,runChange:1}},
+],days:[{{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true}}]}};
+process.stdout.write(renderSubagentRoleEconomics(economics));
+"""
+        completed = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Role trend is unavailable", completed.stdout)
+        self.assertIn("Period insights unavailable", completed.stdout)
+        self.assertNotIn("What changed", completed.stdout)
+        self.assertNotIn("Higher spend for reviewer", completed.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_chart_groups_lower_spend_roles(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const esc=value=>String(value),appFilterLabel=({{provider}})=>provider;
+let subagentRoleChartMode='spend';
+eval(['subagentRoleKey','renderSubagentRoleChart'].map(extract).join('\\n'));
+const days=Array.from({{length:6}},(_,index)=>({{day:'2026-09-24',runtime:'codex',kind:'spawned',role:`role_${{index+1}}`,agents:1,known_cost:6-index,cost_available:true}}));
+process.stdout.write(renderSubagentRoleChart({{trendTruncated:false,days}}));
+"""
+        completed = subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Other roles", completed.stdout)
+        self.assertIn("role_4", completed.stdout)
+        self.assertNotIn("role_5", completed.stdout)
+        self.assertNotIn("role_6", completed.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_workspace_groups_parent_sessions_and_prioritizes_issues(self):
         script = f"""
 const fs=require('fs');
