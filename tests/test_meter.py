@@ -5815,6 +5815,12 @@ class DashboardLayoutTests(unittest.TestCase):
         self.assertNotIn("<span>Elapsed</span>", self.page)
         self.assertNotIn("evidenceMetric('Elapsed'", self.page)
 
+    def test_agent_activity_work_time_header_aligns_with_right_aligned_values(self):
+        self.assertIn(
+            ".agentTreeHeader .fieldtip{justify-content:flex-end}",
+            self.page,
+        )
+
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_explorer_prefers_roles_and_filters_status_and_signals(self):
         script = f"""
