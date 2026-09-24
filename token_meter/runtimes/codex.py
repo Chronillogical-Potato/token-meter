@@ -1719,6 +1719,10 @@ class CodexRuntimeAdapter:
             "retries": 0,
             "failed_attempts": 0,
             "tool_calls": tool_calls,
+            "work_time_s": (
+                sum(float(sample.get("duration_s") or 0) for sample in wait_samples)
+                if wait_samples else None
+            ),
         }]
         return row
 

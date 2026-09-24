@@ -111,6 +111,11 @@ publishing a hierarchy. A reconciliation mismatch omits the breakdown instead
 of changing the established total. Stale nonterminal provider traces are
 classified as `incomplete`; that lifecycle state is independent of the
 deterministic cost/retry attention signals.
+Subagent `work_time_s` is derived only from each adapter's completed
+prompt-to-response timing samples. It includes reasoning and tool execution
+within a response but excludes inter-prompt gaps, open responses, and idle time
+after completion. Missing component-level timing evidence remains unavailable;
+the relationship layer never substitutes timestamp lifespan.
 
 The Pi adapter reads only Pi-owned JSONL session files and accepts a source only
 when it has the expected Pi session header. It projects recorded usage, local

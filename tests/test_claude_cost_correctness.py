@@ -59,6 +59,23 @@ def assistant(message_id, usage, timestamp="2026-09-07T00:00:00.000Z"):
     }
 
 
+def user_prompt(timestamp):
+    return {
+        "type": "user",
+        "timestamp": timestamp,
+        "message": {"content": [{"type": "text", "text": "private prompt"}]},
+    }
+
+
+def turn_duration(duration_ms, timestamp):
+    return {
+        "type": "system",
+        "subtype": "turn_duration",
+        "timestamp": timestamp,
+        "durationMs": duration_ms,
+    }
+
+
 class ClaudeCostCalculationTests(unittest.TestCase):
     def test_five_minute_and_one_hour_cache_writes_use_distinct_rates(self):
         cost = meter.cost_of(
@@ -405,6 +422,38 @@ class ClaudeGroupedDiscoveryTests(unittest.TestCase):
         self.assertNotIn(str(self.nested), encoded)
         self.assertNotIn("agent-one", encoded)
         self.assertNotIn("private response", encoded)
+
+    def test_nested_components_report_completed_work_time_not_wall_lifespan(self):
+        self.adapter.compatibility = meter._claude_compatibility()
+        self.main.write_text("".join((
+            json.dumps(user_prompt("2026-09-07T00:00:00.000Z")) + "\n",
+            json.dumps(assistant(
+                "root-work", claude_usage(input_tokens=10, output_tokens=1),
+                "2026-09-07T02:00:00.000Z",
+            )) + "\n",
+            json.dumps(turn_duration(
+                600000, "2026-09-07T02:00:00.000Z",
+            )) + "\n",
+            json.dumps(user_prompt("2026-09-07T02:30:00.000Z")) + "\n",
+        )))
+        self.nested.write_text("".join((
+            json.dumps(user_prompt("2026-09-07T03:00:00.000Z")) + "\n",
+            json.dumps(assistant(
+                "child-work", claude_usage(input_tokens=20, output_tokens=2),
+                "2026-09-07T04:00:00.000Z",
+            )) + "\n",
+            json.dumps(turn_duration(
+                120000, "2026-09-07T04:00:00.000Z",
+            )) + "\n",
+        )))
+        source = self.adapter.discover_legacy(
+            DiscoveryContext(home=str(self.root)),
+        )[0]
+
+        root, child = self.adapter.summarize_legacy(source)["_agent_records"]
+
+        self.assertEqual(root["work_time_s"], 600)
+        self.assertEqual(child["work_time_s"], 120)
 
     def test_stale_nonterminal_components_are_incomplete(self):
         self.adapter.compatibility = meter._claude_compatibility()

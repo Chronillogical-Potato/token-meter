@@ -13,7 +13,7 @@ AGENT_FIELDS = (
     "last_activity_at", "input_tokens", "output_tokens", "cache_read_tokens",
     "cache_write_tokens", "reasoning_tokens", "tokens", "tokens_available",
     "cost", "cost_available", "executions", "attempts", "retries",
-    "failed_attempts", "tool_calls", "elapsed_s", "group_cost_share",
+    "failed_attempts", "tool_calls", "work_time_s", "group_cost_share",
     "navigable", "attention_level",
 )
 AGENT_TOTAL_FIELDS = (
@@ -42,7 +42,7 @@ AGENT_USAGE_INVENTORY_FIELDS = (
     "id", "root_session_id", "project", "runtime", "client", "kind",
     "depth", "label", "role", "model", "activity_state",
     "last_activity_at", "tokens", "tokens_available", "cost",
-    "cost_available", "elapsed_s", "executions", "attempts", "retries",
+    "cost_available", "work_time_s", "executions", "attempts", "retries",
     "failed_attempts", "tool_calls",
 )
 

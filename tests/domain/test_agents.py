@@ -36,6 +36,7 @@ def agent(agent_id, *, parent_id=None, session_id=None, kind="spawned",
         "retries": extra.pop("retries", 0),
         "failed_attempts": extra.pop("failed_attempts", 0),
         "tool_calls": extra.pop("tool_calls", 0),
+        "work_time_s": extra.pop("work_time_s", None),
         **extra,
     }
     return row
@@ -221,6 +222,27 @@ class AgentGroupDomainTests(unittest.TestCase):
         ):
             self.assertNotIn(private_key, child)
 
+    def test_work_time_uses_completed_response_evidence_not_agent_lifespan(self):
+        groups = build_agent_groups([session(
+            "root-session",
+            agent(
+                "root", session_id="root-session", kind="root", depth=0,
+                started_at=0, ended_at=7200, work_time_s=600,
+            ),
+            agent(
+                "child", parent_id="root", started_at=0, ended_at=7200,
+                work_time_s=600,
+            ),
+        )], now=7200)
+
+        child = groups[0]["agents"][1]
+        self.assertEqual(child["work_time_s"], 600)
+        self.assertNotIn("elapsed_s", child)
+
+        inventory = aggregate_agent_usage(groups, now=7200)["inventory"]
+        self.assertEqual(inventory[0]["work_time_s"], 600)
+        self.assertNotIn("elapsed_s", inventory[0])
+
     def test_cross_session_usage_counts_only_children_and_scopes_models(self):
         groups = build_agent_groups([
             session(
@@ -338,7 +360,7 @@ class AgentGroupDomainTests(unittest.TestCase):
             "tokens_available": True,
             "cost": 2.0,
             "cost_available": True,
-            "elapsed_s": 10.0,
+            "work_time_s": None,
             "executions": 1,
             "attempts": 1,
             "retries": 3,

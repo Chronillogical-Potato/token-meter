@@ -112,9 +112,12 @@ Within a session, **Run** shows usage, timing, tool activity, and the session
 budget cap in one view. When local Claude or Codex evidence establishes a
 parent-child relationship, **Agent activity** adds the main session and its
 descendants with model, activity state, tokens, estimated cost, group share,
-and elapsed time. A navigable Codex child opens its own session detail. Claude
-child work stays a structural component of the grouped Claude session, so it
-does not become duplicate top-level spend.
+and work time. Work time is the cumulative duration of completed
+prompt-to-response turns. It includes reasoning and tool use, excludes idle
+gaps between prompts and time after completion, and stays unavailable when the
+provider trace cannot establish it. A navigable Codex child opens its own
+session detail. Claude child work stays a structural component of the grouped
+Claude session, so it does not become duplicate top-level spend.
 
 **Needs attention** is an explained investigation signal, not a diagnosis.
 Depending on available evidence, reasons can include active cost concentration,
@@ -176,7 +179,7 @@ when either compared period lacks complete cost evidence. Lower spend does not
 establish better output or a successful task.
 
 Select a child in Issues or Sessions to keep the parent list visible while the
-inspector shows identity, lifecycle, cost, tokens, elapsed time, executions,
+inspector shows identity, lifecycle, cost, tokens, work time, executions,
 tool calls, retry evidence, sibling position, comparable-agent cost evidence,
 and the exact reasons for a review signal. **Open parent session** moves to the
 normal session detail and its full Agent activity hierarchy. Parent titles are

@@ -962,19 +962,30 @@ class ClaudeRuntimeAdapter:
                 "id": agent_id(path),
                 "parent_id": agent_id(parent_path) if parent_path else None,
                 "depth": depth,
+                "path": path,
                 "messages": tuple(messages_by_path.get(path) or ()),
             })
         return tuple(layout)
 
-    def _legacy_agent_records(self, source, owned_messages, summary, compat):
+    def _legacy_agent_records(
+        self, source, owned_messages, owned_rows, summary, compat,
+    ):
         add_model_summary = compat["add_model_summary"]
         claude_billing_supported = compat["claude_billing_supported"]
         cost_of = compat["cost_of"]
         price_for = compat["price_for"]
         usage_tokens = compat["usage_tokens"]
+        claude_wait_samples = compat["claude_wait_samples"]
+        rows_by_path = defaultdict(list)
+        main_path = str(source.get("path") or "")
+        for row, owner_path in owned_rows:
+            rows_by_path[str(owner_path or main_path)].append(row)
         records = []
         for component in self._component_layout(source, owned_messages):
             messages = component["messages"]
+            work_samples = claude_wait_samples(
+                tuple(rows_by_path.get(component["path"]) or ()),
+            )
             component_cost = 0.0
             component_tokens = 0
             component_input = 0
@@ -1098,6 +1109,12 @@ class ClaudeRuntimeAdapter:
                 "retries": 0,
                 "failed_attempts": 0,
                 "tool_calls": tool_calls,
+                "work_time_s": (
+                    sum(
+                        float(sample.get("duration_s") or 0)
+                        for sample in work_samples
+                    ) if work_samples else None
+                ),
             })
 
         reconciled = (
@@ -1724,7 +1741,7 @@ class ClaudeRuntimeAdapter:
         attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(claude_tool_call_evidence(objs, msgs))
         agent_records = self._legacy_agent_records(
-            source, owned_msgs, row, compat,
+            source, owned_msgs, owned_rows, row, compat,
         )
         if agent_records:
             row["_agent_records"] = list(agent_records)

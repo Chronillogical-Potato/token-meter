@@ -741,6 +741,31 @@ class CodexRuntimeAdapterTests(unittest.TestCase):
         )
         self.assertNotIn("agent_path", record)
 
+    def test_summary_agent_work_time_sums_completed_prompt_response_durations(self):
+        self.adapter.compatibility = meter._codex_compatibility()
+        path = self._write_trace("work-time", [
+            self._session_meta("work-time-physical", "work-time-public"),
+            self._turn(timestamp="2026-08-11T00:00:01Z"),
+            {"timestamp": "2026-08-11T00:00:02Z", "type": "event_msg",
+             "payload": {"type": "task_started"}},
+            self._token_event(100, 10, 100, 10, "2026-08-11T01:59:59Z"),
+            {"timestamp": "2026-08-11T02:00:02Z", "type": "event_msg",
+             "payload": {"type": "task_complete", "duration_ms": 600000}},
+            self._turn(timestamp="2026-08-11T03:00:01Z"),
+            {"timestamp": "2026-08-11T03:00:02Z", "type": "event_msg",
+             "payload": {"type": "task_started"}},
+            self._token_event(20, 2, 120, 12, "2026-08-11T04:00:02Z"),
+        ], mtime=20)
+        source = next(
+            item for item in self.adapter.discover_legacy(self.context)
+            if item["path"] == str(path)
+        )
+
+        record = self.adapter.summarize_legacy(source)["_agent_records"][0]
+
+        self.assertEqual(record["work_time_s"], 600)
+        self.assertEqual(record["activity_state"], "incomplete")
+
     def test_parent_appearance_changes_child_lineage_revision(self):
         child_path = self._write_trace("revision-child", [
             self._session_meta(

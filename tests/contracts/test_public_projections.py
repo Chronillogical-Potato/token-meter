@@ -208,7 +208,8 @@ class PublicProjectionTests(unittest.TestCase):
             "role": "token_meter_reviewer", "model": "gpt-5.6-terra",
             "activity_state": "incomplete", "last_activity_at": 100,
             "tokens": 200, "tokens_available": True,
-            "cost": 0.5, "cost_available": True, "elapsed_s": 30,
+            "cost": 0.5, "cost_available": True, "work_time_s": 30,
+            "elapsed_s": 7200,
             "executions": 1, "attempts": 1, "retries": 3,
             "failed_attempts": 0, "tool_calls": 0,
             "attention": [{
@@ -231,6 +232,8 @@ class PublicProjectionTests(unittest.TestCase):
         self.assertEqual(
             projected["inventory"][0]["role"], "token_meter_reviewer",
         )
+        self.assertEqual(projected["inventory"][0]["work_time_s"], 30)
+        self.assertNotIn("elapsed_s", projected["inventory"][0])
         self.assertEqual(projected["inventory"][0]["attention"], [{
             "code": "retry_pressure", "explanation": "3 retries",
         }])

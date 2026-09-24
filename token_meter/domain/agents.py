@@ -22,7 +22,7 @@ PUBLIC_AGENT_FIELDS = (
     "label", "role", "model", "activity_state", "started_at", "ended_at",
     "last_activity_at", "input_tokens", "output_tokens", "cache_read_tokens",
     "cache_write_tokens", "reasoning_tokens", "tokens", "cost", "executions",
-    "attempts", "retries", "failed_attempts", "tool_calls",
+    "attempts", "retries", "failed_attempts", "tool_calls", "work_time_s",
 )
 
 
@@ -81,6 +81,7 @@ def _normalize_record(raw, owner_session_id, owner_project):
     if activity_state not in ACTIVITY_STATES:
         activity_state = "unknown"
     reported_depth = _nonnegative_number(raw.get("depth"))
+    work_time_s = _nonnegative_number(raw.get("work_time_s"))
     normalized = {
         "id": agent_id,
         "parent_id": parent_id,
@@ -110,6 +111,7 @@ def _normalize_record(raw, owner_session_id, owner_project):
         "retries": _nonnegative_int(raw.get("retries")),
         "failed_attempts": _nonnegative_int(raw.get("failed_attempts")),
         "tool_calls": _nonnegative_int(raw.get("tool_calls")),
+        "work_time_s": work_time_s,
         "_owner_session_id": owner_session_id,
         "_owner_project": owner_project,
     }
@@ -157,15 +159,6 @@ def _totals(records):
         "known_cost": known_cost,
         "cost_available": cost_available,
     }
-
-
-def _elapsed_seconds(record, now):
-    started_at = record.get("started_at")
-    if started_at is None:
-        return None
-    ended_at = record.get("ended_at")
-    stop = ended_at if ended_at is not None else now
-    return max(0.0, float(stop) - float(started_at))
 
 
 def _attention(records, totals):
@@ -250,7 +243,6 @@ def _public_agent(record, totals, now, attention_ids):
     projected["tokens_available"] = record["tokens_available"]
     projected["cost"] = record["cost"] if record["cost_available"] else None
     projected["cost_available"] = record["cost_available"]
-    projected["elapsed_s"] = _elapsed_seconds(record, now)
     projected["group_cost_share"] = (
         record["cost"] / totals["known_cost"]
         if totals["cost_available"] and totals["known_cost"] > 0 else None
@@ -608,7 +600,7 @@ def _inventory_row(record, group, attention, now):
         "tokens_available": record["tokens_available"],
         "cost": record["cost"] if record["cost_available"] else None,
         "cost_available": record["cost_available"],
-        "elapsed_s": _elapsed_seconds(record, now),
+        "work_time_s": record["work_time_s"],
         "executions": record["executions"],
         "attempts": record["attempts"],
         "retries": record["retries"],

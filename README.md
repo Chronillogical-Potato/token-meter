@@ -116,7 +116,10 @@ provider nicknames remain a fallback. A stale nonterminal trace is labeled
 **Incomplete**, independently of any attention signal. The default **Roles**
 view gives every named role its own spend, cost-per-run, or run-volume trend,
 compares equal periods when coverage permits, and links each role back to its
-runs. Browser Back returns from that drill-down to the same Roles filters.
+runs. **Work time** sums completed prompt-to-response durations, including
+reasoning and tool use while excluding gaps between prompts; missing timing
+evidence remains unavailable. Browser Back returns from that drill-down to the
+same Roles filters.
 
 <p align="center">
   <img src="images/dashboard.png" alt="Token Meter session detail with live cost, token, context, and execution metrics" width="900">

@@ -5810,6 +5810,10 @@ class DashboardLayoutTests(unittest.TestCase):
             self.assertIn(expected, self.page)
         self.assertIn("Needs attention", self.page)
         self.assertIn("possible issue, not a diagnosis", self.page)
+        self.assertIn("Work time", self.page)
+        self.assertIn("completed prompt-to-response time", self.page)
+        self.assertNotIn("<span>Elapsed</span>", self.page)
+        self.assertNotIn("evidenceMetric('Elapsed'", self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_explorer_prefers_roles_and_filters_status_and_signals(self):
@@ -5820,16 +5824,17 @@ function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0
 eval(extract('agentIdentityPresentation'));
 eval(extract('filterSubagentInventory'));
 const usage={{inventory_count:3,inventory_truncated:false,inventory:[
- {{id:'a',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:'token_meter_reviewer',label:'Heisenberg',activity_state:'complete',last_activity_at:100,tokens:10,tokens_available:true,cost:1,cost_available:true,elapsed_s:30,attention:[]}},
- {{id:'b',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:null,label:'Gauss',activity_state:'incomplete',last_activity_at:200,tokens:20,tokens_available:true,cost:4,cost_available:true,elapsed_s:60,attention:[{{code:'peer_cost_outlier',explanation:'3x peers'}}]}},
- {{id:'c',root_session_id:'root-c',project:'/luna-3',runtime:'claude',model:'opus',role:null,label:'',activity_state:'working',last_activity_at:300,tokens:null,tokens_available:false,cost:null,cost_available:false,elapsed_s:90,attention:[]}},
+ {{id:'a',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:'token_meter_reviewer',label:'Heisenberg',activity_state:'complete',last_activity_at:100,tokens:10,tokens_available:true,cost:1,cost_available:true,work_time_s:30,attention:[]}},
+ {{id:'b',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:null,label:'Gauss',activity_state:'incomplete',last_activity_at:200,tokens:20,tokens_available:true,cost:4,cost_available:true,work_time_s:60,attention:[{{code:'peer_cost_outlier',explanation:'3x peers'}}]}},
+ {{id:'c',root_session_id:'root-c',project:'/luna-3',runtime:'claude',model:'opus',role:null,label:'',activity_state:'working',last_activity_at:300,tokens:null,tokens_available:false,cost:null,cost_available:false,work_time_s:null,attention:[]}},
 ]}};
 const result=filterSubagentInventory(usage,{{query:'gauss',runtime:'codex',project:'/token-meter',model:'gpt',status:'incomplete',signal:'peer_cost_outlier',window:'all',sort:'cost'}},400);
+const workSorted=filterSubagentInventory(usage,{{query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'work'}},400);
 process.stdout.write(JSON.stringify({{
  role:agentIdentityPresentation(usage.inventory[0],0),
  nickname:agentIdentityPresentation(usage.inventory[1],1),
  fallback:agentIdentityPresentation(usage.inventory[2],2),
- result,
+ result,workSorted,
 }}));
 """
         payload = json.loads(subprocess.run(
@@ -5850,6 +5855,10 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(payload["result"]["summary"]["attention"], 1)
         self.assertEqual(payload["result"]["summary"]["parentSessions"], 1)
         self.assertTrue(payload["result"]["summary"]["complete"])
+        self.assertEqual(
+            [row["id"] for row in payload["workSorted"]["rows"]],
+            ["b", "a", "c"],
+        )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_explorer_withholds_filtered_totals_when_inventory_is_truncated(self):
@@ -6041,12 +6050,14 @@ function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0
 const selectedSubagentId='',expandedSubagentRoot='not-this-root';
 const esc=value=>String(value),f=value=>String(value),countWord=(value,word)=>value===1?word:`${{word}}s`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),currentSessionAge=()=> 'now',durationShort=value=>`${{value}}s`;
 const agentIdentityPresentation=(row)=>({{primary:row.role||row.label,secondary:''}}),subagentParentPresentation=()=>({{title:'Parent run',project:'token-meter'}});
+eval(extract('groupSubagentSessions'));
 eval(extract('subagentGroupHtml'));
 const rows=[
- {{id:'a',role:'reviewer',kind:'spawned',activity_state:'complete',model:'gpt',cost:1,cost_available:true,tokens:10,tokens_available:true,elapsed_s:30,attention:[]}},
- {{id:'b',role:'tester',kind:'spawned',activity_state:'incomplete',model:'gpt',cost:2,cost_available:true,tokens:20,tokens_available:true,elapsed_s:45,attention:[]}},
+ {{id:'a',role:'reviewer',kind:'spawned',activity_state:'complete',model:'gpt',cost:1,cost_available:true,tokens:10,tokens_available:true,work_time_s:600,attention:[]}},
+ {{id:'b',role:'tester',kind:'spawned',activity_state:'incomplete',model:'gpt',cost:2,cost_available:true,tokens:20,tokens_available:true,work_time_s:null,attention:[]}},
 ];
-const html=subagentGroupHtml({{rootSessionId:'root',rows,agents:2,attention:0,incomplete:1,working:0,cost:3,costCovered:2,knownTokens:30,tokenCovered:2,lastActivity:100,project:'/token-meter'}},0,new Map(),false);
+rows.forEach(row=>{{row.root_session_id='root';row.project='/token-meter';}});
+const html=subagentGroupHtml(groupSubagentSessions(rows,false,'work')[0],0,new Map(),false);
 process.stdout.write(JSON.stringify({{html}}));
 """
         payload = json.loads(subprocess.run(
@@ -6054,6 +6065,9 @@ process.stdout.write(JSON.stringify({{html}}));
         ).stdout)
         self.assertIn("Spawned runs", payload["html"])
         self.assertIn("<b>2</b>", payload["html"])
+        self.assertIn("Work time", payload["html"])
+        self.assertIn("600s", payload["html"])
+        self.assertIn("work time --", payload["html"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_role_table_reports_total_covered_spend(self):
