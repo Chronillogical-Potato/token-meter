@@ -6175,16 +6175,22 @@ eval(['subagentRoleKey','renderSubagentRoleSparkline','renderSubagentRoleEconomi
 const economics={{reason:null,window:'7d',runs:2,cost:6,averageCost:3,costCovered:2,previousRuns:1,previousCost:2,costChange:2,averageCostChange:.5,runChange:1,incomplete:0,attention:0,previousIncomplete:0,trendTruncated:true,roles:[
  {{runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true,cost_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:0,attention_agents:0,costChange:2,runChange:1}},
 ],days:[{{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost_available:true}}]}};
-process.stdout.write(renderSubagentRoleEconomics(economics));
+const spend=renderSubagentRoleEconomics(economics);
+subagentRoleChartMode='runs';
+const runs=renderSubagentRoleEconomics(economics);
+process.stdout.write(JSON.stringify({{spend,runs}}));
 """
         completed = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("Trend unavailable", completed.stdout)
-        self.assertIn("daily history was truncated", completed.stdout)
-        self.assertNotIn("What changed", completed.stdout)
-        self.assertNotIn("Higher spend for reviewer", completed.stdout)
+        payload = json.loads(completed.stdout)
+        for html in payload.values():
+            self.assertIn("Trend unavailable", html)
+            self.assertIn("daily history was truncated", html)
+            self.assertNotIn("What changed", html)
+            self.assertNotIn("Higher spend for reviewer", html)
+        self.assertNotIn("+1 vs prior", payload["runs"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_role_charts_do_not_hide_lower_spend_roles(self):
