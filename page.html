@@ -6165,7 +6165,7 @@ function subagentActiveFilterItems(filters){
  if(filters.model)items.push({key:'model',label:'Model',value:filters.model});
  if(filters.status!=='all')items.push({key:'status',label:'Status',value:filters.status});
  if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Needs attention':String(filters.signal).replaceAll('_',' ')});
- if(filters.sort!=='recent')items.push({key:'sort',label:'Sort',value:filters.sort});
+ if(filters.sort!=='recent')items.push({key:'sort',label:'Sort',value:filters.sort==='work'?'Work time':filters.sort});
  return items;
 }
 function filterSubagentInventory(usage,filters,nowSeconds){

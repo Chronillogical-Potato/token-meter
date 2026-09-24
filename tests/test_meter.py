@@ -5974,6 +5974,21 @@ process.stdout.write(JSON.stringify({{
         self.assertIn('data-subagent-view=roles aria-selected=true', tablist)
         self.assertIn("localStorage.getItem('tm_subagent_view')||'roles'", self.page)
 
+    def test_subagent_work_sort_uses_user_facing_label_and_migrates_elapsed_preference(self):
+        self.assertIn(
+            "filters.sort==='work'?'Work time':filters.sort",
+            self.page,
+        )
+        self.assertIn("if(subagentFilters.sort==='elapsed')", self.page)
+        self.assertIn(
+            "localStorage.setItem('tm_subagent_filter_sort','work')",
+            self.page,
+        )
+        self.assertIn(
+            "rawSource.sort==='elapsed'?{...rawSource,sort:'work'}:rawSource",
+            self.page,
+        )
+
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_summary_tags_toggle_incomplete_and_attention_filters(self):
         script = f"""
