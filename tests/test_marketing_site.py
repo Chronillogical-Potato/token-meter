@@ -346,11 +346,11 @@ class GitHubPagesBranchSourceContractTests(unittest.TestCase):
         self.assertNotIn("@import", css)
         self.assertNotRegex(css, r"url\(\s*['\"]?(?:https?:)?//")
 
+        tracked_site_files = subprocess.check_output(
+            ["git", "ls-files", "--", "docs"], cwd=ROOT, text=True,
+        ).splitlines()
         self.assertEqual(
-            sorted(
-                str(path.relative_to(SITE))
-                for path in SITE.rglob("*") if path.is_file()
-            ),
+            sorted(str(Path(path).relative_to("docs")) for path in tracked_site_files),
             sorted(
                 [".nojekyll", "index.html", "styles.css", "tab-controller.js",
                  "script.js", "favicon.svg", "robots.txt", "sitemap.xml",
@@ -358,6 +358,8 @@ class GitHubPagesBranchSourceContractTests(unittest.TestCase):
                 + ["images/" + image for image in approved_images]
             ),
         )
+        for path in tracked_site_files:
+            self.assertTrue((ROOT / path).is_file(), path)
 
 
 if __name__ == "__main__":
