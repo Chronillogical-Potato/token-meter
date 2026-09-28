@@ -522,11 +522,14 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 body.sessionRoute #view-session.sessionSubagents .currentDaySummary{display:none}
 .subagentCommand{overflow:hidden;padding:0;box-shadow:var(--shadow-soft)}
 .subagentViewTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--line);background:rgba(5,9,13,.26)}
+.subagentViewTabs{grid-template-columns:repeat(2,minmax(0,1fr))}#view-subagents .subagentViewTabs{display:none}#view-session .subagentViewTabs [data-subagent-view=roles]{display:none}
 .subagentViewTabs button{display:flex;min-height:48px;align-items:center;justify-content:center;gap:8px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;font-size:11.5px;font-weight:780;cursor:pointer}.subagentViewTabs button:last-child{border-right:0}.subagentViewTabs button:hover,.subagentViewTabs button:focus-visible{background:rgba(0,188,235,.045);color:var(--fg);outline:none}.subagentViewTabs button[aria-selected=true]{background:linear-gradient(180deg,rgba(0,188,235,.12),rgba(0,188,235,.035));box-shadow:inset 0 -2px var(--accent);color:var(--fg)}.subagentViewTabs small{display:inline-grid;min-width:24px;height:20px;place-items:center;border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.035);color:var(--faint);font:750 9px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentViewTabs button[aria-selected=true] small{border-color:rgba(0,188,235,.38);background:rgba(0,188,235,.1);color:var(--orange3)}
 .subagentCommand .subagentFilterPrimary{padding:12px 13px 0}.subagentCommand .subagentFilterAdvanced{margin:10px 13px 0}.subagentCommand .subagentFilterFooter{margin:10px 13px 0;padding-bottom:10px}
+.subagentCommand .subagentFilterFooter[hidden]{display:none}
 .subagentCompactSummary{display:flex;align-items:center;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:thin}.subagentCompactMetric{display:flex;min-width:max-content;align-items:baseline;gap:7px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.022);padding:7px 10px;color:var(--faint);font:inherit;font-size:9.5px}.subagentCompactMetric b{color:var(--fg);font:770 12px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentCompactMetric.warn{border-color:rgba(255,180,87,.3);background:rgba(255,180,87,.055)}.subagentCompactMetric.warn b{color:var(--warn)}.subagentCompactMetric.dim b{color:var(--dim)}.subagentCompactMetric.actionable{cursor:pointer}.subagentCompactMetric.actionable:hover,.subagentCompactMetric.actionable:focus-visible{border-color:rgba(127,219,242,.52);background:rgba(0,188,235,.075);color:var(--fg);outline:none}.subagentCompactMetric.actionable[aria-pressed=true]{border-color:rgba(0,188,235,.58);background:rgba(0,188,235,.13);box-shadow:inset 0 0 0 1px rgba(0,188,235,.12);color:var(--orange3)}.subagentCompactMetric.actionable[aria-pressed=true] b{color:var(--orange3)}
 .subagentWorkspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,340px);gap:12px;align-items:start;margin-top:12px}.subagentResultsCard{overflow:hidden;box-shadow:var(--shadow-soft)}.subagentResultsHead{display:flex;min-height:58px;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line)}.subagentResultsHead h3{margin:0;font-size:13px}.subagentResultsHead p{margin:2px 0 0;color:var(--faint);font-size:9.5px}.subagentResultsHead>span{flex:none;color:var(--faint);font-size:10px}.subagentResultsEmpty{display:grid;min-height:220px;place-items:center;padding:28px;color:var(--dim);font-size:11.5px;text-align:center}.subagentResultsEmpty strong{display:block;margin-bottom:5px;color:var(--fg);font-size:13px}
 .subagentWorkspace.roleView{grid-template-columns:1fr}.subagentWorkspace.roleView .subagentInspector{display:none}
+.subagentModelDistribution{margin-top:12px;padding:13px 15px}.subagentModelHead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}.subagentModelHead h3{margin:0;font-size:12px}.subagentModelHead small{color:var(--faint);font-size:9px}.subagentModelRows{display:grid;gap:7px}.subagentModelRow{display:grid;grid-template-columns:minmax(150px,1fr) minmax(90px,2fr) 52px 90px;align-items:center;gap:12px;color:var(--dim);font-size:10px}.subagentModelIdentity{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentModelIdentity strong{color:var(--fg)}.subagentModelTrack{height:7px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.07)}.subagentModelTrack i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--orange3))}.subagentModelNumber{text-align:right;font:700 10px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentModelCost{text-align:right;font:700 10px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentModelCost small{display:block;margin-top:4px;color:var(--faint);font:500 8px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .subagentSessionGroup{border-bottom:1px solid var(--line);background:rgba(5,9,13,.12)}.subagentSessionGroup:last-child{border-bottom:0}.subagentSessionGroup>summary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;min-height:70px;padding:11px 14px;list-style:none;cursor:pointer}.subagentSessionGroup>summary::-webkit-details-marker{display:none}.subagentSessionGroup>summary:hover,.subagentSessionGroup>summary:focus-visible{background:rgba(0,188,235,.035);outline:none}.subagentSessionGroup[open]>summary{background:linear-gradient(90deg,rgba(0,188,235,.065),transparent 72%);box-shadow:inset 2px 0 var(--accent)}.subagentSessionGroup.hasAttention>summary{box-shadow:inset 2px 0 var(--warn)}.subagentSessionIdentity{min-width:0}.subagentSessionIdentity strong{display:flex;align-items:center;gap:7px;color:var(--fg);font-size:11.5px}.subagentSessionIdentity strong span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentSessionIdentity small{display:block;margin-top:3px;overflow:hidden;color:var(--faint);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}.subagentSessionBadges{display:flex;gap:5px;flex-wrap:wrap}.subagentSessionBadge{border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.03);padding:2px 6px;color:var(--dim);font-size:8px;font-weight:790;text-transform:uppercase}.subagentSessionBadge.warn{border-color:rgba(255,180,87,.38);background:rgba(255,180,87,.07);color:var(--warn)}.subagentSessionMetrics{display:grid;grid-template-columns:repeat(3,minmax(58px,auto));gap:12px;text-align:right}.subagentSessionMetric span{display:block;color:var(--faint);font-size:8px;text-transform:uppercase}.subagentSessionMetric b{display:block;margin-top:2px;color:var(--dim);font:720 10.5px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentSessionGroup>summary:after{content:"›";position:absolute;right:9px;color:var(--faint);transform:rotate(90deg)}.subagentSessionGroup[open]>summary:after{transform:rotate(-90deg)}
 .subagentChildHeader,.subagentChildRow{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(92px,.75fr) minmax(72px,.5fr) minmax(68px,.48fr);align-items:center;gap:9px}.subagentChildHeader{padding:7px 14px;border-top:1px solid var(--line);background:rgba(0,0,0,.12);color:var(--faint);font-size:7.5px;font-weight:800;text-transform:uppercase}.subagentChildHeader span:not(:first-child){text-align:right}.subagentChildRow{width:100%;min-height:58px;padding:8px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentChildRow:hover,.subagentChildRow:focus-visible{background:rgba(0,188,235,.04);outline:none}.subagentChildRow.selected{background:rgba(0,188,235,.08);box-shadow:inset 3px 0 var(--accent)}.subagentChildRow.attention{box-shadow:inset 2px 0 var(--warn)}.subagentChildRow.attention.selected{box-shadow:inset 2px 0 var(--warn),inset 5px 0 rgba(0,188,235,.36)}.subagentChildIdentity{min-width:0}.subagentChildIdentity strong{display:flex;align-items:center;gap:6px;min-width:0;color:var(--fg);font-size:10.5px}.subagentChildIdentity strong>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentChildIdentity small{display:block;margin-top:2px;overflow:hidden;color:var(--faint);font-size:8.8px;text-overflow:ellipsis;white-space:nowrap}.subagentChildMetric{text-align:right;font:680 9.8px/1.25 ui-monospace,"SF Mono",Menlo,monospace}
 .subagentSiblingLink{width:100%;border:0;border-top:1px solid var(--line);background:rgba(0,188,235,.025);padding:10px 14px;color:var(--orange3);font:inherit;font-size:9.5px;font-weight:740;text-align:left;cursor:pointer}.subagentSiblingLink:hover,.subagentSiblingLink:focus-visible{background:rgba(0,188,235,.07);color:var(--fg);outline:none}
@@ -539,6 +542,14 @@ body.sessionRoute #view-session.sessionSubagents .currentDaySummary{display:none
 @media(max-width:1180px){.subagentWorkspace{grid-template-columns:minmax(0,1fr) 300px}.subagentSessionMetrics{gap:8px}.subagentChildHeader,.subagentChildRow{grid-template-columns:minmax(130px,1fr) minmax(82px,.7fr) minmax(68px,.48fr) minmax(62px,.44fr)}}
 @media(max-width:1100px){.subagentCommand .subagentFilterPrimary .filterControl:nth-child(4){grid-column:1/3}.subagentRoleTrendRow{grid-template-columns:minmax(160px,1fr) minmax(82px,.5fr) minmax(150px,.9fr) auto}.subagentRoleMeta{grid-column:1/4}.subagentRoleInspect{grid-column:4;grid-row:1/3}}
 @media(max-width:900px){.subagentWorkspace{grid-template-columns:1fr}.subagentInspector{position:relative;top:auto}.subagentFilterPrimary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentFilterPrimary .filterControl:first-child{grid-column:1/-1}.subagentFilterPrimary .filterControl:nth-child(4),.subagentFilterMore{grid-column:auto}.subagentSessionGroup>summary{grid-template-columns:1fr}.subagentSessionMetrics{text-align:left}.subagentSessionMetric{display:inline-flex;align-items:baseline;gap:4px}.subagentSessionMetric span,.subagentSessionMetric b{display:inline}.subagentChildHeader,.subagentChildRow{grid-template-columns:minmax(140px,1fr) minmax(80px,.7fr) minmax(66px,.45fr) minmax(62px,.42fr)}}
+.subagentCostHeat{position:relative;display:block;min-width:0;padding-bottom:8px;color:var(--cost-heat);font-weight:760}.subagentCostHeat:after{content:"";position:absolute;right:0;bottom:1px;width:var(--cost-fill);height:3px;max-width:100%;border-radius:3px;background:linear-gradient(90deg,var(--session-cyan),var(--cost-heat))}.subagentCostHeat[style=""]{color:inherit}
+.subagentRoleKpi span{font-size:10px}.subagentRoleKpi strong{font-size:21px}.subagentRoleKpi small{font-size:10px;line-height:1.35}.subagentRoleTrendHead h4{font-size:15px}.subagentRoleTrendHead p{font-size:10px}.subagentRoleChartModes button{font-size:10px}.subagentRoleTrendRow{min-height:116px}.subagentRoleIdentity strong{font-size:12px}.subagentRoleIdentity small{font-size:10px;line-height:1.4}.subagentRolePrimary span,.subagentRoleMeta span{font-size:9px}.subagentRolePrimary b{font-size:16px}.subagentRolePrimary small{font-size:10px}.subagentRoleMeta b{font-size:11px}.subagentRoleSignal{font-size:9px}.subagentRoleInspect{font-size:10px}.subagentRoleEconomicsFoot{font-size:10px;line-height:1.4}
+.subagentRoleSpark{display:flex;height:83px;flex-direction:column;justify-content:center}.subagentRoleSpark svg{height:62px;flex:none}.subagentRoleSparkDates{display:flex;justify-content:space-between;gap:8px;margin-top:3px;color:var(--faint);font:700 9px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentRoleSparkDates span:last-child{text-align:right}
+.subagentRoleHeader,.subagentRoleRow{grid-template-columns:minmax(170px,1.2fr) repeat(5,minmax(82px,.56fr));min-width:750px}
+.subagentResultsHead h3{font-size:15px}.subagentResultsHead p{font-size:11px;line-height:1.4}.subagentSessionIdentity strong{font-size:12.5px}.subagentSessionIdentity small{font-size:10.5px}.subagentSessionMetric span{font-size:9px}.subagentSessionMetric b{font-size:11.5px}.subagentChildHeader{font-size:9px}.subagentChildIdentity strong{font-size:12px}.subagentChildIdentity small{font-size:10px}.subagentChildMetric{font-size:11px}.subagentInspectorHead h3{font-size:16px}.subagentInspectorMetric span{font-size:9px}.subagentInspectorMetric b{font-size:12px}.subagentInspectorEmpty p{font-size:11px}
+#view-subagents .subagentExplorerMeta{font-size:12px;font-weight:650;color:var(--dim)}#view-subagents .subagentWorkspace.roleView .subagentResultsHead{display:none}#view-subagents .subagentRoleEconomics{padding:18px}#view-subagents .subagentRoleKpis{gap:0;overflow:hidden;border:1px solid var(--line2);border-radius:10px;background:linear-gradient(105deg,rgba(0,188,235,.055),rgba(255,255,255,.015) 52%,rgba(127,219,242,.03))}#view-subagents .subagentRoleKpi{border:0;border-left:1px solid var(--line);border-radius:0;background:none;padding:14px 18px}#view-subagents .subagentRoleKpi:first-child{border-left:0}#view-subagents .subagentRoleKpi strong{font-size:24px}#view-subagents .subagentRoleTrendHead{margin-top:22px;margin-bottom:10px}#view-subagents .subagentRoleTrendRow{min-height:108px}#view-subagents .subagentRoleIdentity strong{font-size:13px}#view-subagents .subagentRoleEconomicsFoot{margin-top:10px}#view-subagents .subagentCompactSummary{margin-top:8px}#view-subagents .subagentWorkspace{margin-top:10px}
+#view-subagents .subagentCommand .subagentFilterPrimary{padding-bottom:13px}#view-subagents .subagentCommand .subagentFilterFooter{margin-top:0}
+@media(max-width:1100px){#view-subagents .subagentRoleKpi{padding:12px}#view-subagents .subagentRoleKpi strong{font-size:20px}}
 </style></head><body class=spectrumApp>
 <!--
 THESIS: Sessions are live instruments, not a generic grid of dark cards.
@@ -556,15 +567,16 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   <button class="tab on" id=tab-session data-label=Sessions aria-label=Sessions aria-keyshortcuts="Alt+1" title="Sessions · Shortcut: Option+1"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Sessions</span><span class=tabShortcut aria-hidden=true>1</span></button>
 	   <button class=tab id=tab-daily data-label=Spend aria-label=Spend aria-keyshortcuts="Alt+2" title="Spend · Shortcut: Option+2"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 17h7"/></svg><span class=tabLabel>Spend</span><span class=tabShortcut aria-hidden=true>2</span></button>
 	   <button class=tab id=tab-models data-label=Models aria-label=Models aria-keyshortcuts="Alt+3" title="Models · Shortcut: Option+3"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 18l5-5 4 2 7-8"/><path d="M16 7h4v4M4 20h16"/></svg><span class=tabLabel>Models</span><span class=tabShortcut aria-hidden=true>3</span></button>
-	   <button class=tab id=tab-efficiency data-label=Efficiency aria-label=Efficiency aria-keyshortcuts="Alt+4" title="Efficiency · Shortcut: Option+4"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3 19h18"/></svg><span class=tabLabel>Efficiency</span><span class=tabShortcut aria-hidden=true>4</span></button>
-	   <button class=tab id=tab-git data-label=Git aria-label=Git aria-keyshortcuts="Alt+5" title="Git · Shortcut: Option+5"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5M4 20h16"/></svg><span class=tabLabel>Git</span><span class=tabShortcut aria-hidden=true>5</span></button>
+	   <button class=tab id=tab-subagents data-label=Subagents aria-label=Subagents aria-keyshortcuts="Alt+4" title="Subagents · Shortcut: Option+4"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><circle cx="12" cy="7" r="3"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M12 10v3M6 15v-2h12v2"/></svg><span class=tabLabel>Subagents</span><span class=tabShortcut aria-hidden=true>4</span></button>
+	   <button class=tab id=tab-efficiency data-label=Efficiency aria-label=Efficiency aria-keyshortcuts="Alt+5" title="Efficiency · Shortcut: Option+5"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3 19h18"/></svg><span class=tabLabel>Efficiency</span><span class=tabShortcut aria-hidden=true>5</span></button>
+	   <button class=tab id=tab-git data-label=Git aria-label=Git aria-keyshortcuts="Alt+6" title="Git · Shortcut: Option+6"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5M4 20h16"/></svg><span class=tabLabel>Git</span><span class=tabShortcut aria-hidden=true>6</span></button>
 	   <a class=tab id=tab-performance href=/performance data-label=Performance aria-label=Performance title=Performance><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 15v-3M12 15V9M16 15v-5M8 18h8"/></svg><span class=tabLabel>Performance</span></a>
 	   </div>
 	   <div class=navSecondary>
 	   <button class=tab id=tab-read data-label=Read aria-label="Read about Enterprise Tokenomics" title="Read about Enterprise Tokenomics · Opens a Splunk search in a new tab"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg><span class=tabLabel>Read</span></button>
-	   <button class=tab id=tab-learn data-label=Learn aria-label=Learn aria-keyshortcuts="Alt+6" title="Learn · Shortcut: Option+6"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"/></svg><span class=tabLabel>Learn</span><span class=tabShortcut aria-hidden=true>6</span></button>
-	   <button class=tab id=tab-capabilities data-label=Tools aria-label=Tools aria-keyshortcuts="Alt+7" title="Tools · Shortcut: Option+7"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 6a4 4 0 0 0-5 5L4 16l4 4 5-5a4 4 0 0 0 5-5l-3 3-3-3z"/></svg><span class=tabLabel>Tools</span><span class=tabShortcut aria-hidden=true>7</span></button>
-	   <button class=tab id=tab-settings data-label=Settings aria-label=Settings aria-keyshortcuts="Alt+8" title="Settings · Shortcut: Option+8"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h10M18 7h2M4 17h3M11 17h9M14 4v6M7 14v6"/></svg><span class=tabLabel>Settings</span><span class=tabShortcut aria-hidden=true>8</span></button>
+	   <button class=tab id=tab-learn data-label=Learn aria-label=Learn aria-keyshortcuts="Alt+7" title="Learn · Shortcut: Option+7"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"/></svg><span class=tabLabel>Learn</span><span class=tabShortcut aria-hidden=true>7</span></button>
+	   <button class=tab id=tab-capabilities data-label=Tools aria-label=Tools aria-keyshortcuts="Alt+8" title="Tools · Shortcut: Option+8"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 6a4 4 0 0 0-5 5L4 16l4 4 5-5a4 4 0 0 0 5-5l-3 3-3-3z"/></svg><span class=tabLabel>Tools</span><span class=tabShortcut aria-hidden=true>8</span></button>
+	   <button class=tab id=tab-settings data-label=Settings aria-label=Settings aria-keyshortcuts="Alt+9" title="Settings · Shortcut: Option+9"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h10M18 7h2M4 17h3M11 17h9M14 4v6M7 14v6"/></svg><span class=tabLabel>Settings</span><span class=tabShortcut aria-hidden=true>9</span></button>
 	   </div>
 	  </nav>
   <div class=spacer></div>
@@ -730,7 +742,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="tabs sessionScopeTabs" id=session-scope-tabs role=tablist aria-label="Sessions view">
    <button class=tab id=session-scope-current type=button role=tab aria-selected=true aria-controls=current-sessions-overview data-session-scope=current><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Current sessions</span></button>
    <button class=tab id=session-scope-all type=button role=tab aria-selected=false aria-controls=all-session-history data-session-scope=all><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span class=tabLabel>All sessions</span></button>
-   <button class=tab id=session-scope-subagents type=button role=tab aria-selected=false aria-controls=subagent-explorer data-session-scope=subagents><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><circle cx="12" cy="7" r="3"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M12 10v3M6 15v-2h12v2"/></svg><span class=tabLabel>Subagents</span></button>
+   <button class=tab id=session-scope-subagents type=button role=tab aria-selected=false aria-controls=subagent-explorer data-session-scope=subagents><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M12 4v5M5 12h14M5 12v6M12 12v6M19 12v6"/><circle cx="12" cy="3" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></svg><span class=tabLabel>Subagents</span></button>
   </div>
 
   <div class=previewSurface id=preview-surface-sessions>
@@ -810,7 +822,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <div class=slist id=slist></div>
    </section>
    <section id=subagent-explorer role=tabpanel aria-labelledby=session-scope-subagents hidden>
-    <div class=subagentExplorerHead><div><h2>Subagents</h2><p>Investigate child-agent work by issue, parent session, or provider-reported role.</p></div><span class=subagentExplorerMeta id=subagent-explorer-meta>Waiting for agent evidence</span></div>
     <div class="card subagentCommand">
      <div class=subagentViewTabs id=subagent-view-tabs role=tablist aria-label="Subagent workspace view">
       <button id=subagent-tab-roles type=button role=tab data-subagent-view=roles aria-selected=true aria-controls=subagent-results-panel><span>Roles</span><small id=subagent-view-roles-count>--</small></button>
@@ -827,16 +838,17 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
      <div class=subagentFilterAdvanced id=subagent-filter-advanced hidden>
       <label class=filterControl><span>Model</span><select class=filterSelect id=subagent-filter-model><option value="">All models</option></select></label>
       <label class=filterControl><span>Status</span><select class=filterSelect id=subagent-filter-status><option value=all>All statuses</option><option value=working>Working</option><option value=incomplete>Incomplete</option><option value=complete>Complete</option><option value=waiting>Waiting</option><option value=recent>Recent</option><option value=unknown>Unknown</option></select></label>
-      <label class=filterControl><span>Signal</span><select class=filterSelect id=subagent-filter-signal><option value=all>All signals</option><option value=attention>Needs attention</option><option value=peer_cost_outlier>Peer cost outlier</option><option value=active_cost_concentration>Active cost concentration</option><option value=retry_pressure>Retry pressure</option></select></label>
+      <label class=filterControl><span>Signal</span><select class=filterSelect id=subagent-filter-signal><option value=all>All signals</option><option value=attention>Any cost/retry signal</option><option value=peer_cost_outlier>Peer cost outlier</option><option value=active_cost_concentration>Active cost concentration</option><option value=retry_pressure>Retry pressure</option></select></label>
       <label class=filterControl><span>Sort</span><select class=filterSelect id=subagent-filter-sort><option value=recent>Recent</option><option value=cost>Cost</option><option value=tokens>Tokens</option><option value=work>Work time</option><option value=name>Agent name</option></select></label>
      </div>
-     <div class=subagentFilterFooter>
+     <div class=subagentFilterFooter id=subagent-filter-footer hidden>
       <div class=subagentActiveFilters id=subagent-active-filters aria-live=polite></div>
       <button class="tbtn clearFilters" id=subagent-filter-clear type=button>Clear all</button>
      </div>
     </div>
     <div class=subagentCompactSummary id=subagent-compact-summary aria-live=polite></div>
     <div class=subagentInventoryWarning id=subagent-inventory-warning hidden></div>
+    <section class="card subagentModelDistribution" id=subagent-model-distribution aria-label="Model distribution of matching child runs" hidden></section>
     <div class=subagentWorkspace id=subagent-workspace>
      <section class="card subagentResultsCard" id=subagent-results-panel role=tabpanel aria-labelledby=subagent-tab-roles tabindex=0>
       <div class=subagentResultsHead><div><h3 id=subagent-results-title>Role comparison</h3><p id=subagent-results-description>Provider-reported roles compared across the current filters.</p></div><span id=subagent-results-count></span></div>
@@ -901,11 +913,21 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
    <div class=agentActivityMetrics id=agent-activity-metrics></div>
    <div class=agentActivityTree id=agent-activity-tree role=tree aria-label="Agent activity hierarchy"></div>
    <div class=agentAttentionDetail id=agent-attention-detail aria-live=polite></div>
-   <div class=agentActivityFoot>Needs attention marks a possible issue, not a diagnosis. Token Meter never stops or changes an agent.</div>
+   <div class=agentActivityFoot>Cost color compares children in this session; it does not judge their work.</div>
   </section>
   <div class=foot>Live session evidence · local-only · run preferences stay in this browser</div>
   </div>
  </div>
+
+	 <div class=view id=view-subagents>
+	  <div class="spectrumPageHeadFrame hasPageActions">
+	   <div class="spectrumPageHead subagentPageHead" data-page-signal=subagents>
+	    <div class=spectrumPageHeadCopy><h1>Subagents</h1><p class=spectrumPageSubtitle>Track the cost of your custom agents.</p></div>
+	   </div>
+	   <div class=spectrumPageActions><span class=subagentExplorerMeta id=subagent-explorer-meta>Waiting for agent evidence</span></div>
+	  </div>
+	  <div id=subagent-page-home></div>
+	 </div>
 
 	 <div class=view id=view-models>
 	  <div class="spectrumPageHeadFrame hasPageActions">
@@ -1581,7 +1603,7 @@ function renderSessionScope(){
  $('view-session').classList.toggle('sessionSubagents',subagents);
  $('current-sessions-overview').hidden=all||subagents;
  $('all-session-history').hidden=!all;
- $('subagent-explorer').hidden=!subagents;
+ if($('subagent-explorer').parentElement===$('preview-surface-sessions'))$('subagent-explorer').hidden=!subagents;
  [...$('session-scope-tabs').querySelectorAll('[data-session-scope]')].forEach(button=>{
   const selected=button.dataset.sessionScope===sessionScope;
   button.setAttribute('aria-selected',String(selected));
@@ -1603,6 +1625,7 @@ function setSessionScope(scope){
  renderSessionScope();
 }
 function openSessionScope(scope,{replace=false}={}){
+ if(scope==='subagents')mountSubagentExplorer('sessions');
  sessionRequest++;
  pinned=null;
  CURRENT=LATEST;
@@ -1732,11 +1755,12 @@ const NAV_COMMANDS=[
  {id:'all-sessions',label:'All sessions',description:'Search, filter, and open recorded session history',aliases:'logs',section:'Navigate',route:'sessions-all',glyph:'All'},
  {id:'spend',label:'Spend',description:'Review spend across days and runtimes',section:'Navigate',route:'spend',directKey:'Digit2',glyph:'2'},
  {id:'models',label:'Models',description:'Compare model performance and review user language signals',section:'Navigate',route:'models',directKey:'Digit3',glyph:'3'},
- {id:'efficiency',label:'Efficiency',description:'Review token efficiency overall and by model runtime',section:'Navigate',route:'efficiency',directKey:'Digit4',glyph:'4'},
- {id:'git',label:'Git',description:'Compare locally observed pushed code with covered AI spend',section:'Navigate',route:'git',directKey:'Digit5',glyph:'5'},
- {id:'learn',label:'Learn',description:'Open the recommended review workflow',section:'Navigate',route:'learn',directKey:'Digit6',glyph:'6'},
- {id:'capabilities',label:'Tools',description:'Inspect tools, MCPs, and optional skill packs',section:'Navigate',route:'capabilities',directKey:'Digit7',glyph:'7'},
- {id:'settings',label:'Settings',description:'Configure budgets, pricing, analytics, connections, and updates',section:'Navigate',route:'settings',directKey:'Digit8',glyph:'8'},
+ {id:'subagents',label:'Subagents',description:'Track custom-agent spend and inspect child runs',section:'Navigate',route:'subagents',directKey:'Digit4',glyph:'4'},
+ {id:'efficiency',label:'Efficiency',description:'Review token efficiency overall and by model runtime',section:'Navigate',route:'efficiency',directKey:'Digit5',glyph:'5'},
+ {id:'git',label:'Git',description:'Compare locally observed pushed code with covered AI spend',section:'Navigate',route:'git',directKey:'Digit6',glyph:'6'},
+ {id:'learn',label:'Learn',description:'Open the recommended review workflow',section:'Navigate',route:'learn',directKey:'Digit7',glyph:'7'},
+ {id:'capabilities',label:'Tools',description:'Inspect tools, MCPs, and optional skill packs',section:'Navigate',route:'capabilities',directKey:'Digit8',glyph:'8'},
+ {id:'settings',label:'Settings',description:'Configure budgets, pricing, analytics, connections, and updates',section:'Navigate',route:'settings',directKey:'Digit9',glyph:'9'},
  {id:'settings-budgets',label:'Settings · Monthly budget',description:'Set runtime budgets and track their monthly total',section:'Settings',route:'settings-budgets',glyph:'$'},
  {id:'session-run',label:'Session · Run',description:'Review cost, context, and pace for the selected session',section:'Selected session',route:'summary',action:'selected-session',glyph:'R'},
  {id:'onboarding',label:'Getting started',description:'Resume or replay the first-five-minutes guide',section:'Help',action:'onboarding',glyph:'?'},
@@ -1884,6 +1908,7 @@ function showTab(t){
  document.body.classList.toggle('sessionRoute',t==='session');
  $('tab-session').classList.toggle('on',t==='session');
 	 $('tab-models').classList.toggle('on',t==='models');
+ $('tab-subagents').classList.toggle('on',t==='subagents');
  $('tab-daily').classList.toggle('on',spend);
  $('tab-capabilities').classList.toggle('on',t==='capabilities');
  $('tab-efficiency').classList.toggle('on',t==='efficiency');
@@ -1892,6 +1917,7 @@ function showTab(t){
  $('tab-settings').classList.toggle('on',t==='settings');
  $('view-session').classList.toggle('on',t==='session');
 	 $('view-models').classList.toggle('on',t==='models');
+ $('view-subagents').classList.toggle('on',t==='subagents');
  $('view-daily').classList.toggle('on',spend);
  $('view-capabilities').classList.toggle('on',t==='capabilities');
  $('view-efficiency').classList.toggle('on',t==='efficiency');
@@ -1913,6 +1939,7 @@ function openTopLevelRoute(route){
 }
 $('tab-session').onclick=()=>{window.scrollTo(0,0);openCurrentSessions();};
 $('tab-models').onclick=()=>openTopLevelRoute('models');
+$('tab-subagents').onclick=()=>openTopLevelRoute('subagents');
 $('tab-daily').onclick=()=>openTopLevelRoute('spend');
 $('tab-capabilities').onclick=()=>openTopLevelRoute('capabilities');
 $('tab-efficiency').onclick=()=>openTopLevelRoute('efficiency');
@@ -1948,8 +1975,19 @@ function applyHashRoute(){
  const h=(location.hash||'').replace(/^#/,'');
  const panel=PANEL_ALIAS[h]||h;
  const legacyGlobal=h==='global'||h==='global-logs'||/^global-(overview|evidence)$/.test(h);
- if(h==='sessions'||h==='sessions-all'||h==='sessions-subagents'||h==='current-sessions'){
- const scope=h==='sessions-all'?'all':h==='sessions-subagents'?'subagents':'current',route=sessionScopeRoute(scope);
+ if(h==='subagents'||h==='sessions-subagents'){
+  if(pinned){sessionRequest++;pinned=null;CURRENT=LATEST;}
+  mountSubagentExplorer(h==='subagents'?'roles':'sessions');
+  if(h==='sessions-subagents'){
+   setSessionScope('subagents');
+   showTab('session');
+   showCurrentPanel('sessions');
+  }else showTab('subagents');
+  if(LATEST)renderSubagentExplorer(LATEST.xsession?.agent_usage);
+  return;
+ }
+ if(h==='sessions'||h==='sessions-all'||h==='current-sessions'){
+ const scope=h==='sessions-all'?'all':'current',route=sessionScopeRoute(scope);
  if((routedSessionId()||h==='current-sessions')&&history.replaceState)history.replaceState(null,'',`/#${route}`);
  if(pinned){sessionRequest++;pinned=null;CURRENT=LATEST;}
  setSessionScope(scope);
@@ -2069,6 +2107,15 @@ function applyLocationRoute(){
   pinned=null;
   if(LATEST&&$('view-session').classList.contains('on'))renderSession(LATEST);
  }
+}
+function mountSubagentExplorer(destination){
+ const roles=destination==='roles',home=roles?$('subagent-page-home'):$('preview-surface-sessions'),explorer=$('subagent-explorer');
+ if(explorer.parentElement!==home)home.appendChild(explorer);
+ explorer.hidden=false;
+ explorer.setAttribute('role',roles?'region':'tabpanel');
+ if(roles){explorer.setAttribute('aria-label','Subagent roles');explorer.removeAttribute('aria-labelledby');}
+ else{explorer.removeAttribute('aria-label');explorer.setAttribute('aria-labelledby','session-scope-subagents');}
+ $('subagent-model-distribution').hidden=roles;
 }
 applyLocationRoute();
 window.addEventListener('hashchange',applyHashRoute);
@@ -2972,10 +3019,12 @@ let subagentUsageSort=localStorage.getItem('tm_subagent_usage_sort')||'cost';
 if(!['cost','tokens','agents','output'].includes(subagentUsageSort))subagentUsageSort='cost';
 let subagentView=localStorage.getItem('tm_subagent_view')||'roles';
 if(!['issues','sessions','roles'].includes(subagentView))subagentView='roles';
-let subagentRoleChartMode=localStorage.getItem('tm_subagent_role_chart')||'spend';
-if(!['spend','average','runs'].includes(subagentRoleChartMode))subagentRoleChartMode='spend';
+let subagentRoleChartMode=localStorage.getItem('tm_subagent_role_chart')||'average';
+if(!['spend','average','runs'].includes(subagentRoleChartMode))subagentRoleChartMode='average';
 let subagentFilters={
  query:localStorage.getItem('tm_subagent_filter_search')||'',
+ role:localStorage.getItem('tm_subagent_filter_role')||'',
+ kind:localStorage.getItem('tm_subagent_filter_kind')||'',
  runtime:localStorage.getItem('tm_subagent_filter_app')||'',
  project:localStorage.getItem('tm_subagent_filter_project')||'',
  model:localStorage.getItem('tm_subagent_filter_model')||'',
@@ -3017,10 +3066,8 @@ async function loadAllSessions(){
  }).then(payload=>{
   allSessionInventory=payload.sessions||[];
   allSessionInventoryAt=Number(payload.generated_at||0);
-  if(LATEST&&$('view-session').classList.contains('on')){
-   if(sessionScope==='all')renderAllSessions(LATEST.xsession);
-   if(sessionScope==='subagents')renderSubagentExplorer(LATEST.xsession?.agent_usage);
-  }
+  if(LATEST&&$('view-session').classList.contains('on')&&sessionScope==='all')renderAllSessions(LATEST.xsession);
+  if(LATEST&&($('view-subagents').classList.contains('on')||($('view-session').classList.contains('on')&&sessionScope==='subagents')))renderSubagentExplorer(LATEST.xsession?.agent_usage);
   return allSessionInventory;
  }).catch(()=>allSessionInventory||[]).finally(()=>{allSessionsRequest=null;});
  return allSessionsRequest;
@@ -3734,6 +3781,12 @@ function agentIdentityPresentation(agent,index){
 function agentDisplayLabel(agent,index){
  return agentIdentityPresentation(agent,index).primary;
 }
+function subagentCostHeat(cost,maxCost,available){
+ const value=Number(cost),maximum=Number(maxCost);
+ if(available!==true||!Number.isFinite(value)||value<0||!Number.isFinite(maximum)||maximum<=0)return '';
+ const intensity=Math.max(0,Math.min(1,value/maximum));
+ return `--cost-heat:hsl(${Math.round(190-160*intensity)} 88% 69%);--cost-fill:${Math.round(100*intensity)}%`;
+}
 function renderAgentActivity(s){
  const module=$('agent-activity'),group=s?.agent_group,agents=Array.isArray(group?.agents)?group.agents:[];
  if(!group||agents.length<2){
@@ -3748,6 +3801,7 @@ function renderAgentActivity(s){
  selectedAgentActivityId=selected.id;
  const selectedIndex=Math.max(0,agents.indexOf(selected)),selectedLabel=agentDisplayLabel(selected,selectedIndex);
  const childAgents=agents.filter(agent=>agent.kind!=='root'),childTotals=group.child_totals||{},knownChildCost=Number(childTotals.known_cost)||0;
+ const maximumChildCost=Math.max(0,...childAgents.filter(agent=>agent.cost_available===true).map(agent=>Number(agent.cost)||0));
  const childCostCovered=childTotals.cost_available===true&&Number.isFinite(Number(childTotals.cost));
  const totals=group.totals||{},coverage=group.coverage||{},hidden=Number(group.hidden_agent_count)||0;
  $('agent-activity-context').textContent=selected.kind==='root'
@@ -3762,19 +3816,21 @@ function renderAgentActivity(s){
   metric('Agents',f(totals.agents||agents.length),`${f(childAgents.length+hidden)} children · ${f(attention.length)} ${countWord(attention.length,'signal')}`),
  ].join('');
  const rows=agents.map((agent,index)=>{
-  const identity=agentIdentityPresentation(agent,index),label=identity.primary,reason=attentionByAgent.get(String(agent.id)),selectedRow=String(agent.id)===String(selectedAgentActivityId);
+  const identity=agentIdentityPresentation(agent,index),label=identity.primary,selectedRow=String(agent.id)===String(selectedAgentActivityId);
   const model=agent.model&&agent.model!=='unknown'?agent.model:'model unavailable',state=agent.activity_state||'unknown';
   const tokenValue=agent.tokens_available===true?f(agent.tokens):'--',costValue=agent.cost_available===true?money(agent.cost):'--';
   const share=agent.group_cost_share==null?'--':pct(agent.group_cost_share),workTime=agent.work_time_s==null?'--':durationShort(agent.work_time_s);
   const secondary=identity.secondary?`${identity.secondary} · `:'',kind=agent.kind==='root'?'session':agent.kind;
   const destination=agent.navigable&&agent.session_id?` data-agent-session="${esc(agent.session_id)}"`:'';
-  return `<button class="agentRow${selectedRow?' selected':''}${reason?' attention':''}" type=button role=treeitem aria-level="${Math.max(1,Number(agent.depth||0)+1)}" aria-selected="${selectedRow?'true':'false'}" style="--agent-depth:${Math.max(0,Number(agent.depth)||0)}" data-agent-id="${esc(agent.id)}"${destination}><span class=agentIdentity><strong><span>${esc(label)}</span>${reason?'<span class=agentAttentionBadge>Needs attention</span>':''}</strong><small>${esc(secondary+kind)}</small></span><span class=agentMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=agentMetric>${esc(tokenValue)}</span><span class=agentMetric>${esc(costValue)}</span><span class=agentMetric>${esc(share)}</span><span class=agentMetric>${esc(workTime)}</span></button>`;
+  const heat=agent.kind==='root'?'':subagentCostHeat(agent.cost,maximumChildCost,agent.cost_available);
+  return `<button class="agentRow${selectedRow?' selected':''}" type=button role=treeitem aria-level="${Math.max(1,Number(agent.depth||0)+1)}" aria-selected="${selectedRow?'true':'false'}" style="--agent-depth:${Math.max(0,Number(agent.depth)||0)}" data-agent-id="${esc(agent.id)}"${destination}><span class=agentIdentity><strong><span>${esc(label)}</span></strong><small>${esc(secondary+kind)}</small></span><span class=agentMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=agentMetric>${esc(tokenValue)}</span><span class="agentMetric${heat?' subagentCostHeat':''}"${heat?` style="${heat}" title="Relative child cost in this session"`:''}>${esc(costValue)}</span><span class=agentMetric>${esc(share)}</span><span class=agentMetric>${esc(workTime)}</span></button>`;
  }).join('');
  $('agent-activity-tree').innerHTML='<div class=agentTreeHeader><span>Agent</span><span>Model</span><span>Status</span><span>Tokens</span><span>Cost</span><span>Share</span><span class=fieldtip tabindex=0 data-tip="Cumulative completed prompt-to-response time. Includes reasoning and tool use; excludes gaps between prompts.">Work time</span></div>'+rows;
  const selectedAttention=attentionByAgent.get(String(selected.id));
+ $('agent-attention-detail').hidden=!selectedAttention;
  $('agent-attention-detail').innerHTML=selectedAttention
-  ? `<b>${esc(selectedLabel)} · Needs attention</b><ul>${selectedAttention.reasons.map(reason=>`<li>${esc(reason.explanation)}</li>`).join('')}</ul>`
-  : `<b>${esc(selectedLabel)}</b> · No deterministic attention signal is present in the available local evidence.`;
+  ? `<b>${esc(selectedLabel)} · Cost and retry evidence</b><ul>${selectedAttention.reasons.map(reason=>`<li>${esc(reason.explanation)}</li>`).join('')}</ul>`
+  : '';
 }
 $('agent-activity-tree').addEventListener('click',event=>{
  const row=event.target.closest('[data-agent-id]');
@@ -6159,25 +6215,29 @@ function paginateSubagentRows(rows,limit){
 function subagentActiveFilterItems(filters){
  const items=[];
  if(filters.query)items.push({key:'query',label:'Search',value:filters.query});
+ if(filters.role)items.push({key:'role',label:'Role',value:filters.role});
+ if(filters.kind)items.push({key:'kind',label:'Kind',value:filters.kind});
  if(filters.runtime)items.push({key:'runtime',label:'App',value:appFilterLabel({provider:filters.runtime})});
  if(filters.project)items.push({key:'project',label:'Project',value:projectFilterLabel(filters.project)});
  if(filters.window!=='all')items.push({key:'window',label:'Time',value:{'24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[filters.window]||filters.window});
  if(filters.model)items.push({key:'model',label:'Model',value:filters.model});
  if(filters.status!=='all')items.push({key:'status',label:'Status',value:filters.status});
- if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Needs attention':String(filters.signal).replaceAll('_',' ')});
+ if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Cost/retry signal':String(filters.signal).replaceAll('_',' ')});
  if(filters.sort!=='recent')items.push({key:'sort',label:'Sort',value:filters.sort==='work'?'Work time':filters.sort});
  return items;
 }
 function filterSubagentInventory(usage,filters,nowSeconds){
  filters=filters||{};nowSeconds=nowSeconds==null?Date.now()/1000:Number(nowSeconds);
  const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],query=String(filters.query||'').trim().toLowerCase();
- const runtime=String(filters.runtime||''),project=String(filters.project||''),model=String(filters.model||''),status=String(filters.status||'all'),signal=String(filters.signal||'all'),window=String(filters.window||'all'),sort=String(filters.sort||'recent');
+ const runtime=String(filters.runtime||''),project=String(filters.project||''),model=String(filters.model||''),role=String(filters.role||''),kind=String(filters.kind||''),status=String(filters.status||'all'),signal=String(filters.signal||'all'),window=String(filters.window||'all'),sort=String(filters.sort||'recent');
  const seconds={all:0,'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[window]||0,rangeStart=seconds?Number(nowSeconds)-seconds:0;
  const rows=inventory.filter(row=>{
   const reasons=Array.isArray(row?.attention)?row.attention:[];
   if(runtime&&String(row?.runtime||'')!==runtime)return false;
   if(project&&String(row?.project||'')!==project)return false;
   if(model&&String(row?.model||'')!==model)return false;
+  if(role&&String(row?.role||'')!==role)return false;
+  if(kind&&String(row?.kind||'')!==kind)return false;
   if(status!=='all'&&String(row?.activity_state||'unknown')!==status)return false;
   if(signal==='attention'&&!reasons.length)return false;
   if(signal!=='all'&&signal!=='attention'&&!reasons.some(reason=>String(reason?.code||'')===signal))return false;
@@ -6205,6 +6265,24 @@ function filterSubagentInventory(usage,filters,nowSeconds){
  }: {complete:false,agents:null,parentSessions:null,incomplete:null,working:null,attention:null,costCovered:null,cost:null};
  return {rows,summary,signalCounts,inventoryCount,truncated};
 }
+function subagentModelDistribution(rows){
+ const groups=new Map();
+ (Array.isArray(rows)?rows:[]).forEach(row=>{
+  const runtime=String(row?.runtime||''),model=String(row?.model||''),key=`${runtime}\n${model}`;
+  if(!groups.has(key))groups.set(key,{runtime,model,runs:0,costCovered:0,cost:0});
+  const group=groups.get(key);group.runs++;
+  if(row?.cost_available===true){group.costCovered++;group.cost+=Number(row.cost)||0;}
+ });
+ return [...groups.values()].sort((a,b)=>b.runs-a.runs||a.runtime.localeCompare(b.runtime)||a.model.localeCompare(b.model));
+}
+function renderSubagentModelDistribution(rows,truncated){
+ const target=$('subagent-model-distribution');
+ if(subagentView!=='sessions'){target.hidden=true;return;}
+ target.hidden=false;
+ const models=subagentModelDistribution(rows),maximum=Math.max(1,...models.map(item=>item.runs));
+ const qualifier=truncated?'Visible runs only · inventory limit reached':'Matching runs';
+ target.innerHTML=`<div class=subagentModelHead><h3>Model distribution</h3><small>${esc(qualifier)} · ${f(rows.length)} ${countWord(rows.length,'run')}</small></div>${models.length?`<div class=subagentModelRows>${models.map(item=>{const label=item.model||'Unknown model',app=appFilterLabel({provider:item.runtime})||'Unknown app',coverage=item.costCovered===item.runs?'':`${f(item.costCovered)} / ${f(item.runs)} cost-covered`;return `<div class=subagentModelRow><span class=subagentModelIdentity title="${esc(`${app} · ${label}`)}"><strong>${esc(label)}</strong> · ${esc(app)}</span><span class=subagentModelTrack aria-hidden=true><i style="width:${(item.runs/maximum*100).toFixed(1)}%"></i></span><span class=subagentModelNumber>${f(item.runs)}</span><span class=subagentModelCost>${item.costCovered?esc(money(item.cost)):'--'}${coverage?`<small>${esc(coverage)}</small>`:''}</span></div>`;}).join('')}</div>`:'<div class=subagentResultsEmpty>No matching models</div>'}`;
+}
 function renderSubagentExplorerLegacy(usage){
  const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],filters=subagentFilters;
  const values=key=>[...new Set(inventory.map(row=>String(row?.[key]||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
@@ -6221,7 +6299,8 @@ function renderSubagentExplorerLegacy(usage){
  $('subagent-filter-more').setAttribute('aria-expanded',String(subagentAdvancedOpen));
  $('subagent-filter-more-count').textContent=advancedCount?String(advancedCount):'';
  const filterItems=subagentActiveFilterItems(filters);
- $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'<span>Showing all available child-agent evidence</span>';
+ $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'';
+ $('subagent-filter-footer').hidden=!filterItems.length;
  $('subagent-filter-clear').disabled=!filterItems.length;
  const triageResult=filterSubagentInventory(usage,applySubagentPreset(filters,'all')),triageExact=triageResult.summary.complete;
  $('subagent-triage-all').textContent=triageExact?f(triageResult.summary.agents):'--';
@@ -6230,7 +6309,7 @@ function renderSubagentExplorerLegacy(usage){
  const activePreset=subagentPresetForFilters(filters);
  [...$('subagent-triage').querySelectorAll('[data-subagent-preset]')].forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.subagentPreset===activePreset)));
  const result=filterSubagentInventory(usage,filters),summary=result.summary,exact=summary.complete;
- $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} recorded child agents`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child agents`;
+ $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} child runs`:result.rows.length===result.inventoryCount?`${f(result.inventoryCount)} child runs`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child runs`;
  const metric=(label,value,note)=>`<div class=subagentExplorerStat><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
  $('subagent-explorer-summary').innerHTML=[
   metric('Matching agents',exact?f(summary.agents):'--',exact?`${f(summary.incomplete)} incomplete · ${f(summary.working)} working`:'exact filtered total withheld'),
@@ -6326,10 +6405,12 @@ function buildSubagentRoleRows(rows){
 }
 function subagentRoleKey(row){return `${String(row?.runtime||'')}\n${String(row?.kind||'')}\n${String(row?.role||'')}`;}
 function subagentRoleFineFilters(filters){
- return Boolean(filters?.query||filters?.model||(filters?.status&&filters.status!=='all')||(filters?.signal&&filters.signal!=='all'));
+ return Boolean(filters?.model||(filters?.status&&filters.status!=='all')||(filters?.signal&&filters.signal!=='all'));
 }
 function subagentRoleDayRows(usage,filters,nowMs=Date.now()){
  let rows=(Array.isArray(usage?.role_days)?usage.role_days:[]).filter(row=>(!filters?.runtime||row?.runtime===filters.runtime)&&(!filters?.project||row?.project===filters.project));
+ const query=String(filters?.query||'').trim().toLowerCase();
+ if(query)rows=rows.filter(row=>String(row?.role||'').toLowerCase().includes(query));
  const dayCount={"24h":1,"7d":7,"30d":30,"90d":90}[filters?.window];
  if(dayCount){
   const cutoff=new Date(nowMs);cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-(dayCount-1));
@@ -6342,42 +6423,51 @@ function buildSubagentRoleEconomics(usage,filters,nowMs=Date.now()){
  if(subagentRoleFineFilters(filters))return {reason:'filtered',roles:[],days:[]};
  const selected=selectSubagentUsageScope(usage,filters?.runtime,filters?.window,filters?.project,false);
  if(!selected.usage)return {reason:selected.reason||'unavailable',roles:[],days:[]};
- const roles=Array.isArray(selected.usage.roles)?selected.usage.roles:[],previousRoles=Array.isArray(selected.usage.comparison?.roles)?selected.usage.comparison.roles:[],previousByKey=new Map(previousRoles.map(row=>[subagentRoleKey(row),row]));
+ const query=String(filters?.query||'').trim().toLowerCase(),matchesRole=row=>!query||String(row?.role||'').toLowerCase().includes(query);
+ const roles=(Array.isArray(selected.usage.roles)?selected.usage.roles:[]).filter(matchesRole),previousRoles=(Array.isArray(selected.usage.comparison?.roles)?selected.usage.comparison.roles:[]).filter(matchesRole),previousByKey=new Map(previousRoles.map(row=>[subagentRoleKey(row),row]));
  if(!roles.length)return {reason:'empty',roles:[],days:[]};
  const totals=items=>{
   const runs=items.reduce((sum,row)=>sum+Number(row?.agents||0),0),costCovered=items.reduce((sum,row)=>sum+Number(row?.cost_covered_agents||0),0),costComplete=Boolean(runs)&&costCovered===runs&&items.every(row=>row?.cost_available===true),knownCost=items.reduce((sum,row)=>sum+Number(row?.known_cost||0),0);
-  return {runs,costCovered,cost:costComplete?knownCost:null,averageCost:costComplete&&runs?knownCost/runs:null,incomplete:items.reduce((sum,row)=>sum+Number(row?.incomplete_agents||0),0),attention:items.reduce((sum,row)=>sum+Number(row?.attention_agents||0),0)};
+  return {runs,costCovered,costComplete,cost:costCovered?knownCost:null,averageCost:costCovered?knownCost/costCovered:null,incomplete:items.reduce((sum,row)=>sum+Number(row?.incomplete_agents||0),0),attention:items.reduce((sum,row)=>sum+Number(row?.attention_agents||0),0)};
  };
  const current=totals(roles),previous=totals(previousRoles),hasPrevious=previousRoles.length>0;
  const relative=(value,baseline)=>value!=null&&baseline!=null&&baseline>0?(value-baseline)/baseline:null;
  const comparedRoles=roles.map(row=>{
-  const prior=previousByKey.get(subagentRoleKey(row)),currentAverage=row?.cost_available===true&&Number(row?.agents)>0?Number(row.known_cost||0)/Number(row.agents):null,priorAverage=prior?.cost_available===true&&Number(prior?.agents)>0?Number(prior.known_cost||0)/Number(prior.agents):null;
-  return {...row,previousAgents:prior?Number(prior.agents||0):null,previousCost:prior?.cost_available===true?Number(prior.known_cost||0):null,costChange:prior&&row?.cost_available===true&&prior?.cost_available===true?relative(Number(row.known_cost||0),Number(prior.known_cost||0)):null,averageCostChange:relative(currentAverage,priorAverage),runChange:prior?Number(row.agents||0)-Number(prior.agents||0):null};
+  const prior=previousByKey.get(subagentRoleKey(row)),currentCovered=Number(row?.cost_covered_agents||0),priorCovered=Number(prior?.cost_covered_agents||0),currentComplete=row?.cost_available===true&&currentCovered===Number(row?.agents||0),priorComplete=prior?.cost_available===true&&priorCovered===Number(prior?.agents||0),currentAverage=currentCovered?Number(row.known_cost||0)/currentCovered:null,priorAverage=priorCovered?Number(prior.known_cost||0)/priorCovered:null;
+  return {...row,previousAgents:prior?Number(prior.agents||0):null,previousCost:priorComplete?Number(prior.known_cost||0):null,costChange:prior&&currentComplete&&priorComplete?relative(Number(row.known_cost||0),Number(prior.known_cost||0)):null,averageCostChange:currentComplete&&priorComplete?relative(currentAverage,priorAverage):null,runChange:prior?Number(row.agents||0)-Number(prior.agents||0):null};
  }).sort((a,b)=>Number(b.known_cost||0)-Number(a.known_cost||0)||Number(b.agents||0)-Number(a.agents||0)||String(a.role).localeCompare(String(b.role)));
- return {reason:null,window:String(filters?.window||'all'),...current,previousRuns:hasPrevious?previous.runs:null,previousCost:hasPrevious?previous.cost:null,previousAverageCost:hasPrevious?previous.averageCost:null,previousIncomplete:hasPrevious?previous.incomplete:null,costChange:hasPrevious?relative(current.cost,previous.cost):null,averageCostChange:hasPrevious?relative(current.averageCost,previous.averageCost):null,runChange:hasPrevious?current.runs-previous.runs:null,roles:comparedRoles,days:subagentRoleDayRows(usage,filters,nowMs),trendTruncated:usage?.role_days_truncated===true,roleDayCount:Number(usage?.role_day_count||0)};
+ return {reason:null,window:String(filters?.window||'all'),...current,previousRuns:hasPrevious?previous.runs:null,previousCost:hasPrevious?previous.cost:null,previousAverageCost:hasPrevious?previous.averageCost:null,previousIncomplete:hasPrevious?previous.incomplete:null,costChange:hasPrevious&&current.costComplete&&previous.costComplete?relative(current.cost,previous.cost):null,averageCostChange:hasPrevious&&current.costComplete&&previous.costComplete?relative(current.averageCost,previous.averageCost):null,runChange:hasPrevious?current.runs-previous.runs:null,roles:comparedRoles,days:subagentRoleDayRows(usage,filters,nowMs),trendTruncated:usage?.role_days_truncated===true,roleDayCount:Number(usage?.role_day_count||0)};
 }
 function renderSubagentRoleSparkline(economics,role){
  if(economics?.trendTruncated)return '<div class=subagentRoleSparkEmpty>Trend unavailable · daily history was truncated</div>';
- const allRows=Array.isArray(economics?.days)?economics.days:[],days=[...new Set(allRows.map(row=>String(row?.day||'')).filter(Boolean))].sort(),key=subagentRoleKey(role);
+ const allRows=Array.isArray(economics?.days)?economics.days:[],key=subagentRoleKey(role),roleRows=allRows.filter(row=>subagentRoleKey(row)===key),days=[...new Set(roleRows.map(row=>String(row?.day||'')).filter(Boolean))].sort();
  if(!days.length)return '<div class=subagentRoleSparkEmpty>Trend unavailable</div>';
  const points=new Map();
- allRows.filter(row=>subagentRoleKey(row)===key).forEach(row=>{const day=String(row?.day||''),point=points.get(day)||{cost:0,runs:0,complete:true};point.cost+=Number(row?.known_cost||0);point.runs+=Number(row?.agents||0);point.complete=point.complete&&row?.cost_available===true;points.set(day,point);});
+ roleRows.forEach(row=>{const day=String(row?.day||''),point=points.get(day)||{cost:0,runs:0,complete:true};point.cost+=Number(row?.known_cost||0);point.runs+=Number(row?.agents||0);point.complete=point.complete&&row?.cost_available===true;points.set(day,point);});
  if(subagentRoleChartMode!=='runs'&&[...points.values()].some(point=>!point.complete))return '<div class=subagentRoleSparkEmpty>Spend trend unavailable</div>';
- const value=day=>{const point=points.get(day);if(!point)return 0;if(subagentRoleChartMode==='runs')return point.runs;if(subagentRoleChartMode==='average')return point.runs?point.cost/point.runs:0;return point.cost;},values=days.map(value),maximum=Math.max(1,...values),width=220,height=48,pad=4;
+ const value=day=>{const point=points.get(day);if(subagentRoleChartMode==='runs')return point.runs;if(subagentRoleChartMode==='average')return point.runs?point.cost/point.runs:0;return point.cost;},values=days.map(value),maximum=Math.max(.000001,...values),width=220,height=62,pad=5;
  const x=index=>days.length===1?width/2:pad+index*(width-2*pad)/(days.length-1),y=item=>height-pad-(item/maximum)*(height-2*pad),line=values.map((item,index)=>`${x(index).toFixed(1)},${y(item).toFixed(1)}`).join(' '),area=days.length>1?`M ${x(0).toFixed(1)} ${height-pad} L ${line.replaceAll(' ',', ')} L ${x(days.length-1).toFixed(1)} ${height-pad} Z`:'';
  const modeLabel={spend:'spend',average:'cost per run',runs:'runs'}[subagentRoleChartMode]||'spend',mark=days.length===1?`<circle cx="${x(0)}" cy="${y(values[0])}" r=3 fill=var(--accent)/>`:`<path d="${area}" fill="rgba(0,188,235,.08)"/><polyline points="${line}" fill=none stroke=var(--accent) stroke-width=2.2 vector-effect=non-scaling-stroke/>`;
- return `<div class=subagentRoleSpark><svg viewBox="0 0 ${width} ${height}" preserveAspectRatio=none role=img aria-label="${esc(role.role)} ${esc(modeLabel)} trend">${mark}</svg></div>`;
+ return `<div class=subagentRoleSpark><svg viewBox="0 0 ${width} ${height}" preserveAspectRatio=none role=img aria-label="${esc(role.role)} ${esc(modeLabel)} trend">${mark}</svg><div class=subagentRoleSparkDates><span>${esc(days[0])}</span><span>${esc(days[days.length-1])}</span></div></div>`;
 }
 function renderSubagentRoleEconomics(economics){
- if(economics?.reason==='filtered')return '<div class=subagentRoleAnalyticsEmpty><strong>Role trend paused for row-level filters</strong><p>Clear Search, Model, Status, and Signal to compare exact role periods. The filtered role table remains available below.</p></div>';
+ if(economics?.reason==='filtered')return '<div class=subagentRoleAnalyticsEmpty><strong>Role trends unavailable for these row filters</strong><p>Clear Model, Status, and Signal to compare exact role periods. The filtered role table remains available below.</p></div>';
  if(!economics||economics.reason)return `<div class=subagentResultsEmpty><div><strong>No provider-reported roles match</strong>${economics?.reason==='unavailable'?'Exact role aggregates are unavailable for this scope.':'Adjust the app, project, or time range, or inspect Sessions for anonymous child agents.'}</div></div>`;
- const change=value=>value==null?'--':`${value>0?'↑ ':value<0?'↓ ':''}${Math.abs(value*100).toFixed(0)}%`,changeClass=value=>value==null?'':value<0?' good':value>0?' warn':'',windowLabel={all:'available history','24h':'last 24 hours','7d':'last 7 days','30d':'last 30 days','90d':'last 90 days'}[economics.window]||economics.window;
+ const change=value=>value==null?'--':`${value>0?'↑ ':value<0?'↓ ':''}${Math.abs(value*100).toFixed(0)}%`,changeClass=value=>value==null?'':value<0?' good':value>0?' warn':'';
  const comparisonsAvailable=!economics.trendTruncated,comparisonUnavailable='Comparison unavailable: daily series truncated';
- const coverage=`${f(economics.costCovered)} / ${f(economics.runs)}`,baseline=!comparisonsAvailable?comparisonUnavailable:economics.previousRuns==null?'No prior-period baseline':`${change(economics.costChange)} spend · ${economics.runChange>0?'+':''}${f(economics.runChange||0)} runs`;
- const kpi=(label,value,note,kind='')=>`<div class="subagentRoleKpi ${kind}"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
- const rows=economics.roles.map(row=>{const runs=Number(row.agents||0),roleCoverage=`${f(row.cost_covered_agents||0)} / ${f(runs)} cost-covered`,total=row.cost_available===true?money(row.known_cost||0):'--',average=row.cost_available===true&&runs?money(Number(row.known_cost||0)/runs):'--',incomplete=Number(row.incomplete_agents||0),attention=Number(row.attention_agents||0),primary=subagentRoleChartMode==='runs'?f(runs):subagentRoleChartMode==='average'?average:total,delta=subagentRoleChartMode==='runs'?(!comparisonsAvailable||row.runChange==null?'--':`${row.runChange>0?'+':''}${f(row.runChange)} vs prior`):change(comparisonsAvailable?(subagentRoleChartMode==='average'?row.averageCostChange:row.costChange):null),deltaClass=changeClass(comparisonsAvailable?(subagentRoleChartMode==='average'?row.averageCostChange:row.costChange):null),label={spend:'Spend',average:'Cost / run',runs:'Runs'}[subagentRoleChartMode]||'Spend',p95=row.p95_cost==null?'P95 unavailable':`P95 ${money(row.p95_cost)}`;return `<div class=subagentRoleTrendRow><div class=subagentRoleIdentity><strong>${esc(row.role)}</strong><small>${esc(appFilterLabel({provider:row.runtime}))} · ${esc(row.kind)} · ${esc(`${f(runs)} runs`)}<br>${esc(roleCoverage)}</small></div><div class="subagentRolePrimary${deltaClass}"><span>${esc(label)}</span><b>${esc(primary)}</b><small>${esc(delta)}</small></div>${renderSubagentRoleSparkline(economics,row)}<div class=subagentRoleMeta aria-label="${esc(`Average ${average}; ${p95}; ${incomplete} incomplete; ${attention} need review`)}"><span>Cost / run</span><b title="${esc(p95)}">${esc(average)}</b>${incomplete?`<span class="subagentRoleSignal warn">${f(incomplete)} incomplete</span>`:''}${attention?`<span class="subagentRoleSignal warn">${f(attention)} review</span>`:''}</div><button class=subagentRoleInspect type=button data-subagent-inspect-role="${esc(row.role)}" data-subagent-inspect-runtime="${esc(row.runtime)}">View runs</button></div>`;}).join('');
- const averageNote=!comparisonsAvailable?comparisonUnavailable:economics.averageCostChange==null?'No comparable baseline':`${change(economics.averageCostChange)} vs prior`,runsNote=!comparisonsAvailable?comparisonUnavailable:economics.runChange==null?'No comparable baseline':`${economics.runChange>0?'+':''}${f(economics.runChange)} vs prior`;
- return `<div class=subagentRoleEconomics><div class=subagentRoleKpis>${kpi('Role spend',economics.cost==null?'--':money(economics.cost),economics.cost==null?`Cost evidence ${coverage}`:baseline,changeClass(comparisonsAvailable?economics.costChange:null))}${kpi('Cost / run',economics.averageCost==null?'--':money(economics.averageCost),averageNote,changeClass(comparisonsAvailable?economics.averageCostChange:null))}${kpi('Runs',f(economics.runs),`${runsNote} · ${coverage} cost-covered`)}</div><div class=subagentRoleTrendHead><div><h4>Role trends</h4><p>${esc(windowLabel)} · one chart per provider-reported role</p></div><div class="seg subagentRoleChartModes"><button class="${subagentRoleChartMode==='spend'?'on':''}" type=button data-subagent-role-chart=spend>Spend</button><button class="${subagentRoleChartMode==='average'?'on':''}" type=button data-subagent-role-chart=average>Cost / run</button><button class="${subagentRoleChartMode==='runs'?'on':''}" type=button data-subagent-role-chart=runs>Runs</button></div></div><div class=subagentRoleTrendList>${rows}</div><p class=subagentRoleEconomicsFoot>Spend is a local API-rate estimate. Use View runs to investigate changes; cost alone does not establish outcome quality.</p></div>`;
+ const coverage=`${f(economics.costCovered)} / ${f(economics.runs)} cost-covered`,costComplete=economics.costCovered===economics.runs,baseline=!comparisonsAvailable?comparisonUnavailable:economics.previousRuns==null?'':economics.costChange==null?'Comparison unavailable':`${change(economics.costChange)} vs prior`;
+ const kpi=(label,value,note,kind='')=>`<div class="subagentRoleKpi ${kind}"><span>${esc(label)}</span><strong>${esc(value)}</strong>${note?`<small>${esc(note)}</small>`:''}</div>`;
+ const rows=economics.roles.map(row=>{
+  const runs=Number(row.agents||0),covered=Number(row.cost_covered_agents||0),roleCoverage=`${f(covered)}/${f(runs)} priced`,total=covered?money(row.known_cost||0):'--',average=covered?money(Number(row.known_cost||0)/covered):'--',incomplete=Number(row.incomplete_agents||0);
+  const primary=subagentRoleChartMode==='runs'?f(runs):subagentRoleChartMode==='average'?average:total;
+  const delta=subagentRoleChartMode==='runs'?(!comparisonsAvailable||row.runChange==null?'':`${row.runChange>0?'+':''}${f(row.runChange)} vs prior`):change(comparisonsAvailable?(subagentRoleChartMode==='average'?row.averageCostChange:row.costChange):null);
+  const deltaClass=subagentRoleChartMode==='average'?changeClass(comparisonsAvailable?row.averageCostChange:null):'';
+  const label={spend:covered===runs?'Spend':'Covered spend',average:covered===runs?'Cost / run':'Cost / covered run',runs:'Runs'}[subagentRoleChartMode]||'Cost / run';
+  const distribution=row.median_cost==null||row.p95_cost==null?'--':`${money(row.median_cost)} / ${money(row.p95_cost)}`;
+  return `<div class=subagentRoleTrendRow><div class=subagentRoleIdentity><strong>${esc(row.role)}</strong><small>${esc(appFilterLabel({provider:row.runtime}))} · ${esc(row.kind||'child')} · ${esc(`${f(runs)} ${runs===1?'run':'runs'}`)}<br>${esc(roleCoverage)}</small></div><div class="subagentRolePrimary${deltaClass}"><span>${esc(label)}</span><b>${esc(primary)}</b>${delta&&delta!=='--'?`<small>${esc(delta)}</small>`:''}</div>${renderSubagentRoleSparkline(economics,row)}<div class=subagentRoleMeta><span>Median / P95</span><b>${esc(distribution)}</b>${incomplete?`<span class="subagentRoleSignal warn">${f(incomplete)} incomplete</span>`:''}</div><button class=subagentRoleInspect type=button data-subagent-inspect-role="${esc(row.role)}" data-subagent-inspect-runtime="${esc(row.runtime)}" data-subagent-inspect-kind="${esc(row.kind)}">View runs</button></div>`;
+ }).join('');
+ const averageNote=!comparisonsAvailable?comparisonUnavailable:economics.previousRuns==null?'':economics.averageCostChange==null?'Comparison unavailable':`${change(economics.averageCostChange)} vs prior`,runsNote=!comparisonsAvailable?comparisonUnavailable:economics.runChange==null?'':`${economics.runChange>0?'+':''}${f(economics.runChange)} vs prior`;
+ return `<div class=subagentRoleEconomics><div class=subagentRoleKpis>${kpi(costComplete?'Cost / run':'Cost / covered run',economics.averageCost==null?'--':money(economics.averageCost),costComplete?averageNote:coverage,changeClass(comparisonsAvailable?economics.averageCostChange:null))}${kpi(costComplete?'Role spend':'Covered role spend',economics.cost==null?'--':money(economics.cost),costComplete?baseline:coverage)}${kpi('Named runs',f(economics.runs),runsNote)}</div><div class=subagentRoleTrendHead><div><h4>Role trends</h4></div><div class="seg subagentRoleChartModes"><button class="${subagentRoleChartMode==='average'?'on':''}" type=button data-subagent-role-chart=average>Cost / run</button><button class="${subagentRoleChartMode==='spend'?'on':''}" type=button data-subagent-role-chart=spend>Spend</button><button class="${subagentRoleChartMode==='runs'?'on':''}" type=button data-subagent-role-chart=runs>Runs</button></div></div><div class=subagentRoleTrendList>${rows}</div><p class=subagentRoleEconomicsFoot>Local API-rate estimates · Cost per run is not a quality score.</p></div>`;
 }
 function subagentParentSessionMap(){
  const rows=[...(allSessionInventory||[]),...(LATEST?.xsession?.sessions||[]),...(LATEST?.xsession?.current_sessions||[])],result=new Map();
@@ -6389,35 +6479,38 @@ function subagentParentPresentation(rootSessionId,project,parentSessions=subagen
  return {title:title||'Parent session',project:projectFilterLabel(project||row?.project)||'No project',runtime:appFilterLabel(row||{})};
 }
 function subagentGroupHtml(group,index,parentSessions,issuesOnly=false){
- const parent=subagentParentPresentation(group.rootSessionId,group.project,parentSessions),attention=group.attention>0,selected=group.rows.some(row=>String(row?.id||'')===selectedSubagentId),open=selected||expandedSubagentRoot===group.rootSessionId||(expandedSubagentRoot===null&&index<1);
+ const parent=subagentParentPresentation(group.rootSessionId,group.project,parentSessions),selected=group.rows.some(row=>String(row?.id||'')===selectedSubagentId),open=selected||expandedSubagentRoot===group.rootSessionId||(expandedSubagentRoot===null&&index<1);
  const cost=group.costCovered?money(group.cost):'--',tokens=group.tokenCovered?compactNumber(group.knownTokens):'--',workTime=group.workTimeCovered===group.agents?durationShort(group.workTime):'--';
- const badges=[attention?`<span class="subagentSessionBadge warn">${f(group.attention)} need review</span>`:'',group.incomplete?`<span class="subagentSessionBadge warn">${f(group.incomplete)} incomplete</span>`:'',group.working?`<span class=subagentSessionBadge>${f(group.working)} working</span>`:''].filter(Boolean).join('');
+ const badges=[group.incomplete?`<span class="subagentSessionBadge warn">${f(group.incomplete)} incomplete</span>`:'',group.working?`<span class=subagentSessionBadge>${f(group.working)} working</span>`:''].filter(Boolean).join('');
  const visibleRows=issuesOnly?group.rows.filter(row=>row?.activity_state==='incomplete'||Array.isArray(row?.attention)&&row.attention.length):group.rows;
+ const maximumChildCost=Math.max(0,...group.rows.filter(row=>row?.cost_available===true).map(row=>Number(row.cost)||0));
  const children=visibleRows.map((row,rowIndex)=>{
-  const identity=agentIdentityPresentation(row,rowIndex),hasAttention=Array.isArray(row?.attention)&&row.attention.length,state=String(row?.activity_state||'unknown'),model=row?.model&&row.model!=='unknown'?row.model:'model unavailable',costValue=row?.cost_available===true?money(row.cost):'--',tokenValue=row?.tokens_available===true?compactNumber(row.tokens):'tokens --',workTimeValue=row?.work_time_s==null?'work time --':`work time ${durationShort(row.work_time_s)}`,id=String(row?.id||''),isSelected=id&&id===selectedSubagentId;
-  return `<button class="subagentChildRow${hasAttention?' attention':''}${isSelected?' selected':''}" type=button data-subagent-id="${esc(id)}"${isSelected?' aria-current=true':''} aria-label="Inspect ${esc(identity.primary)}"><span class=subagentChildIdentity><strong><span>${esc(identity.primary)}</span>${hasAttention?'<span class=agentAttentionBadge>Review</span>':''}</strong><small>${esc([identity.secondary,row.kind,tokenValue,workTimeValue].filter(Boolean).join(' · '))}</small></span><span class=subagentChildMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class=subagentChildMetric>${esc(costValue)}</span></button>`;
+  const identity=agentIdentityPresentation(row,rowIndex),state=String(row?.activity_state||'unknown'),model=row?.model&&row.model!=='unknown'?row.model:'model unavailable',costValue=row?.cost_available===true?money(row.cost):'--',tokenValue=row?.tokens_available===true?compactNumber(row.tokens):'tokens --',workTimeValue=row?.work_time_s==null?'work time --':`work time ${durationShort(row.work_time_s)}`,id=String(row?.id||''),isSelected=id&&id===selectedSubagentId,heat=subagentCostHeat(row.cost,maximumChildCost,row.cost_available);
+  return `<button class="subagentChildRow${isSelected?' selected':''}" type=button data-subagent-id="${esc(id)}"${isSelected?' aria-current=true':''} aria-label="Inspect ${esc(identity.primary)}"><span class=subagentChildIdentity><strong><span>${esc(identity.primary)}</span></strong><small>${esc([identity.secondary,row.kind,tokenValue,workTimeValue].filter(Boolean).join(' · '))}</small></span><span class=subagentChildMetric>${esc(model)}</span><span class="agentState ${esc(state)}">${esc(state)}</span><span class="subagentChildMetric${heat?' subagentCostHeat':''}"${heat?` style="${heat}" title="Relative child cost in this session"`:''}>${esc(costValue)}</span></button>`;
  }).join('');
  const hiddenSiblings=group.agents-visibleRows.length,footer=issuesOnly&&hiddenSiblings?`<button class=subagentSiblingLink type=button data-subagent-show-session="${esc(group.rootSessionId)}">View ${f(hiddenSiblings)} other ${hiddenSiblings===1?'child':'children'} in Sessions</button>`:'',spawnedRunMetric=issuesOnly?'':`<span class=subagentSessionMetric><span>Spawned runs</span><b>${f(group.agents)}</b></span>`;
- return `<details class="subagentSessionGroup${attention?' hasAttention':''}" data-subagent-root="${esc(group.rootSessionId)}"${open?' open':''}><summary aria-label="${esc(`${parent.title}, ${group.agents} child agents, ${group.attention} need review, ${group.incomplete} incomplete`)}"><div class=subagentSessionIdentity><strong><span title="${esc(parent.title)}">${esc(parent.title)}</span>${badges}</strong><small>${esc(parent.project)} · ${f(group.agents)} ${countWord(group.agents,'child agent')}</small></div><div class=subagentSessionMetrics>${spawnedRunMetric}<span class=subagentSessionMetric><span>Child cost</span><b>${esc(cost)}</b></span><span class=subagentSessionMetric><span>Tokens</span><b>${esc(tokens)}</b></span><span class=subagentSessionMetric><span>Work time</span><b>${esc(workTime)}</b></span></div></summary><div class=subagentChildHeader><span>Agent</span><span>Model</span><span>Status</span><span>Est. cost</span></div>${children}${footer}</details>`;
+ return `<details class=subagentSessionGroup data-subagent-root="${esc(group.rootSessionId)}"${open?' open':''}><summary aria-label="${esc(`${parent.title}, ${group.agents} child agents, ${group.incomplete} incomplete`)}"><div class=subagentSessionIdentity><strong><span title="${esc(parent.title)}">${esc(parent.title)}</span>${badges}</strong><small>${esc(parent.project)} · ${f(group.agents)} ${countWord(group.agents,'child agent')}</small></div><div class=subagentSessionMetrics>${spawnedRunMetric}<span class=subagentSessionMetric><span>Child cost</span><b>${esc(cost)}</b></span><span class=subagentSessionMetric><span>Tokens</span><b>${esc(tokens)}</b></span><span class=subagentSessionMetric><span>Work time</span><b>${esc(workTime)}</b></span></div></summary><div class=subagentChildHeader><span>Agent</span><span>Model</span><span>Status</span><span>Est. cost</span></div>${children}${footer}</details>`;
 }
 function renderSubagentInspector(row,allRows,parentSessions=subagentParentSessionMap()){
  const inspector=$('subagent-inspector');
- if(!row){inspector.innerHTML='<div class=subagentInspectorEmpty><div><svg viewBox="0 0 40 40" aria-hidden=true><circle cx="20" cy="11" r="5"/><circle cx="10" cy="29" r="4"/><circle cx="30" cy="29" r="4"/><path d="M20 16v6M10 25v-4h20v4"/></svg><strong>Select a child agent</strong><p>Inspect its parent context, cost evidence, lifecycle state, sibling position, and transparent attention reasons.</p></div></div>';return;}
+ if(!row){inspector.innerHTML='<div class=subagentInspectorEmpty><div><svg viewBox="0 0 40 40" aria-hidden=true><circle cx="20" cy="11" r="5"/><circle cx="10" cy="29" r="4"/><circle cx="30" cy="29" r="4"/><path d="M20 16v6M10 25v-4h20v4"/></svg><strong>Select a child agent</strong><p>See its parent, cost, work time, and available retry evidence.</p></div></div>';return;}
  const identity=agentIdentityPresentation(row,0),parent=subagentParentPresentation(row.root_session_id,row.project,parentSessions),siblings=(allRows||[]).filter(item=>String(item?.root_session_id||'')===String(row.root_session_id||'')),siblingIndex=Math.max(0,siblings.findIndex(item=>String(item?.id||'')===String(row.id||'')))+1;
  const state=String(row.activity_state||'unknown'),model=row.model&&row.model!=='unknown'?row.model:'model unavailable',cost=row.cost_available===true?money(row.cost):'--',tokens=row.tokens_available===true?f(row.tokens):'--',workTime=row.work_time_s==null?'--':durationShort(row.work_time_s),attempts=Number(row.retries||0)+Number(row.failed_attempts||0),attention=Array.isArray(row.attention)&&row.attention.length;
  const peers=(allRows||[]).filter(item=>item?.cost_available===true&&item?.runtime===row.runtime&&item?.model===row.model&&item?.kind===row.kind&&Number(item?.depth||0)===Number(row.depth||0)).map(item=>Number(item.cost)||0).sort((a,b)=>a-b),middle=Math.floor(peers.length/2),peerMedian=!peers.length?null:peers.length%2?peers[middle]:(peers[middle-1]+peers[middle])/2,comparison=row.cost_available===true&&peerMedian>0&&peers.length>1?`${(Number(row.cost)/peerMedian).toFixed(1)}× cohort median · ${f(peers.length)} comparable agents`:'Comparable cost baseline unavailable';
- const reasons=attention?`<ul>${row.attention.map(reason=>`<li><strong>${esc(String(reason?.code||'').replaceAll('_',' '))}:</strong> ${esc(reason?.explanation||'Evidence threshold met.')}</li>`).join('')}</ul>`:'<p>No deterministic attention signal is present in the available local evidence.</p>';
+ const reasons=attention?`<ul>${row.attention.map(reason=>`<li><strong>${esc(String(reason?.code||'').replaceAll('_',' '))}:</strong> ${esc(reason?.explanation||'Evidence threshold met.')}</li>`).join('')}</ul>`:'';
  const metric=(label,value)=>`<div class=subagentInspectorMetric><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
- inspector.innerHTML=`<div class=subagentInspectorHead><div><h3>${esc(identity.primary)}</h3><p>${esc(identity.secondary?`Provider role · nickname ${identity.secondary}`:'Child-agent evidence')}</p></div><button class=subagentInspectorClose type=button data-subagent-close-detail aria-label="Close agent inspector">×</button></div><div class=subagentInspectorParent><span>Parent session</span><strong title="${esc(parent.title)}">${esc(parent.title)}</strong><small>${esc(parent.project)} · child ${f(siblingIndex)} of ${f(siblings.length)}</small></div><div class=subagentInspectorTags><span>${esc(appFilterLabel({provider:row.runtime}))}</span><span>${esc(model)}</span><span>${esc(row.kind||'child')}</span><span>${esc(state)}</span></div><div class=subagentInspectorGrid>${metric('Estimated cost',cost)}${metric('Tokens',tokens)}${metric('Work time',workTime)}${metric('Executions',f(row.executions||0))}${metric('Tool calls',f(row.tool_calls||0))}${metric('Retry evidence',f(attempts))}</div><div class=subagentInspectorSignals><strong>${attention?'Why this needs review':'Attention evidence'}</strong>${reasons}<p>${esc(comparison)}</p></div><button class="subagentOpenParent subagentInspectorAction" type=button data-subagent-open-parent="${esc(row.root_session_id)}">Open parent session</button>`;
+ inspector.innerHTML=`<div class=subagentInspectorHead><div><h3>${esc(identity.primary)}</h3><p>${esc(identity.secondary?`Provider role · nickname ${identity.secondary}`:'Child-agent evidence')}</p></div><button class=subagentInspectorClose type=button data-subagent-close-detail aria-label="Close agent inspector">×</button></div><div class=subagentInspectorParent><span>Parent session</span><strong title="${esc(parent.title)}">${esc(parent.title)}</strong><small>${esc(parent.project)} · child ${f(siblingIndex)} of ${f(siblings.length)}</small></div><div class=subagentInspectorTags><span>${esc(appFilterLabel({provider:row.runtime}))}</span><span>${esc(model)}</span><span>${esc(row.kind||'child')}</span><span>${esc(state)}</span></div><div class=subagentInspectorGrid>${metric('Estimated cost',cost)}${metric('Tokens',tokens)}${metric('Work time',workTime)}${metric('Executions',f(row.executions||0))}${metric('Tool calls',f(row.tool_calls||0))}${metric('Retry evidence',f(attempts))}</div><div class=subagentInspectorSignals><strong>Cost and retry evidence</strong>${reasons}<p>${esc(comparison)}</p></div><button class="subagentOpenParent subagentInspectorAction" type=button data-subagent-open-parent="${esc(row.root_session_id)}">Open parent session</button>`;
 }
 function renderSubagentRoles(rows){
  const roles=buildSubagentRoleRows(rows);
  if(!roles.length)return '<div class=subagentResultsEmpty><div><strong>No provider-reported roles match</strong>Adjust the filters or inspect Sessions for anonymous child agents.</div></div>';
- const maximum=Math.max(.001,...roles.map(row=>row.knownCost));
- return `<div class=subagentRoleTable><div class=subagentRoleHeader><span>Role</span><span>Runs</span><span>Total spend</span><span>Incomplete</span><span>Needs review</span><span>Median / P95</span><span>Tokens</span></div>${roles.map(row=>{const coverage=row.costCovered===row.agents?'complete':`${f(row.costCovered)} / ${f(row.agents)} covered`,tokenValue=row.tokenCovered?compactNumber(row.knownTokens):'--',totalSpend=row.costCovered?money(row.knownCost):'--';return `<div class=subagentRoleRow style="--role-share:${Math.max(0,Math.min(100,100*row.knownCost/maximum))}%"><div class=subagentRoleIdentity><strong>${esc(row.role)}</strong><small>${esc(appFilterLabel({provider:row.runtime}))} · ${esc(row.kind)} · ${esc(row.topModel)} · ${esc(coverage)}</small></div><div class=subagentRoleMetric><span>Runs</span><b>${f(row.agents)}</b></div><div class=subagentRoleMetric><span>Total spend</span><b>${esc(totalSpend)}</b></div><div class="subagentRoleMetric${row.incomplete?' warn':''}"><span>Incomplete</span><b>${pct(row.incompleteRate)}</b></div><div class="subagentRoleMetric${row.attention?' warn':''}"><span>Needs review</span><b>${pct(row.attentionRate)}</b></div><div class=subagentRoleMetric><span>Median / P95</span><b>${row.medianCost==null?'--':`${money(row.medianCost)} / ${money(row.p95Cost)}`}</b></div><div class=subagentRoleMetric><span>Tokens</span><b>${esc(tokenValue)}</b></div></div>`;}).join('')}</div>`;
+ return `<div class=subagentRoleTable><div class=subagentRoleHeader><span>Role</span><span>Runs</span><span>Total spend</span><span>Incomplete</span><span>Median / P95</span><span>Tokens</span></div>${roles.map(row=>{const coverage=row.costCovered===row.agents?'complete':`${f(row.costCovered)} / ${f(row.agents)} covered`,tokenValue=row.tokenCovered?compactNumber(row.knownTokens):'--',totalSpend=row.costCovered?money(row.knownCost):'--';return `<div class=subagentRoleRow><div class=subagentRoleIdentity><strong>${esc(row.role)}</strong><small>${esc(appFilterLabel({provider:row.runtime}))} · ${esc(row.kind)} · ${esc(row.topModel)} · ${esc(coverage)}</small></div><div class=subagentRoleMetric><span>Runs</span><b>${f(row.agents)}</b></div><div class=subagentRoleMetric><span>Total spend</span><b>${esc(totalSpend)}</b></div><div class="subagentRoleMetric${row.incomplete?' warn':''}"><span>Incomplete</span><b>${pct(row.incompleteRate)}</b></div><div class=subagentRoleMetric><span>Median / P95</span><b>${row.medianCost==null?'--':`${money(row.medianCost)} / ${money(row.p95Cost)}`}</b></div><div class=subagentRoleMetric><span>Tokens</span><b>${esc(tokenValue)}</b></div></div>`;}).join('')}</div>`;
 }
 function renderSubagentExplorer(usage){
  const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],filters=subagentFilters;
+ if($('subagent-explorer').parentElement===$('subagent-page-home')){subagentView='roles';if(filters.role||filters.kind){filters.role='';filters.kind='';persistSubagentFilter('role');persistSubagentFilter('kind');}}
+ else if(subagentView==='roles')subagentView='sessions';
+ localStorage.setItem('tm_subagent_view',subagentView);
  const values=key=>[...new Set(inventory.map(row=>String(row?.[key]||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
  const runtimes=values('runtime'),projects=values('project'),models=values('model');
  if(filters.runtime&&!runtimes.includes(filters.runtime))filters.runtime='';
@@ -6430,30 +6523,34 @@ function renderSubagentExplorer(usage){
  const advancedCount=[filters.model,filters.status!=='all',filters.signal!=='all',filters.sort!=='recent'].filter(Boolean).length;
  $('subagent-filter-advanced').hidden=!subagentAdvancedOpen;$('subagent-filter-more').setAttribute('aria-expanded',String(subagentAdvancedOpen));$('subagent-filter-more-count').textContent=advancedCount?String(advancedCount):'';
  const filterItems=subagentActiveFilterItems(filters);
- $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'<span>Showing all available child-agent evidence</span>';
+ $('subagent-active-filters').innerHTML=filterItems.length?'<span>Filtered by</span>'+filterItems.map(item=>`<button class=subagentFilterChip type=button data-subagent-clear-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter"><b>${esc(item.label)}: ${esc(item.value)}</b><i aria-hidden=true>×</i></button>`).join(''):'';
+ $('subagent-filter-footer').hidden=!filterItems.length;
  $('subagent-filter-clear').disabled=!filterItems.length;
  const contextFilters={...filters,status:'all',signal:'all'},context=filterSubagentInventory(usage,contextFilters),result=filterSubagentInventory(usage,filters),summary=result.summary,exact=summary.complete,parentSessions=subagentParentSessionMap();
- const issueGroups=groupSubagentSessions(context.rows,true,'priority'),sessionGroups=groupSubagentSessions(context.rows,false,filters.sort),roleRows=buildSubagentRoleRows(context.rows);
+ const roleQuery=String(filters.query||'').trim().toLowerCase(),roleVisibleRows=context.rows.filter(row=>!roleQuery||String(row?.role||'').toLowerCase().includes(roleQuery));
+ const issueGroups=groupSubagentSessions(context.rows,true,'priority'),sessionGroups=groupSubagentSessions(context.rows,false,filters.sort),roleRows=buildSubagentRoleRows(roleVisibleRows);
  $('subagent-view-issues-count').textContent=context.summary.complete?f(issueGroups.length):'--';$('subagent-view-sessions-count').textContent=context.summary.complete?f(sessionGroups.length):'--';$('subagent-view-roles-count').textContent=context.summary.complete?f(roleRows.length):'--';
- [...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')].forEach(button=>{const active=button.dataset.subagentView===subagentView;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;if(active)$('subagent-results-panel').setAttribute('aria-labelledby',button.id);});
- $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} recorded child agents`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child agents`;
- const reviewAgents=context.rows.filter(row=>Array.isArray(row?.attention)&&row.attention.length).length,compact=(label,value,kind='',filter='')=>filter?`<button class="subagentCompactMetric actionable ${kind}" type=button data-subagent-summary-filter="${esc(filter)}" aria-pressed="${String(filter==='incomplete'?filters.status==='incomplete':filters.signal===filter)}"><span>${esc(label)}</span><b>${esc(value)}</b></button>`:`<span class="subagentCompactMetric ${kind}"><span>${esc(label)}</span><b>${esc(value)}</b></span>`;
+ [...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')].forEach(button=>{const active=button.dataset.subagentView===subagentView;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;if(active)$('subagent-results-panel').setAttribute('aria-labelledby',subagentView==='roles'?'subagent-results-title':button.id);});
+ $('subagent-explorer-meta').textContent=result.truncated?`${f(result.rows.length)} visible of ${f(result.inventoryCount)} child runs`:result.rows.length===result.inventoryCount?`${f(result.inventoryCount)} child runs`:`${f(result.rows.length)} of ${f(result.inventoryCount)} child runs`;
+ const compact=(label,value,kind='',filter='')=>filter?`<button class="subagentCompactMetric actionable ${kind}" type=button data-subagent-summary-filter="${esc(filter)}" aria-pressed="${String(filter==='incomplete'?filters.status==='incomplete':filters.signal===filter)}"><span>${esc(label)}</span><b>${esc(value)}</b></button>`:`<span class="subagentCompactMetric ${kind}"><span>${esc(label)}</span><b>${esc(value)}</b></span>`;
  const signalLabels={peer_cost_outlier:'cost outliers',active_cost_concentration:'active concentrations',retry_pressure:'retry pressure'};
  const signalPills=Object.entries(context.signalCounts).filter(([,count])=>count>0).map(([code,count])=>compact(signalLabels[code]||code.replaceAll('_',' '),f(count),'warn',code));
- const triagePills=[compact('Needs review',context.summary.complete?f(reviewAgents):'--',reviewAgents?'warn':'dim','attention'),compact('Incomplete',context.summary.complete?f(context.summary.incomplete):'--',context.summary.incomplete?'warn':'dim','incomplete')];
- $('subagent-compact-summary').innerHTML=(subagentView==='roles'?triagePills:[...triagePills,compact('Matching child cost',exact&&summary.costCovered?money(summary.cost):'--'),compact('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--'),...signalPills]).join('');
+ const incompletePill=compact('Incomplete',context.summary.complete?f(context.summary.incomplete):'--',context.summary.incomplete?'warn':'dim','incomplete');
+ $('subagent-compact-summary').innerHTML=(subagentView==='roles'?[incompletePill]:[incompletePill,compact('Matching child cost',exact&&summary.costCovered?money(summary.cost):'--'),compact('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--'),...signalPills]).join('');
  const warning=$('subagent-inventory-warning');warning.hidden=!result.truncated;warning.textContent=result.truncated?'The child-agent inventory reached its privacy-safe display limit. Visible rows remain filterable, but exact filtered totals are withheld.':'';
  if(selectedSubagentId&&!result.rows.some(row=>String(row?.id||'')===selectedSubagentId))selectedSubagentId='';
- const copy={issues:['Review queue','Parent sessions with incomplete work or deterministic attention signals.'],sessions:['Parent sessions','Every matching child grouped under the session that started it.'],roles:['Subagent roles','Spend and run trends for each provider-reported role.']}[subagentView];
+ const copy={issues:['Issues','Incomplete runs and cost/retry signals.'],sessions:['Parent sessions','Child runs grouped by parent. Cost color is relative within each session.'],roles:['Roles','']}[subagentView];
  $('subagent-results-title').textContent=copy[0];$('subagent-results-description').textContent=copy[1];
+ $('subagent-filter-search').placeholder=subagentView==='roles'?'Find a role':'Role, nickname, model, or project';
  const roleView=subagentView==='roles';$('subagent-workspace').classList.toggle('roleView',roleView);$('subagent-inspector').hidden=roleView;
+ renderSubagentModelDistribution(result.rows,result.truncated);
  if(subagentView==='roles'){
-  const economics=buildSubagentRoleEconomics(usage,filters),roles=economics.reason?buildSubagentRoleRows(result.rows):economics.roles;$('subagent-results-count').textContent=`${f(roles.length)} ${countWord(roles.length,'role')}`;$('subagent-results').innerHTML=economics.reason==='filtered'?renderSubagentRoleEconomics(economics)+renderSubagentRoles(result.rows):renderSubagentRoleEconomics(economics);
+  const economics=buildSubagentRoleEconomics(usage,filters),filteredRoleRows=result.rows.filter(row=>!roleQuery||String(row?.role||'').toLowerCase().includes(roleQuery)),roles=economics.reason?buildSubagentRoleRows(filteredRoleRows):economics.roles;$('subagent-results-count').textContent=`${f(roles.length)} ${countWord(roles.length,'role')}`;$('subagent-results').innerHTML=economics.reason==='filtered'?renderSubagentRoleEconomics(economics)+renderSubagentRoles(filteredRoleRows):renderSubagentRoleEconomics(economics);
  }else{
   const groups=groupSubagentSessions(result.rows,subagentView==='issues',subagentView==='issues'?'priority':filters.sort),agentCount=groups.reduce((total,group)=>total+group.agents,0);
-  const reviewCount=groups.reduce((total,group)=>total+group.attention,0),incompleteCount=groups.reduce((total,group)=>total+group.incomplete,0);
-  $('subagent-results-count').textContent=subagentView==='issues'?`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(reviewCount)} need review · ${f(incompleteCount)} incomplete · ${f(agentCount)} total children`:`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(agentCount)} ${countWord(agentCount,'agent')}`;
-  $('subagent-results').innerHTML=groups.length?groups.map((group,index)=>subagentGroupHtml(group,index,parentSessions,subagentView==='issues')).join(''):`<div class=subagentResultsEmpty><div><strong>${subagentView==='issues'?'Nothing needs review':'No parent sessions match'}</strong>${subagentView==='issues'?'No incomplete children or deterministic attention signals are present in this filtered evidence.':'Adjust the filters to restore child-agent sessions.'}</div></div>`;
+  const signalCount=groups.reduce((total,group)=>total+group.attention,0),incompleteCount=groups.reduce((total,group)=>total+group.incomplete,0);
+  $('subagent-results-count').textContent=subagentView==='issues'?`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(incompleteCount)} incomplete · ${f(signalCount)} with cost/retry signals`:`${f(groups.length)} ${countWord(groups.length,'session')} · ${f(agentCount)} ${countWord(agentCount,'agent')}`;
+  $('subagent-results').innerHTML=groups.length?groups.map((group,index)=>subagentGroupHtml(group,index,parentSessions,subagentView==='issues')).join(''):`<div class=subagentResultsEmpty><div><strong>${subagentView==='issues'?'No matching runs':'No parent sessions match'}</strong>${subagentView==='issues'?'No incomplete children or cost/retry signals match these filters.':'Adjust the filters to restore child-agent sessions.'}</div></div>`;
  }
  const selected=result.rows.find(row=>String(row?.id||'')===selectedSubagentId)||null;
  renderSubagentInspector(selected,result.rows,parentSessions);
@@ -6562,8 +6659,8 @@ const subagentFilterBindings={
  'subagent-filter-time':['window','tm_subagent_filter_time'],
  'subagent-filter-sort':['sort','tm_subagent_filter_sort'],
 };
-const subagentFilterStorage={query:'tm_subagent_filter_search',runtime:'tm_subagent_filter_app',project:'tm_subagent_filter_project',model:'tm_subagent_filter_model',status:'tm_subagent_filter_status',signal:'tm_subagent_filter_signal',window:'tm_subagent_filter_time',sort:'tm_subagent_filter_sort'};
-const subagentFilterDefaults={query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'};
+const subagentFilterStorage={query:'tm_subagent_filter_search',role:'tm_subagent_filter_role',kind:'tm_subagent_filter_kind',runtime:'tm_subagent_filter_app',project:'tm_subagent_filter_project',model:'tm_subagent_filter_model',status:'tm_subagent_filter_status',signal:'tm_subagent_filter_signal',window:'tm_subagent_filter_time',sort:'tm_subagent_filter_sort'};
+const subagentFilterDefaults={query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'};
 function persistSubagentFilter(key){
  const storage=subagentFilterStorage[key],value=subagentFilters[key],fallback=subagentFilterDefaults[key];
  if(!storage)return;
@@ -6573,7 +6670,7 @@ function resetSubagentResultView(){subagentVisibleLimit=SUBAGENT_PAGE_SIZE;selec
 function normalizedSubagentNavigationState(view,filters){
  const allowed={status:['all','working','complete','incomplete','waiting','recent','unknown'],signal:['all','attention','peer_cost_outlier','active_cost_concentration','retry_pressure'],window:['all','24h','7d','30d','90d'],sort:['recent','cost','tokens','work','name']},rawSource=filters&&typeof filters==='object'?filters:{},source=rawSource.sort==='elapsed'?{...rawSource,sort:'work'}:rawSource;
  const normalized={...subagentFilterDefaults};
- ['query','runtime','project','model'].forEach(key=>normalized[key]=String(source[key]??subagentFilterDefaults[key]));
+ ['query','role','kind','runtime','project','model'].forEach(key=>normalized[key]=String(source[key]??subagentFilterDefaults[key]??''));
  Object.entries(allowed).forEach(([key,values])=>normalized[key]=values.includes(source[key])?source[key]:subagentFilterDefaults[key]);
  return {view:['issues','sessions','roles'].includes(view)?view:'roles',filters:normalized};
 }
@@ -6584,14 +6681,14 @@ function restoreSubagentNavigationState(state){
  Object.keys(subagentFilterDefaults).forEach(persistSubagentFilter);expandedSubagentRoot=null;resetSubagentResultView();
  return true;
 }
-function openSubagentRoleRuns(role,runtime){
- const current=normalizedSubagentNavigationState(subagentView,subagentFilters),next=normalizedSubagentNavigationState('sessions',{...subagentFilters,query:String(role||''),runtime:String(runtime||subagentFilters.runtime||'')});
+function openSubagentRoleRuns(role,runtime,kind){
+ const current=normalizedSubagentNavigationState(subagentView,subagentFilters),next=normalizedSubagentNavigationState('sessions',{...subagentFilters,query:'',role:String(role||''),kind:String(kind||''),runtime:String(runtime||subagentFilters.runtime||'')});
  history.replaceState({...history.state,subagent:current},'',location.href);
- history.pushState({...history.state,subagent:next},'',location.href);
+ history.pushState({...history.state,subagent:next},'',`/#sessions-subagents`);
  restoreSubagentNavigationState(next);
 }
 window.addEventListener('popstate',event=>{
- if((location.hash||'').replace(/^#/,'')!=='sessions-subagents'||!restoreSubagentNavigationState(event.state?.subagent))return;
+ if(!['subagents','sessions-subagents'].includes((location.hash||'').replace(/^#/,''))||!restoreSubagentNavigationState(event.state?.subagent))return;
  renderSubagentExplorer(LATEST?.xsession?.agent_usage);
 });
 $('subagent-filter-search').addEventListener('input',event=>{
@@ -6613,7 +6710,7 @@ $('subagent-view-tabs').onclick=event=>{
 $('subagent-view-tabs').onkeydown=event=>{
  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
  event.preventDefault();
- const buttons=[...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')],index=buttons.indexOf(event.target.closest('[data-subagent-view]'));
+ const buttons=[...$('subagent-view-tabs').querySelectorAll('[data-subagent-view]')].filter(button=>button.dataset.subagentView!=='roles'),index=buttons.indexOf(event.target.closest('[data-subagent-view]'));
  if(index<0)return;
  const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
  buttons[next].focus();buttons[next].click();
@@ -6633,7 +6730,7 @@ $('subagent-active-filters').onclick=event=>{
 };
 $('subagent-filter-clear').onclick=()=>{
  subagentFilters={...subagentFilterDefaults};
- ['tm_subagent_filter_search',...Object.values(subagentFilterBindings).map(([,storage])=>storage)].forEach(key=>localStorage.removeItem(key));
+ ['tm_subagent_filter_search','tm_subagent_filter_role','tm_subagent_filter_kind',...Object.values(subagentFilterBindings).map(([,storage])=>storage)].forEach(key=>localStorage.removeItem(key));
  subagentAdvancedOpen=false;
  resetSubagentResultView();
  renderSubagentExplorer(LATEST?.xsession?.agent_usage);
@@ -6642,7 +6739,7 @@ $('subagent-results').onclick=event=>{
  const chart=event.target.closest('[data-subagent-role-chart]')?.dataset.subagentRoleChart;
  if(['spend','average','runs'].includes(chart)){subagentRoleChartMode=chart;localStorage.setItem('tm_subagent_role_chart',chart);renderSubagentExplorer(LATEST?.xsession?.agent_usage);return;}
  const roleButton=event.target.closest('[data-subagent-inspect-role]');
- if(roleButton){openSubagentRoleRuns(roleButton.dataset.subagentInspectRole,roleButton.dataset.subagentInspectRuntime);renderSubagentExplorer(LATEST?.xsession?.agent_usage);return;}
+ if(roleButton){openSubagentRoleRuns(roleButton.dataset.subagentInspectRole,roleButton.dataset.subagentInspectRuntime,roleButton.dataset.subagentInspectKind);applyHashRoute();return;}
  const root=event.target.closest('[data-subagent-show-session]')?.dataset.subagentShowSession;
  if(root){
   subagentView='sessions';localStorage.setItem('tm_subagent_view',subagentView);selectedSubagentId='';expandedSubagentRoot=root;renderSubagentExplorer(LATEST?.xsession?.agent_usage);
@@ -7403,6 +7500,11 @@ function applyLiveState(state){
   else renderAllSessions(LATEST.xsession);
  }
  if(sessionSurfaceActive&&currentPanel==='sessions'&&sessionScope==='subagents'){
+  const inventoryStale=!allSessionInventory||allSessionInventoryAt!==Number(LATEST.xsession?.generated_at||0);
+  renderSubagentExplorer(LATEST.xsession?.agent_usage);
+  if(inventoryStale)loadAllSessions();
+ }
+ if($('view-subagents').classList.contains('on')){
   const inventoryStale=!allSessionInventory||allSessionInventoryAt!==Number(LATEST.xsession?.generated_at||0);
   renderSubagentExplorer(LATEST.xsession?.agent_usage);
   if(inventoryStale)loadAllSessions();

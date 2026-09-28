@@ -5792,7 +5792,7 @@ class DashboardLayoutTests(unittest.TestCase):
             "id=agent-activity",
             "id=agent-activity-tree",
             "id=agent-attention-detail",
-            "id=session-scope-subagents",
+            "id=view-subagents",
             "id=subagent-explorer",
             "id=subagent-filter-status",
             "id=subagent-filter-signal",
@@ -5808,8 +5808,8 @@ class DashboardLayoutTests(unittest.TestCase):
             "buildSubagentRoleRows(",
         ):
             self.assertIn(expected, self.page)
-        self.assertIn("Needs attention", self.page)
-        self.assertIn("possible issue, not a diagnosis", self.page)
+        self.assertIn("Cost color compares children in this session", self.page)
+        self.assertIn("Cost and retry evidence", self.page)
         self.assertIn("Work time", self.page)
         self.assertIn("completed prompt-to-response time", self.page)
         self.assertNotIn("<span>Elapsed</span>", self.page)
@@ -5962,14 +5962,10 @@ process.stdout.write(JSON.stringify({{
             "id=subagent-inventory-more",
         ):
             self.assertNotIn(removed, self.page)
-        self.assertIn(
-            "body.sessionRoute #view-session.sessionSubagents "
-            ".currentDaySummary{display:none}",
-            self.page,
-        )
+        self.assertIn("id=view-subagents", self.page)
         self.assertIn("function renderSubagentInspector(", self.page)
-        self.assertIn("compact('Needs review'", self.page)
-        self.assertNotIn("compact('Need review'", self.page)
+        self.assertIn("const incompletePill=compact('Incomplete'", self.page)
+        self.assertNotIn("compact('Needs review'", self.page)
 
     def test_subagent_workspace_orders_roles_sessions_issues_and_defaults_to_roles(self):
         tablist_start = self.page.index('id=subagent-view-tabs')
@@ -5992,7 +5988,7 @@ let subagentFilters;
 const initStart=page.indexOf('let subagentFilters={{');
 const initEnd=page.indexOf('const SUBAGENT_PAGE_SIZE',initStart);
 eval(page.slice(initStart,initEnd).replace('let subagentFilters=','subagentFilters='));
-const subagentFilterDefaults={{query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
 eval(extract('normalizedSubagentNavigationState'));
 eval(extract('subagentActiveFilterItems'));
 const restored=normalizedSubagentNavigationState('sessions',{{sort:'elapsed'}});
@@ -6051,14 +6047,14 @@ const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
 const calls=[];
-const history={{state:{{sessionScope:'all'}},replaceState(state,title,url){{this.state=state;calls.push(['replace',state.subagent]);}},pushState(state,title,url){{this.state=state;calls.push(['push',state.subagent]);}}}};
-const location={{href:'http://127.0.0.1:8722/#sessions-subagents'}};
+const history={{state:{{sessionScope:'all'}},replaceState(state,title,url){{this.state=state;calls.push(['replace',state.subagent,url]);}},pushState(state,title,url){{this.state=state;location.href=String(url);location.hash='#'+String(url).split('#')[1];calls.push(['push',state.subagent,url]);}}}};
+const location={{href:'http://127.0.0.1:8722/#subagents',hash:'#subagents'}};
 const localStorage={{setItem(){{}},removeItem(){{}}}};
 const subagentFilterDefaults={{query:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
 let subagentView='roles',subagentFilters={{...subagentFilterDefaults,project:'/token-meter',window:'30d'}},selectedSubagentId='child',expandedSubagentRoot='root';
 const persistSubagentFilter=()=>{{}},resetSubagentResultView=()=>{{}};
 eval(['normalizedSubagentNavigationState','restoreSubagentNavigationState','openSubagentRoleRuns'].map(extract).join('\\n'));
-openSubagentRoleRuns('token_meter_reviewer','codex');
+openSubagentRoleRuns('token_meter_reviewer','codex','spawned');
 const drilldown={{view:subagentView,filters:subagentFilters}};
 restoreSubagentNavigationState(calls[0][1]);
 process.stdout.write(JSON.stringify({{calls,drilldown,restored:{{view:subagentView,filters:subagentFilters}},sessionScope:history.state.sessionScope}}));
@@ -6073,10 +6069,61 @@ process.stdout.write(JSON.stringify({{calls,drilldown,restored:{{view:subagentVi
         self.assertEqual(payload["calls"][0][1]["view"], "roles")
         self.assertEqual(payload["calls"][0][1]["filters"]["project"], "/token-meter")
         self.assertEqual(payload["drilldown"]["view"], "sessions")
-        self.assertEqual(payload["drilldown"]["filters"]["query"], "token_meter_reviewer")
+        self.assertEqual(payload["calls"][1][2], "/#sessions-subagents")
+        self.assertEqual(payload["drilldown"]["filters"]["role"], "token_meter_reviewer")
+        self.assertEqual(payload["drilldown"]["filters"]["kind"], "spawned")
         self.assertEqual(payload["restored"]["view"], "roles")
         self.assertEqual(payload["restored"]["filters"]["window"], "30d")
         self.assertEqual(payload["sessionScope"], "all")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagents_have_a_primary_page_and_canonical_return_route(self):
+        self.assertIn("id=tab-subagents", self.page)
+        self.assertIn("id=view-subagents", self.page)
+        self.assertIn("id=session-scope-subagents", self.page)
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const SESSION_SCOPES=['current','all','subagents'];
+eval(extract('normalizeSessionScope'));
+eval(extract('sessionScopeRoute'));
+process.stdout.write(JSON.stringify({{subagents:sessionScopeRoute('subagents'),all:sessionScopeRoute('all'),current:sessionScopeRoute('current')}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload, {
+            "subagents": "sessions-subagents", "all": "sessions-all", "current": "sessions",
+        })
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_role_runs_model_distribution_is_exact_and_runtime_scoped(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('filterSubagentInventory'));
+eval(extract('subagentModelDistribution'));
+const rows=[
+ {{id:'1',runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt-x',cost:2,cost_available:true}},
+ {{id:'2',runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt-x',cost_available:false}},
+ {{id:'3',runtime:'claude',kind:'spawned',role:'token_meter_reviewer',model:'gpt-x',cost:3,cost_available:true}},
+ {{id:'4',runtime:'codex',role:'tester',label:'token_meter_reviewer helper',model:'gpt-y',cost:9,cost_available:true}},
+ {{id:'5',runtime:'codex',kind:'internal',role:'token_meter_reviewer',model:'gpt-y',cost:11,cost_available:true}},
+];
+const result=filterSubagentInventory({{inventory:rows}},{{role:'token_meter_reviewer',kind:'spawned',status:'all',signal:'all',window:'all',sort:'recent'}});
+process.stdout.write(JSON.stringify({{ids:result.rows.map(row=>row.id),models:subagentModelDistribution(result.rows)}}));
+"""
+        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["ids"], ["1", "2", "3"])
+        self.assertEqual(len(payload["models"]), 2)
+        self.assertEqual(payload["models"][0]["runtime"], "codex")
+        self.assertEqual(payload["models"][0]["runs"], 2)
+        self.assertEqual(payload["models"][0]["costCovered"], 1)
+        self.assertEqual(payload["models"][0]["cost"], 2)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_session_rows_keep_spawned_run_count(self):
@@ -6088,6 +6135,7 @@ const selectedSubagentId='',expandedSubagentRoot='not-this-root';
 const esc=value=>String(value),f=value=>String(value),countWord=(value,word)=>value===1?word:`${{word}}s`,money=value=>`$${{Number(value).toFixed(2)}}`,compactNumber=value=>String(value),currentSessionAge=()=> 'now',durationShort=value=>`${{value}}s`;
 const agentIdentityPresentation=(row)=>({{primary:row.role||row.label,secondary:''}}),subagentParentPresentation=()=>({{title:'Parent run',project:'token-meter'}});
 eval(extract('groupSubagentSessions'));
+eval(extract('subagentCostHeat'));
 eval(extract('subagentGroupHtml'));
 const rows=[
  {{id:'a',role:'reviewer',kind:'spawned',activity_state:'complete',model:'gpt',cost:1,cost_available:true,tokens:10,tokens_available:true,work_time_s:600,attention:[]}},
@@ -6105,6 +6153,50 @@ process.stdout.write(JSON.stringify({{html}}));
         self.assertIn("Work time", payload["html"])
         self.assertIn("600s", payload["html"])
         self.assertIn("work time --", payload["html"])
+        self.assertIn("subagentCostHeat", payload["html"])
+        self.assertIn("--cost-fill:100%", payload["html"])
+        self.assertNotIn("Need review", payload["html"])
+        self.assertNotIn("Needs attention", payload["html"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_cost_color_is_relative_and_unavailable_cost_is_neutral(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(extract('subagentCostHeat'));
+process.stdout.write(JSON.stringify({{low:subagentCostHeat(1,10,true),high:subagentCostHeat(10,10,true),missing:subagentCostHeat(null,10,false)}}));
+"""
+        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertIn("--cost-fill:10%", result["low"])
+        self.assertIn("--cost-fill:100%", result["high"])
+        self.assertNotEqual(result["low"], result["high"])
+        self.assertEqual(result["missing"], "")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_role_name_search_keeps_exact_cost_trend_and_comparison(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(['selectSubagentUsageScope','subagentRoleKey','subagentRoleFineFilters','subagentRoleDayRows','buildSubagentRoleEconomics'].map(extract).join('\\n'));
+const reviewer={{runtime:'codex',kind:'spawned',role:'token_meter_reviewer',agents:2,known_cost:4,cost_available:true,cost_covered_agents:2}};
+const tester={{runtime:'codex',kind:'spawned',role:'token_meter_tester',agents:1,known_cost:9,cost_available:true,cost_covered_agents:1}};
+const usage={{scopes:[{{runtime:'',project:'',window:'7d',roles:[reviewer,tester],comparison:{{roles:[{{...reviewer,agents:1,known_cost:3,cost_covered_agents:1}},tester]}}}}],role_days:[{{...reviewer,day:'2026-09-27'}},{{...tester,day:'2026-09-27'}}]}};
+const filters={{query:'reviewer',runtime:'',project:'',window:'7d',model:'',status:'all',signal:'all'}};
+process.stdout.write(JSON.stringify(buildSubagentRoleEconomics(usage,filters,Date.parse('2026-09-28T12:00:00'))));
+"""
+        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertIsNone(result["reason"])
+        self.assertEqual(result["runs"], 2)
+        self.assertEqual(result["cost"], 4)
+        self.assertEqual(result["previousCost"], 3)
+        self.assertEqual([row["role"] for row in result["roles"]], ["token_meter_reviewer"])
+        self.assertEqual([row["role"] for row in result["days"]], ["token_meter_reviewer"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_role_table_reports_total_covered_spend(self):
@@ -6150,9 +6242,10 @@ const usage={{scopes:[{{window:'7d',runtime:'codex',project:'/repo',roles:curren
 ]}};
 const base={{query:'',runtime:'codex',project:'/repo',model:'',status:'all',signal:'all',window:'7d',sort:'recent'}};
 const result=buildSubagentRoleEconomics(usage,base,Date.parse('2026-09-24T12:00:00'));
-const partial=buildSubagentRoleEconomics({{...usage,scopes:[{{...usage.scopes[0],roles:[{{...current[0],cost:null,cost_available:false,cost_covered_agents:1}}]}}]}},base,Date.parse('2026-09-24T12:00:00'));
+const partial=buildSubagentRoleEconomics({{...usage,scopes:[{{...usage.scopes[0],roles:[{{...current[0],known_cost:3,cost:null,cost_available:false,cost_covered_agents:1}}]}}]}},base,Date.parse('2026-09-24T12:00:00'));
+const uncovered=buildSubagentRoleEconomics({{...usage,scopes:[{{...usage.scopes[0],roles:[{{...current[0],known_cost:0,cost:null,cost_available:false,cost_covered_agents:0}}]}}]}},base,Date.parse('2026-09-24T12:00:00'));
 const filtered=buildSubagentRoleEconomics(usage,{{...base,status:'incomplete'}},Date.parse('2026-09-24T12:00:00'));
-process.stdout.write(JSON.stringify({{result,partial,filtered}}));
+process.stdout.write(JSON.stringify({{result,partial,uncovered,filtered}}));
 """
         completed = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True,
@@ -6171,8 +6264,13 @@ process.stdout.write(JSON.stringify({{result,partial,filtered}}));
         reviewer = next(row for row in result["roles"] if row["role"] == "reviewer")
         self.assertEqual(reviewer["costChange"], -0.25)
         self.assertEqual(reviewer["runChange"], 1)
-        self.assertIsNone(payload["partial"]["cost"])
+        self.assertEqual(payload["partial"]["cost"], 3)
+        self.assertEqual(payload["partial"]["costCovered"], 1)
+        self.assertEqual(payload["partial"]["averageCost"], 3)
         self.assertIsNone(payload["partial"]["costChange"])
+        self.assertIsNone(payload["partial"]["averageCostChange"])
+        self.assertIsNone(payload["uncovered"]["cost"])
+        self.assertIsNone(payload["uncovered"]["averageCost"])
         self.assertEqual(payload["filtered"]["reason"], "filtered")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
@@ -6182,7 +6280,7 @@ const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
 const esc=value=>String(value),f=value=>String(value),pct=value=>`${{Math.round(value*100)}}%`,money=value=>`$${{Number(value).toFixed(2)}}`,appFilterLabel=({{provider}})=>provider;
-let subagentRoleChartMode='spend';
+let subagentRoleChartMode='average';
 eval(['subagentRoleKey','renderSubagentRoleSparkline','renderSubagentRoleEconomics'].map(extract).join('\\n'));
 const economics={{reason:null,window:'7d',runs:3,cost:8,averageCost:8/3,costCovered:3,previousRuns:1,previousCost:8,costChange:0,averageCostChange:-2/3,runChange:2,incomplete:1,attention:1,previousIncomplete:0,roles:[
  {{id:'reviewer::codex::spawned',runtime:'codex',kind:'spawned',role:'reviewer',agents:2,known_cost:6,cost:6,cost_available:true,cost_covered_agents:2,known_tokens:600,tokens_available:true,token_covered_agents:2,median_cost:3,p95_cost:4,incomplete_agents:1,attention_agents:1,costChange:-.25,runChange:1,averageCostChange:-.625}},
@@ -6193,7 +6291,9 @@ const economics={{reason:null,window:'7d',runs:3,cost:8,averageCost:8/3,costCove
  {{day:'2026-09-23',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:1,cost_available:true,cost_covered_agents:1}},
  {{day:'2026-09-24',runtime:'codex',kind:'spawned',role:'tester',agents:1,known_cost:2,cost_available:true,cost_covered_agents:1}},
 ]}};
-process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics)}}));
+const partial=renderSubagentRoleEconomics({{...economics,runs:2,cost:3,averageCost:3,costCovered:1,costChange:null,averageCostChange:null}});
+const allHistory=renderSubagentRoleEconomics({{...economics,window:'all',previousRuns:null,previousCost:null,costChange:null,averageCostChange:null,runChange:null,roles:economics.roles.map(row=>({{...row,costChange:null,averageCostChange:null,runChange:null}}))}});
+process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics),partial,allHistory}}));
 """
         completed = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True,
@@ -6205,14 +6305,26 @@ process.stdout.write(JSON.stringify({{html:renderSubagentRoleEconomics(economics
         self.assertIn("Role trends", html)
         self.assertIn("Cost / run", html)
         self.assertEqual(html.count("<svg"), 2)
-        self.assertIn('aria-label="reviewer spend trend"', html)
-        self.assertIn('aria-label="tester spend trend"', html)
+        self.assertIn('aria-label="reviewer cost per run trend"', html)
+        self.assertIn('aria-label="tester cost per run trend"', html)
+        self.assertLess(html.index('subagentRoleKpi'), html.index('Role spend'))
+        self.assertLess(html.index('Cost / run'), html.index('Role spend'))
+        self.assertIn('2026-09-23', html)
+        self.assertIn('2026-09-24', html)
+        self.assertNotIn('>1 review<', html)
         self.assertIn("data-subagent-inspect-role=", html)
         self.assertIn("reviewer", html)
         self.assertIn("tester", html)
         self.assertIn("View runs", html)
         self.assertNotIn("What changed", html)
         self.assertNotIn("Role spend over time", html)
+        self.assertIn("Covered role spend", payload["partial"])
+        self.assertIn("Cost / covered run", payload["partial"])
+        self.assertIn("$3.00", payload["partial"])
+        self.assertIn("1 / 2 cost-covered", payload["partial"])
+        self.assertIn("Named runs", payload["partial"])
+        self.assertNotIn("No comparable baseline", payload["allHistory"])
+        self.assertNotIn("<small>--</small>", payload["allHistory"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_role_economics_withholds_truncated_period_insights(self):
@@ -8547,7 +8659,7 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
     def test_sessions_all_spend_learn_and_settings_are_first_class_routes(self):
         for marker in (
             "id=session-scope-tabs", "id=session-scope-current", "id=session-scope-all",
-            "id=session-scope-subagents", "id=all-session-history",
+            "id=tab-subagents", "id=view-subagents", "id=all-session-history",
             "id=subagent-explorer", "id=tab-daily", "id=view-daily",
             "id=tab-learn", "id=view-learn", "id=tab-settings", "id=view-settings",
         ):
@@ -9193,7 +9305,7 @@ console.log(JSON.stringify({
 
     def test_primary_navigation_and_command_palette_share_the_same_workflow_order(self):
         tab_ids = [
-            "tab-session", "tab-daily", "tab-models",
+            "tab-session", "tab-daily", "tab-models", "tab-subagents",
             "tab-efficiency", "tab-git", "tab-performance", "tab-learn",
             "tab-capabilities", "tab-settings",
         ]
@@ -9201,7 +9313,7 @@ console.log(JSON.stringify({
         self.assertEqual(positions, sorted(positions))
         for marker in (
             "id=command-palette", "id=command-search",
-            "const NAV_COMMANDS=[", "directKey:'Digit1'", "directKey:'Digit8'",
+            "const NAV_COMMANDS=[", "directKey:'Digit1'", "directKey:'Digit9'",
             "key==='k'", "event.key==='Escape'", "event.key==='ArrowDown'",
             "event.key==='Enter'",
             "class=tabs aria-label=\"Primary navigation\"",
@@ -9230,8 +9342,8 @@ console.log(JSON.stringify({
     def test_top_level_shortcuts_follow_visible_rail_order(self):
         expected = [
             ("session", "1"), ("daily", "2"), ("models", "3"),
-            ("efficiency", "4"), ("git", "5"), ("learn", "6"),
-            ("capabilities", "7"), ("settings", "8"),
+            ("subagents", "4"), ("efficiency", "5"), ("git", "6"),
+            ("learn", "7"), ("capabilities", "8"), ("settings", "9"),
         ]
         for tab_id, digit in expected:
             match = re.search(rf'<button[^>]+id=tab-{tab_id}[^>]*>.*?</button>', self.page)
@@ -9243,8 +9355,8 @@ console.log(JSON.stringify({
         commands = self.page.split("const NAV_COMMANDS=[", 1)[1].split("];", 1)[0]
         for command_id, digit in (
             ("sessions", "1"), ("spend", "2"), ("models", "3"),
-            ("efficiency", "4"), ("git", "5"), ("learn", "6"),
-            ("capabilities", "7"), ("settings", "8"),
+            ("subagents", "4"), ("efficiency", "5"), ("git", "6"),
+            ("learn", "7"), ("capabilities", "8"), ("settings", "9"),
         ):
             self.assertRegex(
                 commands,
@@ -9662,7 +9774,7 @@ console.log(JSON.stringify({
         self.assertNotIn("data-current-panel=sessions", self.page)
         self.assertNotIn('id=current-tabs', self.page)
         self.assertRegex(self.page, r"id=tab-session[^>]*>.*?<span class=tabLabel>Sessions</span>")
-        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='sessions-subagents'||h==='current-sessions')", self.page)
+        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='current-sessions')", self.page)
         self.assertIn("history.replaceState(null,'','/#sessions')", self.page)
         self.assertIn("function currentSessionModelName", self.page)
         self.assertIn("row.session_name||row.project||'Untitled session'", self.page)
@@ -10379,6 +10491,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "data-page-signal=sessions",
             "data-page-signal=spend",
             "data-page-signal=models",
+            "data-page-signal=subagents",
             "data-page-signal=capabilities",
             "data-page-signal=learn",
             "data-page-signal=settings",
@@ -10432,6 +10545,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "Live local traces · last 30 minutes.",
             "Estimated agent spend over time.",
             "Cost, speed, and context.",
+            "Track the cost of your custom agents.",
             "Tools, MCP servers, and skills.",
             "Local token efficiency.",
             "Pushed code &times; covered spend.",
@@ -10439,8 +10553,8 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "Budgets, connections, pricing, and updates.",
         ):
             self.assertIn(marker, self.page)
-        self.assertEqual(self.page.count("data-page-signal="), 8)
-        self.assertEqual(self.page.count("class=spectrumPageSubtitle"), 8)
+        self.assertEqual(self.page.count("data-page-signal="), 9)
+        self.assertEqual(self.page.count("class=spectrumPageSubtitle"), 9)
         self.assertNotIn(".spectrumPageHead{position:relative;isolation:isolate;display:flex;width:100%;max-width:none;min-height:138px", self.page)
 
     def test_shared_header_effect_adapter_exposes_generic_mounts(self):
@@ -10461,7 +10575,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             re.DOTALL,
         )
         self.assertEqual(
-            titles, ["Sessions", "Models", "Spend", "Efficiency", "Git"],
+            titles, ["Sessions", "Subagents", "Models", "Spend", "Efficiency", "Git"],
         )
         self.assertTrue(all(len(title) <= 12 for title in titles))
 

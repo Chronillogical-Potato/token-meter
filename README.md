@@ -90,6 +90,16 @@ Token Meter works when the agent keeps session evidence on your machine in a
 supported local store. Sessions that exist only in a cloud-hosted service may
 not be available to Token Meter.
 
+### Pi coding-agent sessions
+
+Pi support reads local session JSONL files and shows only content-free usage
+evidence. When present, Token Meter shows recorded input, output, cache, local
+cost, and tool-call evidence. Wait time
+is inferred from user-to-assistant timestamps, not measured output speed.
+Context pressure, output speed, cache savings, and semantic token classification
+remain unavailable. Pi cost is the estimate persisted in its local session;
+Token Meter does not infer a model or price from provider resource identifiers.
+
 ## First Five Minutes
 
 1. Open **Sessions → Current sessions** and select an active run.
@@ -97,7 +107,7 @@ not be available to Token Meter.
    For a supported Claude or Codex run, use **Agent activity** to inspect its
    child hierarchy, covered estimated cost, and explained attention signals.
    Add a session budget if the run needs an attention limit.
-3. After more sessions accumulate, use **Spend**, **Models**, **Tools**,
+3. After more sessions accumulate, use **Spend**, **Models**, **Subagents**, **Tools**,
    **Efficiency**, and **Git** to review longer-term patterns.
 
 ## Product Tour
@@ -106,17 +116,19 @@ not be available to Token Meter.
 
 Run keeps usage, execution, tool, budget, and supported child-agent evidence
 together on one focused session page. **Agent activity** shows a bounded local
-hierarchy for Claude and Codex when their traces establish one. Its **Needs
-attention** label identifies transparent cost or retry conditions to inspect;
-it is not a diagnosis and never stops or changes an agent. **Sessions →
-Subagents** filters child-agent activity by project, application, model,
-completion state, attention signal, and time. Provider-reported roles such as
+hierarchy for Claude and Codex when their traces establish one. Relative cost
+color and explicit retry evidence help identify runs worth inspecting; neither
+is a diagnosis or changes an agent. The dedicated **Subagents** page compares
+named roles over time. **Sessions → Subagents** filters child-agent runs by
+project, application, model, completion state, evidence signal, and time. Provider-reported roles such as
 `token_meter_reviewer` are shown as the primary identity when available;
 provider nicknames remain a fallback. A stale nonterminal trace is labeled
 **Incomplete**, independently of any attention signal. The default **Roles**
 view gives every named role its own spend, cost-per-run, or run-volume trend,
-compares equal periods when coverage permits, and links each role back to its
-runs. **Work time** sums completed prompt-to-response durations, including
+compares equal periods when coverage permits, and links each role cohort to its
+runs under Sessions, with a matching-run model breakdown. Covered spend and cost per covered run remain visible when some runs lack
+cost; coverage is shown, and incomplete periods have no cost-change claim.
+**Work time** sums completed prompt-to-response durations, including
 reasoning and tool use while excluding gaps between prompts; missing timing
 evidence remains unavailable. Browser Back returns from that drill-down to the
 same Roles filters.
@@ -231,8 +243,8 @@ costs, or derived analytics. Do not expose the localhost dashboard publicly.
 
 Costs and selected token values can be estimates. Codex cost uses public
 API-equivalent rates, which can differ from subscription billing; Cursor usage
-includes local proxies where authoritative values are unavailable; Pi cost are
-estimates based on model API pricing.
+includes local proxies where authoritative values are unavailable; Pi cost is
+the local estimate persisted in its session record.
 
 Subagent views use only content-free structural relationships and existing
 usage evidence. They do not expose prompts, responses, reasoning, tool

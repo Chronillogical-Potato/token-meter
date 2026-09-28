@@ -181,8 +181,9 @@ allowlisted fields or discovered canonical identifiers.
 ## Client Interfaces
 
 The browser polls live state and renders all top-level review surfaces from
-`page.html`. Dashboard order is `Sessions → Spend → Models → Efficiency → Git →
-Learn → Tools → Settings`; Sessions owns Current, All, and Subagents modes. Efficiency derives
+`page.html`. Dashboard order is `Sessions → Spend → Models → Subagents → Efficiency → Git →
+Learn → Tools → Settings`; the top-level Subagents page owns Roles, while Sessions owns
+Current, All, and Subagents investigation (child-run Sessions and Issues). Efficiency derives
 mechanical token-efficiency ratios and daily trends from the same runtime-scoped
 model aggregates. Its sortable model table defaults to spend descending and
 preserves unavailable and partial evidence. A Claude thinking-block observation
@@ -192,8 +193,8 @@ reuses those same aggregate formulas for a compact Output/$ and Reasoning ratio
 module. `/session` projects that selected source's bounded model statistics
 directly, so older All Sessions entries do not depend on the 60-row cross-session
 preview. Agent activity is contained in the selected-session Run surface, and
-child-only filtering and aggregate statistics are contained in Sessions
-Subagents. A content-free inventory is positively allowlisted and bounded to
+child-only filtering is contained in Sessions → Subagents, while exact role
+aggregate statistics are shown on the top-level Subagents page. A content-free inventory is positively allowlisted and bounded to
 1,000 child rows; the browser withholds exact filtered totals when that bound
 is reached. Server-side
 attention signals use explicit thresholds for covered cost concentration,
@@ -203,14 +204,17 @@ fully covered. Every reason is explanatory and non-mutating. Charts and model
 comparison remain on the top-level Efficiency route. Child usage is
 pre-aggregated into bounded all-history and fixed activity-window scopes, with
 exact project and runtime variants rooted in the initiating session, so
-supported Sessions Subagents project/runtime/time comparisons never aggregate
+supported Subagents project/runtime/time comparisons never aggregate
 from the visible All Sessions row slice. Non-all scopes also carry the
 immediately preceding equal-duration comparison body. Named provider roles are
 additionally aggregated into a content-free local-calendar daily series,
 bounded to 4,000 role/day/project/runtime/kind rows with explicit truncation
 metadata. The Roles workspace uses those structures to render one spend,
 average-cost-per-run, or volume trend per role; it never derives exact trend
-totals from the 1,000-row visible inventory. Role, nickname, model, status,
+totals from the 1,000-row visible inventory. Known role spend remains visible
+when some runs lack cost; cost per run divides by cost-covered runs only, with
+coverage explicit. Cost changes require complete coverage in both compared
+periods. Role, nickname, model, status,
 signal, and text filters operate only on that bounded child inventory, so the
 browser suspends role trends while a filter not represented by the aggregate is
 active.

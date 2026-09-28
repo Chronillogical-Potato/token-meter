@@ -104,8 +104,9 @@ and select it from **Sessions**.
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches
-history by project, application, or activity window. **Subagents** is the
-dedicated cross-session child-agent explorer. Selecting a session opens a
+history by project, application, or activity window. **Sessions → Subagents**
+investigates child-agent runs and issues; the top-level **Subagents** page compares
+roles. Selecting a session opens a
 durable local URL such as `/sessions/<id>#summary`.
 
 Within a session, **Run** shows usage, timing, tool activity, and the session
@@ -119,8 +120,8 @@ provider trace cannot establish it. A navigable Codex child opens its own
 session detail. Claude child work stays a structural component of the grouped
 Claude session, so it does not become duplicate top-level spend.
 
-**Needs attention** is an explained investigation signal, not a diagnosis.
-Depending on available evidence, reasons can include active cost concentration,
+Relative cost color highlights expensive children in their session; exact
+figures remain visible. Explicit investigation signals can include active cost concentration,
 a comparable-peer cost outlier, provider-reported retry or failed-attempt
 pressure, spend above the browser-local session cap, or covered estimated cost
 that increased by at least $0.25 while a child remained active. Cost-derived
@@ -128,9 +129,9 @@ signals are withheld unless the group has complete cost coverage. Token Meter
 does not stop, pause, or change an agent.
 
 Completion state is separate. A stale trace with no terminal provider event is
-shown as **Incomplete**; a terminal trace is **Complete**. An incomplete agent
-does not automatically need attention, and a complete agent can still carry a
-cost-outlier or retry signal. When Codex reports a safe role such as
+shown as **Incomplete**; a terminal trace is **Complete**. Completion and cost
+or retry evidence are separate: a complete agent can still be a cost outlier.
+When Codex reports a safe role such as
 `token_meter_reviewer`, that role is the primary name and the provider nickname
 is secondary. If no role exists, the nickname or a neutral ordinal is used.
 
@@ -144,41 +145,42 @@ than becoming zero.
 runtime-scoped model, depth, kind, or provider-reported role. Its bounded
 inventory can be filtered by role or nickname, project, application, model,
 status, attention reason, and activity window. A compact evidence strip keeps
-incomplete agents, **Needs attention** signals, matching child cost, and cost
+incomplete agents, cost or retry signals, matching child cost, and cost
 coverage visible without treating a zero-valued signal as a finding. Select an
-**Incomplete**, **Needs review**, or attention-reason tag to apply that filter;
+**Incomplete** or a signal tag to apply that filter;
 select the active tag again to remove it. Spawned
 and internal Codex children remain separate in model, depth, role, and kind
 cohorts. A role is never inferred from a prompt, filename, or conversation. If
 the inventory reaches its bound, visible rows remain filterable but exact
 filtered totals are withheld.
 
-The Subagents workspace has three views. **Roles** is first and is the default
-for new installations. It compares provider-reported roles within their
+The dedicated Subagents page contains **Roles** only. It compares provider-reported roles within their
 application and child kind. Three summary metrics separate total named-role
-spend, average estimated cost per run, and run volume, so reduced spend is not
+covered spend, cost per covered run, and run volume, so reduced spend is not
 mistaken for fewer executions. Each role then gets its own trend chart with a
 shared Spend, Cost/run, or Runs mode. Spend and cost-per-run changes compare the
 selected 24-hour, 7-day, 30-day, or 90-day period with the immediately previous
 period of the same duration. **Any time** shows available history without a
 comparison baseline. Each compact role row keeps run count, cost coverage,
 average and p95 estimated cost, incomplete and review counts, and a **View
-runs** action. Browser Back returns from that filtered run list to the same
-Roles state; Forward restores the run list. **Sessions** keeps every matching
-child under the parent session that started it and shows the spawned-run count
-for each parent.
-**Issues** shows only parent sessions containing an incomplete child or a
-deterministic attention signal. Filters apply across all three views; a saved
-view preference is preserved.
+runs** action. It opens **Sessions → Subagents**, filtered to that exact role,
+application, and child kind,
+with a model distribution by app and model for matching child runs. Browser Back
+returns to the same Roles state; Forward restores the run list. In Sessions →
+Subagents, **Sessions** keeps every matching child under its parent and shows
+the spawned-run count for each parent. **Issues** shows only parent sessions
+containing an incomplete child or a deterministic attention signal. The run
+filters apply to both investigation views; the view preference is preserved.
 
 Role trends use exact server-side app, project, and time aggregates rather than
 the bounded visible inventory. Search, Model, Status, and Signal are row-level
 filters; while any is active, Token Meter pauses the exact trend and explains
-why instead of mixing incompatible scopes. Spend and change are unavailable
-when either compared period lacks complete cost evidence. Lower spend does not
+why instead of mixing incompatible scopes. Known spend and cost per covered run
+remain visible with explicit coverage; cost changes require complete cost
+evidence in both compared periods. Lower spend does not
 establish better output or a successful task.
 
-Select a child in Issues or Sessions to keep the parent list visible while the
+Select a child in Issues or Sessions → Subagents to keep the parent list visible while the
 inspector shows identity, lifecycle, cost, tokens, work time, executions,
 tool calls, retry evidence, sibling position, comparable-agent cost evidence,
 and the exact reasons for a review signal. **Open parent session** moves to the
