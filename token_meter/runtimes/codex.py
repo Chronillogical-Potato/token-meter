@@ -234,13 +234,15 @@ def _compact(value, limit=90):
     return value[:limit - 1] + "…" if len(value) > limit else value
 
 
-def _safe_agent_display(value, limit):
-    """Accept a bounded structural label, not path/URL/credential-shaped text."""
+def _safe_agent_display(value, limit, *, nickname=False):
+    """Keep short agent identifiers, never arbitrary provider prose."""
     if not isinstance(value, str):
         return ""
-    text = _compact(value, limit)
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return ""
+    text = " ".join(value.split())
     lowered = text.lower()
-    if not text or any(ord(char) < 32 or ord(char) == 127 for char in text):
+    if not text or len(text) > limit:
         return ""
     if (
         text.startswith(("/", "\\", "~", "./", "../"))
@@ -252,7 +254,13 @@ def _safe_agent_display(value, limit):
         ))
     ):
         return ""
-    return text
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", text):
+        return text
+    if nickname and re.fullmatch(
+        r"[A-Z][a-z]{1,31} (?:[A-Z][a-z]{1,31}|[0-9]{1,3})", text,
+    ):
+        return text
+    return ""
 
 
 def _opaque_agent_id(physical_trace_id):
@@ -424,7 +432,7 @@ class CodexRuntimeAdapter:
             "agent_parent_physical_id": direct_parent or spawn_parent or None,
             "agent_depth": depth,
             "agent_label": _safe_agent_display(
-                spawn.get("agent_nickname"), 80,
+                spawn.get("agent_nickname"), 80, nickname=True,
             ),
             "agent_role": _safe_agent_display(spawn.get("agent_role"), 64),
         }
