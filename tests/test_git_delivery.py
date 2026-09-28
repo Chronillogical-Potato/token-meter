@@ -1063,12 +1063,12 @@ console.log(JSON.stringify({{mouse,pen,touch}}));
     def test_git_is_the_canonical_name_and_delivery_hash_is_compatible(self):
         for marker in (
             "id=tab-git data-label=Git aria-label=Git",
-            "title=\"Git · Shortcut: Option+5\"",
+            "title=\"Git · Shortcut: Option+6\"",
             "<span class=tabLabel>Git</span>",
             "<div class=view id=view-git>",
             "<h1>Git</h1>",
             "{id:'git',label:'Git'",
-            "route:'git',directKey:'Digit5'",
+            "route:'git',directKey:'Digit6'",
             "if(h==='delivery')setHashRoute('git',{replace:true,apply:false})",
             "if(h==='git'||h==='delivery')",
             "showTab('git')",
@@ -1079,7 +1079,7 @@ console.log(JSON.stringify({{mouse,pen,touch}}));
         for removed in (
             "id=tab-delivery", "data-label=Delivery", "aria-label=Delivery",
             "<span class=tabLabel>Delivery</span>", "<h1>Delivery</h1>",
-            "label:'Delivery'", "route:'delivery',directKey:'Digit5'",
+            "label:'Delivery'", "route:'delivery',directKey:'Digit6'",
         ):
             self.assertNotIn(removed, self.page)
 
@@ -1093,7 +1093,7 @@ console.log(JSON.stringify({{mouse,pen,touch}}));
         self.assertIn("### Git", docs["README.md"])
         self.assertIn("### Git", docs["specs/USER_GUIDE.md"])
         expected_order = (
-            "Sessions → Spend → Models → Efficiency → Git → Learn → Tools → Settings"
+            "Sessions → Spend → Models → Subagents → Efficiency → Git → Learn → Tools → Settings"
         )
         self.assertIn(expected_order, " ".join(docs["specs/ARCHITECTURE.md"].split()))
         self.assertIn(expected_order, " ".join(docs["specs/AGENTS.md"].split()))

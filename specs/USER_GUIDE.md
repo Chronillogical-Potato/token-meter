@@ -104,11 +104,89 @@ and select it from **Sessions**.
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches
-history by project, application, or activity window. Selecting a session opens
-a durable local URL such as `/sessions/<id>#summary`.
+history by project, application, or activity window. **Sessions → Subagents**
+investigates child-agent runs and issues; the top-level **Subagents** page compares
+roles. Selecting a session opens a
+durable local URL such as `/sessions/<id>#summary`.
 
 Within a session, **Run** shows usage, timing, tool activity, and the session
-budget cap in one view.
+budget cap in one view. When local Claude or Codex evidence establishes a
+parent-child relationship, **Agent activity** adds the main session and its
+descendants with model, activity state, tokens, estimated cost, group share,
+and work time. Work time is the cumulative duration of completed
+prompt-to-response turns. It includes reasoning and tool use, excludes idle
+gaps between prompts and time after completion, and stays unavailable when the
+provider trace cannot establish it. A navigable Codex child opens its own
+session detail. Claude child work stays a structural component of the grouped
+Claude session, so it does not become duplicate top-level spend.
+
+Relative cost color highlights expensive children in their session; exact
+figures remain visible. Explicit investigation signals can include active cost concentration,
+a comparable-peer cost outlier, provider-reported retry or failed-attempt
+pressure, spend above the browser-local session cap, or covered estimated cost
+that increased by at least $0.25 while a child remained active. Cost-derived
+signals are withheld unless the group has complete cost coverage. Token Meter
+does not stop, pause, or change an agent.
+
+Completion state is separate. A stale trace with no terminal provider event is
+shown as **Incomplete**; a terminal trace is **Complete**. Completion and cost
+or retry evidence are separate: a complete agent can still be a cost outlier.
+When Codex reports a safe role such as
+`token_meter_reviewer`, that role is the primary name and the provider nickname
+is secondary. If no role exists, the nickname or a neutral ordinal is used.
+
+The hierarchy displays at most 100 agents and reports any hidden count, while
+its totals continue to cover the full resolved group. Ambiguous, unresolved,
+or cyclic relationships are excluded and relationship coverage becomes
+partial. Missing token or cost evidence remains partial or unavailable rather
+than becoming zero.
+
+**Subagents** counts child work only and groups it by application,
+runtime-scoped model, depth, kind, or provider-reported role. Its bounded
+inventory can be filtered by role or nickname, project, application, model,
+status, attention reason, and activity window. A compact evidence strip keeps
+incomplete agents, cost or retry signals, matching child cost, and cost
+coverage visible without treating a zero-valued signal as a finding. Select an
+**Incomplete** or a signal tag to apply that filter;
+select the active tag again to remove it. Spawned
+and internal Codex children remain separate in model, depth, role, and kind
+cohorts. A role is never inferred from a prompt, filename, or conversation. If
+the inventory reaches its bound, visible rows remain filterable but exact
+filtered totals are withheld.
+
+The dedicated Subagents page contains **Roles** only. It compares provider-reported roles within their
+application and child kind. Three summary metrics separate total named-role
+covered spend, cost per covered run, and run volume, so reduced spend is not
+mistaken for fewer executions. Each role then gets its own trend chart with a
+shared Spend, Cost/run, or Runs mode. Spend and cost-per-run changes compare the
+selected 24-hour, 7-day, 30-day, or 90-day period with the immediately previous
+period of the same duration. **Any time** shows available history without a
+comparison baseline. Each compact role row keeps run count, cost coverage,
+average and p95 estimated cost, incomplete and review counts, and a **View
+runs** action. It opens **Sessions → Subagents**, filtered to that exact role,
+application, and child kind,
+with a model distribution by app and model for matching child runs. Browser Back
+returns to the same Roles state; Forward restores the run list. In Sessions →
+Subagents, **Sessions** keeps every matching child under its parent and shows
+the spawned-run count for each parent. **Issues** shows only parent sessions
+containing an incomplete child or a deterministic attention signal. The run
+filters apply to both investigation views; the view preference is preserved.
+
+Role trends use exact server-side app, project, and time aggregates rather than
+the bounded visible inventory. Search, Model, Status, and Signal are row-level
+filters; while any is active, Token Meter pauses the exact trend and explains
+why instead of mixing incompatible scopes. Known spend and cost per covered run
+remain visible with explicit coverage; cost changes require complete cost
+evidence in both compared periods. Lower spend does not
+establish better output or a successful task.
+
+Select a child in Issues or Sessions → Subagents to keep the parent list visible while the
+inspector shows identity, lifecycle, cost, tokens, work time, executions,
+tool calls, retry evidence, sibling position, comparable-agent cost evidence,
+and the exact reasons for a review signal. **Open parent session** moves to the
+normal session detail and its full Agent activity hierarchy. Parent titles are
+resolved from the existing local session history; no prompt or response text
+is added to the child-agent projection.
 
 Session deletion is available only where the runtime and platform expose a
 safe, recoverable target.
@@ -369,6 +447,11 @@ The dashboard can display local project paths, runtime/model names, capability
 names, and derived metrics. See [SECURITY.md](SECURITY.md) and the
 [architecture privacy invariants](ARCHITECTURE.md#privacy-and-security-invariants)
 for the complete boundary.
+
+Agent activity and subagent statistics project only opaque relationships,
+bounded provider-reported labels and roles, model/activity fields, and numeric
+usage evidence. Prompts, responses, reasoning, tool contents, commands, raw
+provider events, agent-definition paths, and trace paths are excluded.
 
 ## Troubleshooting
 

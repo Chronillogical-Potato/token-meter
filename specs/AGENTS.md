@@ -74,7 +74,7 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
 - Persist machine-wide settings through the existing atomic JSON-write path and action-token-protected HTTP endpoints.
 - New settings require validation, idempotent writes, migration behavior, and tests.
 - Preserve legacy hash routes and stored preferences when changing navigation or native settings.
-- Keep the top-level dashboard order `Sessions → Spend → Models → Efficiency → Git → Learn → Tools → Settings`. Sessions contains `Current sessions` and `All sessions`; All owns cross-session review.
+- Keep the top-level dashboard order `Sessions → Spend → Models → Subagents → Efficiency → Git → Learn → Tools → Settings`. The top-level Subagents page owns only role economics. Sessions contains `Current sessions`, `All sessions`, and `Subagents`; the latter owns child-run `Sessions` and `Issues` investigation. Preserve both `#subagents` and `#sessions-subagents` routes.
 - Global is not a dashboard surface. Keep cross-session aggregation as shared backend data for Sessions All, Daily, Models, Tools, Efficiency, MCP, and the menu bar.
 - Keep the complete machine-wide monthly budget dashboard and controls inside Settings. The native companion may deep-link to `#settings-budgets`; preserve `#budgets` as a compatibility redirect.
 - Use macOS labels such as `⌥`, never `Alt`, in user-facing copy.

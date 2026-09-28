@@ -81,6 +81,11 @@ from token_meter.domain.aggregates import (
     spend_log_summaries as _domain_spend_log_summaries,
     spend_projection as _domain_spend_projection,
 )
+from token_meter.domain.agents import (
+    aggregate_agent_usage as _domain_aggregate_agent_usage,
+    build_agent_groups as _domain_build_agent_groups,
+    find_agent_group as _domain_find_agent_group,
+)
 from token_meter.domain.builder_recap import (
     VALID_RECAP_RANGES,
     build_builder_recap as _domain_build_builder_recap,
@@ -136,6 +141,10 @@ from token_meter.models.pricing import (
 )
 from token_meter.platforms.base import ProcessPurpose
 from token_meter.platforms.registry import platform_services
+from token_meter.projections import (
+    agent_group_projection as _agent_group_projection,
+    agent_usage_projection as _agent_usage_projection,
+)
 from token_meter.quotas.base import CallableQuotaAdapter, QuotaUnavailable
 from token_meter.quotas import anthropic as anthropic_quotas
 from token_meter.quotas.common import (
@@ -354,7 +363,7 @@ _git_delivery_service_lock = threading.Lock()
 _git_delivery_wake = threading.Event()
 _xsess = {
     "data": None, "at": 0.0, "sessions": [],
-    "internal_rows": (), "project_model_stats": {},
+    "internal_rows": (), "agent_groups": (), "project_model_stats": {},
 }
 _XSESS_TTL = 15.0
 _XSESS_LIVE_REFRESH_S = _XSESS_TTL
@@ -5903,11 +5912,19 @@ def dashboard_state_payload(state):
         ):
             public_tools.pop(removed, None)
         payload["tools"] = public_tools
+    if isinstance(state.get("agent_group"), dict):
+        payload["agent_group"] = _agent_group_projection(
+            state.get("agent_group")
+        )
     payload["runtime_catalog"] = _runtime_catalog(runtime_registry().descriptors)
     cross = state.get("xsession")
     if isinstance(cross, dict):
         public_cross = dict(cross)
         public_cross.pop("tool_waste", None)
+        if isinstance(cross.get("agent_usage"), dict):
+            public_cross["agent_usage"] = _agent_usage_projection(
+                cross.get("agent_usage")
+            )
         if isinstance(cross.get("capabilities"), dict):
             public_cross["capabilities"] = capability_summary_payload(
                 cross.get("capabilities")
@@ -5974,6 +5991,14 @@ def attach_cross_session(state, cross=None):
     cross = cross or cross_session()
     state["xsession"] = cross
     state["optional_capabilities"] = session_optional_capabilities(state, cross.get("capabilities") or {})
+    source_id = str(((state.get("source") or {}).get("id") or ""))
+    group = _domain_find_agent_group(
+        _xsess.get("agent_groups") or (), source_id,
+    )
+    if group:
+        state["agent_group"] = _agent_group_projection(group)
+    else:
+        state.pop("agent_group", None)
     return state
 
 
@@ -7230,16 +7255,69 @@ def canonical_aggregation_sources(sources):
     return result
 
 
+def canonical_agent_sources(sources):
+    """Select one summary source per physical agent without changing accounting."""
+    source_rows = list(sources or ())
+    selected = []
+
+    for source in canonical_aggregation_sources(source_rows):
+        if source.get("provider") == "claude":
+            selected.append(source)
+
+    groups = defaultdict(list)
+    for index, source in enumerate(source_rows):
+        if source.get("provider") != "codex":
+            continue
+        physical_id = str(source.get("physical_trace_id") or "")
+        key = physical_id or "path:" + str(source.get("path") or index)
+        groups[key].append((index, source))
+
+    def rank(indexed_source):
+        _index, source = indexed_source
+        try:
+            activity = float(source.get("mtime") or 0)
+        except (TypeError, ValueError, OverflowError):
+            activity = 0.0
+        try:
+            signature = float(source.get("signature_mtime") or 0)
+        except (TypeError, ValueError, OverflowError):
+            signature = 0.0
+        return (
+            not bool(source.get("_aggregation_canonical")),
+            -activity,
+            -signature,
+            str(source.get("path") or ""),
+        )
+
+    codex_selected = {
+        min(candidates, key=rank)[0] for candidates in groups.values()
+    }
+    selected.extend(
+        source for index, source in enumerate(source_rows)
+        if index in codex_selected
+    )
+    return selected
+
+
 def cross_session(sources=None):
     now = time.time()
     if _xsess["data"] and (now - _xsess["at"] < _XSESS_TTL):
         return _xsess["data"]
 
     internal_rows = []
+    agent_rows = []
 
-    source_rows = canonical_aggregation_sources(
-        list(sources) if sources is not None else all_session_sources()
-    )
+    all_sources = list(sources) if sources is not None else all_session_sources()
+    source_rows = canonical_aggregation_sources(all_sources)
+    agent_source_rows = canonical_agent_sources(all_sources)
+    summarized_rows = {}
+
+    def source_key(source):
+        return (
+            str(source.get("provider") or ""),
+            str(source.get("path") or ""),
+            str(source.get("id") or ""),
+        )
     opencode_conn = None
     if any(source.get("provider") == "opencode" for source in source_rows):
         try:
@@ -7257,9 +7335,22 @@ def cross_session(sources=None):
                 if source.get("provider") == "opencode" and shared_opencode_conn is not None
                 else session_summary(source)
             )
+            summarized_rows[source_key(source)] = row
             if row["turns"] == 0:
                 continue
             internal_rows.append(row)
+
+    for source in agent_source_rows:
+        row = summarized_rows.get(source_key(source))
+        if row is None:
+            row = session_summary(source)
+        if row.get("_agent_records"):
+            agent_rows.append(row)
+
+    agent_groups = _domain_build_agent_groups(agent_rows, now=now)
+    agent_usage = _agent_usage_projection(
+        _domain_aggregate_agent_usage(agent_groups, now=now)
+    )
 
     aggregate = _domain_aggregate_cross_session_rows(
         internal_rows, runtime_resolver=source_runtime_label,
@@ -7317,6 +7408,7 @@ def cross_session(sources=None):
         "premium_share": (premium / total) if total else 0.0,
         "providers": aggregate["providers"],
         "model_stats": aggregate_model_stats(internal_rows),
+        "agent_usage": agent_usage,
         "language_signals": language_signals,
         "frustration": language_signals["friction"],
         "model_pricing": model_pricing_settings(),
@@ -7330,6 +7422,7 @@ def cross_session(sources=None):
         "session_actions": session_action_capability(),
     }
     _xsess["internal_rows"] = tuple(internal_rows)
+    _xsess["agent_groups"] = tuple(agent_groups)
     _xsess["project_model_stats"] = {}
     _xsess["data"], _xsess["at"] = data, now
     return data
