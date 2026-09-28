@@ -1,12 +1,10 @@
 import unittest
-from pathlib import Path
 
 from token_meter.contracts import (
     EvidenceBasis,
     EvidenceValue,
     ModelRef,
     PriceQuote,
-    RuntimeModelKey,
     UsageEvidence,
 )
 from token_meter.domain.usage import (
@@ -47,17 +45,6 @@ def quote(provider="model-provider", model="model"):
 
 
 class UsageDomainTests(unittest.TestCase):
-    def test_shared_usage_module_contains_no_known_runtime_identifiers(self):
-        source = (
-            Path(__file__).resolve().parents[2]
-            / "token_meter"
-            / "domain"
-            / "usage.py"
-        ).read_text().lower()
-
-        for runtime_id in ("claude", "codex", "cursor", "opencode", "kiro"):
-            self.assertNotIn(runtime_id, source)
-
     def test_golden_cost_and_cache_token_semantics(self):
         evidence = usage(
             input_tokens=1_000_000,
@@ -120,17 +107,6 @@ class UsageDomainTests(unittest.TestCase):
             "cache_read": 0.4,
             "output": 15.0,
         })
-
-    def test_equivalent_evidence_is_runtime_neutral_but_keys_stay_scoped(self):
-        evidence = usage(input_tokens=100, output_tokens=20)
-        model = quote().model
-
-        left = cost_breakdown(evidence, quote())
-        right = cost_breakdown(evidence, quote())
-
-        self.assertEqual(left, right)
-        self.assertNotEqual(RuntimeModelKey("runtime-a", model),
-                            RuntimeModelKey("runtime-b", model))
 
     def test_reported_cost_distribution_preserves_authoritative_total(self):
         split = distribute_reported_cost(

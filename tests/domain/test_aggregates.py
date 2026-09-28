@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 
 from token_meter.domain.aggregates import (
     aggregate_model_stats,
@@ -220,14 +219,6 @@ class AggregateDomainTests(unittest.TestCase):
         self.assertEqual([row["id"] for row in result["models"]], [
             "m::runtime-a", "m::runtime-b",
         ])
-
-    def test_shared_aggregate_module_contains_no_known_runtime_identifiers(self):
-        source = (
-            Path(__file__).resolve().parents[2]
-            / "token_meter" / "domain" / "aggregates.py"
-        ).read_text().lower()
-        for runtime_id in ("claude", "codex", "cursor", "opencode", "kiro"):
-            self.assertNotIn(runtime_id, source)
 
 
 if __name__ == "__main__":

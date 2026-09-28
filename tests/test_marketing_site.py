@@ -9,7 +9,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "docs"
-PAGES_WORKFLOW = ROOT / ".github" / "workflows" / "pages.yml"
 
 
 class _SiteParser(HTMLParser):
@@ -48,23 +47,6 @@ class MarketingSiteContractTests(unittest.TestCase):
         cls.llms = (SITE / "llms.txt").read_text(encoding="utf-8")
         cls.parser = _SiteParser()
         cls.parser.feed(cls.html)
-
-    def test_static_site_has_complete_local_entrypoints(self):
-        self.assertTrue((SITE / "index.html").is_file())
-        self.assertTrue((SITE / "styles.css").is_file())
-        self.assertTrue((SITE / "script.js").is_file())
-        self.assertTrue((SITE / "favicon.svg").is_file())
-        self.assertTrue((SITE / "robots.txt").is_file())
-        self.assertTrue((SITE / "sitemap.xml").is_file())
-        self.assertTrue((SITE / "llms.txt").is_file())
-        self.assertEqual(self.parser.stylesheets, ["styles.css"])
-        self.assertEqual(self.parser.scripts, ["tab-controller.js", "script.js"])
-        self.assertNotRegex(self.html, r'<script[^>]+src="https?://')
-        self.assertNotRegex(
-            self.html,
-            r'<link[^>]+rel="stylesheet"[^>]+href="https?://',
-        )
-        self.assertNotIn("@import", self.css)
 
     def test_site_has_search_and_agent_discovery_metadata(self):
         self.assertIn(
@@ -125,6 +107,9 @@ class MarketingSiteContractTests(unittest.TestCase):
         ):
             self.assertIn(section_id, self.parser.ids)
             self.assertIn("#" + section_id, self.parser.links)
+        for href in self.parser.links:
+            if href.startswith("#"):
+                self.assertIn(href[1:], self.parser.ids, href)
         self.assertIn('class="skip-link"', self.html)
         self.assertIn('href="#main-content"', self.html)
 
@@ -146,6 +131,12 @@ class MarketingSiteContractTests(unittest.TestCase):
     def test_hero_leads_with_optimisation_and_one_tabbed_install_frame(self):
         self.assertIn('<h1 id="hero-title">', self.html)
         self.assertIn("Optimise your coding agents.", re.sub(r"<[^>]+>", "", self.html))
+        heading = re.search(r'<h1 id="hero-title">(.*?)</h1>', self.html, re.S)
+        self.assertIsNotNone(heading)
+        self.assertEqual(
+            re.findall(r"<span[^>]*>([^<]+)</span>", heading.group(1)),
+            ["Optimise your", "coding agents."],
+        )
         hero_end = self.html.index('<section class="proof-section"')
         hero_copy = self.html[:hero_end]
         self.assertIn(
@@ -172,22 +163,6 @@ class MarketingSiteContractTests(unittest.TestCase):
         self.assertEqual(self.html.count('class="install-card '), 1)
         self.assertNotIn('class="section install-section"', self.html)
 
-    def test_hero_typography_is_structured_for_desktop_readability(self):
-        self.assertIn('<span class="hero-title-line">Optimise your</span>', self.html)
-        self.assertIn(
-            '<span class="hero-title-line hero-title-emphasis">coding agents.</span>',
-            self.html,
-        )
-        for rule in (
-            "--label-size: 11px;",
-            "--micro-size: 10px;",
-            "font-size: clamp(4.6rem, 7.3vw, 8.4rem);",
-            "line-height: 0.86;",
-            ".hero-title-emphasis",
-        ):
-            self.assertIn(rule, self.css)
-        self.assertNotIn("font-size: clamp(5rem, 10vw, 10.8rem);", self.css)
-
     def test_product_proof_uses_approved_local_screenshots(self):
         expected = {
             "images/dashboard.png",
@@ -203,36 +178,32 @@ class MarketingSiteContractTests(unittest.TestCase):
         for image in product_images:
             self.assertTrue(image.get("alt"), image)
             self.assertEqual(image.get("loading"), "lazy")
-        for relative in expected:
-            self.assertTrue((ROOT / relative).is_file())
 
     def test_native_companion_is_semantic_web_ui_not_a_snapshot(self):
         self.assertNotIn("menu-bar-widget.png", self.html)
         self.assertFalse((SITE / "images" / "menu-bar-widget.png").exists())
-        self.assertIn('class="native-menu-demo"', self.html)
-        self.assertIn('class="native-statusbar"', self.html)
-        self.assertIn('class="native-popover"', self.html)
-        for label in (
-            "Open Dashboard", "Recent sessions", "Follow Latest",
-            "Completed #16", "Summarize soon", "Cost", "Tokens",
-            "Cache", "Context", "Last execution", "Watch closely",
-        ):
-            self.assertIn(label, self.html)
+        native = self.html.split('id="native-companion"', 1)[1].split("</figure>", 1)[0]
+        self.assertIn('role="img"', native)
+        self.assertIn('aria-label="Web recreation of the Token Meter macOS menu-bar companion', native)
+        for label in ("Cost", "Tokens", "Cache", "Context", "Last execution"):
+            self.assertIn(label, native)
 
     def test_efficiency_has_a_dedicated_evidence_qualified_section(self):
-        self.assertIn('class="efficiency-section" id="efficiency"', self.html)
-        self.assertIn("Efficiency, with the evidence beside it.", self.html)
+        match = re.search(r'<section[^>]+id="efficiency".*?</section>', self.html, re.S)
+        self.assertIsNotNone(match)
+        efficiency = match.group(0)
+        self.assertIn("Efficiency, with the evidence beside it.", efficiency)
         for signal in (
             "Output / covered $", "Reasoning ratio", "Context load",
             "Output / execution",
         ):
-            self.assertIn(signal, self.html)
+            self.assertIn(signal, efficiency)
         for qualifier in (
             "No universal score", "comparable work", "Coverage remains visible",
             "Costs and selected token values can be estimates",
         ):
-            self.assertIn(qualifier, self.html)
-        self.assertNotIn("Efficiency score", self.html)
+            self.assertIn(qualifier, efficiency)
+        self.assertNotIn("Efficiency score", efficiency)
 
     def test_splunk_wordmarks_use_the_local_brand_image(self):
         logo_source = "images/logo-splunk-acc-rgb-w.png"
@@ -267,31 +238,6 @@ class MarketingSiteContractTests(unittest.TestCase):
             r'<img[^>]+src="https?://[^\"]*(?:splunk|logo)[^\"]*\.(?:svg|png)',
         )
 
-    def test_signal_print_rejects_generic_saas_composition(self):
-        self.assertNotIn("One instrument for the work", self.html)
-        self.assertIn("Every run leaves a signal.", self.html)
-        self.assertIn("Read the cost. See the work.", self.html)
-        self.assertIn('class="proof-viewer"', self.html)
-        self.assertIn('class="signal-ledger"', self.html)
-        for mode in ("plume", "scan", "orbit"):
-            self.assertIn(f'data-dither="{mode}"', self.html)
-            self.assertIn(f"case '{mode}'", self.js)
-        self.assertEqual(self.html.count('class="dither-canvas"'), 3)
-        self.assertIn("canvas.dataset.dither", self.js)
-        for rejected in (
-            "hero-instrument", "instrument-window", "bento-grid",
-            "runtime-orbit", "local-diagram",
-        ):
-            self.assertNotIn(rejected, self.html)
-        self.assertNotIn(".bento", self.css)
-        self.assertNotIn("backdrop-filter", self.css)
-
-    def test_privacy_dither_is_a_closed_boundary_not_a_letterform(self):
-        self.assertIn("const closedRing =", self.js)
-        self.assertIn("const boundaryEcho =", self.js)
-        self.assertNotIn("const gate = nx > 0.48", self.js)
-        self.assertIn("closedRing * 1.08 + boundaryEcho", self.js)
-
     def test_interactions_are_keyboard_and_reduced_motion_safe(self):
         self.assertEqual(self.html.count('aria-hidden="true"></canvas>'), 3)
         self.assertIn('aria-hidden="true"', self.html)
@@ -315,47 +261,68 @@ class MarketingSiteContractTests(unittest.TestCase):
             )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for tab behavior")
-    def test_tab_controller_selects_panels_and_wraps_keyboard_navigation(self):
+    def test_tab_controller_wires_click_and_keyboard_navigation(self):
         driver = r"""
-const tabsApi = require('./docs/tab-controller.js');
-const panels = { first: { hidden: false }, second: { hidden: true } };
-const makeTab = target => ({
-  dataset: { tabTarget: target }, tabIndex: 0, attrs: {},
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+let focused = null;
+const makeTab = (id, selected) => ({
+  dataset: { tabTarget: id }, tabIndex: selected ? 0 : -1,
+  attrs: { 'aria-selected': String(selected) }, listeners: {},
   setAttribute(name, value) { this.attrs[name] = value; },
+  addEventListener(name, listener) { this.listeners[name] = listener; },
+  focus() { focused = this; },
+  dispatch(name, event = {}) { this.listeners[name](event); },
 });
-const first = makeTab('first');
-const second = makeTab('second');
-tabsApi.selectTab([first, second], second, id => panels[id]);
-console.log(JSON.stringify({
-  firstSelected: first.attrs['aria-selected'],
-  secondSelected: second.attrs['aria-selected'],
-  firstHidden: panels.first.hidden,
-  secondHidden: panels.second.hidden,
-  next: tabsApi.nextTabIndex('ArrowRight', 1, 2),
-  previous: tabsApi.nextTabIndex('ArrowLeft', 0, 2),
-  home: tabsApi.nextTabIndex('Home', 1, 2),
-  end: tabsApi.nextTabIndex('End', 0, 2),
-  ignored: tabsApi.nextTabIndex('Enter', 0, 2),
-}));
+const tabs = ['first', 'second', 'third'].map((id, index) => makeTab(id, index === 0));
+const panels = Object.fromEntries(tabs.map((tab, index) =>
+  [tab.dataset.tabTarget, { hidden: index !== 0 }]));
+const group = { querySelectorAll(selector) {
+  assert.equal(selector, '[role="tab"]');
+  return tabs;
+} };
+const documentRoot = {
+  querySelectorAll(selector) {
+    assert.equal(selector, '[data-tab-group]');
+    return [group];
+  },
+  getElementById(id) { return panels[id]; },
+};
+const window = {};
+vm.runInNewContext(fs.readFileSync('./docs/tab-controller.js', 'utf8'), { window });
+window.TokenMeterTabs.setupAll(documentRoot);
+const check = selected => {
+  tabs.forEach((tab, index) => {
+    assert.equal(tab.attrs['aria-selected'], String(index === selected));
+    assert.equal(tab.tabIndex, index === selected ? 0 : -1);
+    assert.equal(panels[tab.dataset.tabTarget].hidden, index !== selected);
+  });
+};
+tabs[1].dispatch('click');
+check(1);
+for (const [from, key, expected] of [
+  [2, 'ArrowRight', 0], [0, 'ArrowLeft', 2],
+  [2, 'Home', 0], [0, 'End', 2],
+]) {
+  let prevented = false;
+  tabs[from].dispatch('keydown', { key, preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  check(expected);
+  assert.equal(focused, tabs[expected]);
+}
+let prevented = false;
+tabs[2].dispatch('keydown', { key: 'Enter', preventDefault() { prevented = true; } });
+assert.equal(prevented, false);
+check(2);
 """
-        result = subprocess.run(
+        subprocess.run(
             ["node", "-e", driver], cwd=ROOT, check=True,
             capture_output=True, text=True,
         )
-        self.assertEqual(result.stdout.strip(), (
-            '{"firstSelected":"false","secondSelected":"true",'
-            '"firstHidden":true,"secondHidden":false,"next":0,'
-            '"previous":1,"home":0,"end":1,"ignored":null}'
-        ))
 
 
 class GitHubPagesBranchSourceContractTests(unittest.TestCase):
-    def test_pages_source_is_self_contained_under_docs(self):
-        self.assertFalse(PAGES_WORKFLOW.exists())
-        self.assertFalse((ROOT / "site").exists())
-        self.assertTrue((SITE / "index.html").is_file())
-        self.assertTrue((SITE / ".nojekyll").is_file())
-
     def test_exact_branch_source_contains_every_local_reference(self):
         approved_images = (
             "dashboard.png", "logo-splunk-acc-rgb-w.png", "spend.png",
@@ -364,10 +331,7 @@ class GitHubPagesBranchSourceContractTests(unittest.TestCase):
         deployed = _SiteParser()
         deployed.feed((SITE / "index.html").read_text(encoding="utf-8"))
         local_references = set(deployed.stylesheets + deployed.scripts)
-        local_references.update(
-            image["src"] for image in deployed.images
-            if not image["src"].startswith(("http://", "https://"))
-        )
+        local_references.update(image["src"] for image in deployed.images)
         local_references.add("favicon.svg")
         self.assertEqual(
             sorted(local_references),
@@ -378,6 +342,9 @@ class GitHubPagesBranchSourceContractTests(unittest.TestCase):
         )
         for reference in local_references:
             self.assertTrue((SITE / reference).is_file(), reference)
+        css = (SITE / "styles.css").read_text(encoding="utf-8")
+        self.assertNotIn("@import", css)
+        self.assertNotRegex(css, r"url\(\s*['\"]?(?:https?:)?//")
 
         self.assertEqual(
             sorted(

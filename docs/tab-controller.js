@@ -1,10 +1,4 @@
-(function exposeTabController(root, factory) {
-  'use strict';
-
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  if (root) root.TokenMeterTabs = api;
-}(typeof window === 'undefined' ? null : window, () => {
+(() => {
   'use strict';
 
   const nextTabIndex = (key, index, count) => {
@@ -47,5 +41,5 @@
       .forEach(tabList => setupTabList(tabList, documentRoot));
   };
 
-  return { nextTabIndex, selectTab, setupTabList, setupAll };
-}));
+  window.TokenMeterTabs = { setupAll };
+})();

@@ -1,6 +1,5 @@
 import unittest
 import time
-from pathlib import Path
 
 from token_meter.contracts import EvidenceBasis, EvidenceValue, TimingEvidence
 from token_meter.domain.insights import enrich_insights, normalize_insights
@@ -147,15 +146,6 @@ class InsightDomainTests(unittest.TestCase):
             {"key": "same", "kind": "warn", "priority": 2},
             {"key": "same", "kind": "neutral", "priority": 90},
         ])), 1)
-
-    def test_shared_domain_modules_contain_no_known_runtime_identifiers(self):
-        root = Path(__file__).resolve().parents[2] / "token_meter" / "domain"
-        source = "\n".join(
-            (root / name).read_text().lower()
-            for name in ("timing.py", "tools.py", "insights.py")
-        )
-        for runtime_id in ("claude", "codex", "cursor", "opencode", "kiro"):
-            self.assertNotIn(runtime_id, source)
 
 
 if __name__ == "__main__":

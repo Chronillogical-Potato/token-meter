@@ -104,8 +104,6 @@ class PublicProjectionTests(unittest.TestCase):
         result = projection_bundle(normalized(row), runtime_catalog=catalog)
 
         self.assertEqual(result, expected)
-        self.assertEqual(result["session"]["provider"], "kiro")
-        self.assertEqual(result["session"]["model_provider"], "anthropic")
 
     def test_unavailable_is_omitted_from_mcp_but_measured_zero_is_preserved(self):
         fixture = json.loads((FIXTURES / "current-runtimes.json").read_text())

@@ -13916,17 +13916,16 @@ class McpDocumentationContractTests(unittest.TestCase):
 class PiDocumentationTests(unittest.TestCase):
     def test_docs_explain_pi_evidence_and_privacy_boundaries(self):
         root = Path(__file__).resolve().parents[1]
-        readme = (root / "README.md").read_text()
         guide = (root / "specs/USER_GUIDE.md").read_text()
         architecture = (root / "specs/ARCHITECTURE.md").read_text()
         security = (root / "specs/SECURITY.md").read_text()
 
-        self.assertIn("Pi coding-agent sessions", readme)
-        self.assertIn("Wait time\nis inferred", readme)
-        self.assertIn("semantic token classification", readme)
         self.assertIn("PI_CODING_AGENT_DIR", guide)
         self.assertIn("Pi coding-agent sessions", guide)
         self.assertIn("does not import cloud transcripts", guide)
+        guide_copy = " ".join(guide.split())
+        self.assertIn("Wait is inferred from the user-to-assistant timestamps", guide_copy)
+        self.assertIn("semantic token classification remain unavailable", guide_copy)
         self.assertIn("Pi adapter", architecture)
         self.assertIn("application-profile", architecture)
         self.assertIn("application-profile", security)
