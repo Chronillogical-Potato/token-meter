@@ -74,10 +74,11 @@ Two additional narrow standing exceptions remain. When the user explicitly
 authorizes checking out, reviewing, or managing pull requests, follow the
 one-status-reply-per-PR rule in `token-meter-github-ops`. When Pratik's agent asked a
 contributor to test a pull request and that contributor later reports results, reply
-on every existing discussion thread containing those results: thank them, say the
-team will follow up without inventing a diagnosis or deadline, and sign the message
-as Pratik's agent. Apply the same one-short-paragraph Slack contract. These exceptions
-authorize only the described replies; other external actions remain gated.
+on every existing discussion thread containing those results: thank them, state any
+actual next action without inventing a diagnosis or deadline, and sign the message
+as Pratik's agent. Omit a follow-up promise when the work is complete. Apply the
+same one-short-paragraph Slack contract. These exceptions authorize only the
+described replies; other external actions remain gated.
 
 ## Classification
 

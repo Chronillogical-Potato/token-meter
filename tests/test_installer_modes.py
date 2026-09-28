@@ -10,6 +10,141 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @unittest.skipUnless(os.name == "posix", "POSIX shell integration")
+class MacMenuBarRunnerTests(unittest.TestCase):
+    def test_runner_adopts_older_unstamped_binary_when_compiler_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            root = workspace / "runtime"
+            (root / "scripts").mkdir(parents=True)
+            (root / "menubar").mkdir()
+            (root / "scripts" / "run-menubar").write_bytes(
+                (ROOT / "scripts" / "run-menubar").read_bytes()
+            )
+            source = root / "menubar" / "TokenMeterMenuBar.swift"
+            info = root / "menubar" / "Info.plist"
+            source.write_text("import AppKit\n")
+            info.write_text("plist")
+            os.utime(source, (1000, 1000))
+            os.utime(info, (1000, 1000))
+            contents = root / ".build" / "Token Meter Menu Bar.app" / "Contents"
+            (contents / "MacOS").mkdir(parents=True)
+            (contents / "Info.plist").write_text("plist")
+            legacy_bin = contents / "MacOS" / "token-meter-menubar"
+            legacy_bin.write_text("#!/bin/sh\necho legacy-menu-launched\n")
+            legacy_bin.chmod(0o755)
+            fake_bin = workspace / "bin"
+            fake_bin.mkdir()
+            for name, content in {
+                "uname": "#!/bin/sh\necho Darwin\n",
+                "swiftc": "#!/bin/sh\necho 'compiler unavailable' >&2\nexit 1\n",
+                "xcrun": "#!/bin/sh\necho '/no/installed/SDKs/MacOSX27.0.sdk'\n",
+            }.items():
+                executable = fake_bin / name
+                executable.write_text(content)
+                executable.chmod(0o755)
+            env = {**os.environ, "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}"}
+
+            checked = subprocess.run(
+                ["bash", str(root / "scripts" / "run-menubar"), "--check"],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stderr)
+            self.assertTrue((contents / "source.sha256").exists())
+
+            launched = subprocess.run(
+                ["bash", str(root / "scripts" / "run-menubar")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(launched.returncode, 0, launched.stderr)
+            self.assertEqual(launched.stdout.strip(), "legacy-menu-launched")
+
+    def test_runner_reuses_compatible_build_until_source_changes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            root = workspace / "runtime"
+            (root / "scripts").mkdir(parents=True)
+            (root / "menubar").mkdir()
+            (root / "scripts" / "run-menubar").write_bytes(
+                (ROOT / "scripts" / "run-menubar").read_bytes()
+            )
+            (root / "menubar" / "Info.plist").write_text("plist")
+            (root / "menubar" / "TokenMeterMenuBar.swift").write_text("import AppKit\n")
+            sdk_dir = workspace / "SDKs"
+            (sdk_dir / "MacOSX26.5.sdk").mkdir(parents=True)
+            (sdk_dir / "MacOSX27.0.sdk").mkdir()
+            fake_bin = workspace / "bin"
+            fake_bin.mkdir()
+            for name, content in {
+                "uname": "#!/bin/sh\necho Darwin\n",
+                "xcrun": f"#!/bin/sh\necho '{sdk_dir}/MacOSX27.0.sdk'\n",
+                "ditto": "#!/bin/sh\ncp \"$1\" \"$2\"\n",
+                "swiftc": """#!/bin/bash
+sdk=''
+output=''
+typecheck=0
+while (($#)); do
+  case "$1" in
+    -sdk) sdk="$2"; shift 2 ;;
+    -o) output="$2"; shift 2 ;;
+    -typecheck) typecheck=1; shift ;;
+    *) shift ;;
+  esac
+done
+[[ "$sdk" == *MacOSX26.5.sdk ]] || {
+  echo 'SDK is not supported by the compiler' >&2
+  exit 1
+}
+if (( ! typecheck )); then
+  printf '#!/bin/sh\\necho menu-bar-launched\\n' > "$output"
+  chmod +x "$output"
+fi
+""",
+            }.items():
+                executable = fake_bin / name
+                executable.write_text(content)
+                executable.chmod(0o755)
+            env = {**os.environ, "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}"}
+            env.pop("SDKROOT", None)
+
+            result = subprocess.run(
+                ["bash", str(root / "scripts" / "run-menubar")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "menu-bar-launched")
+
+            (fake_bin / "swiftc").write_text(
+                "#!/bin/sh\necho 'compiler no longer works' >&2\nexit 1\n"
+            )
+            cached = subprocess.run(
+                ["bash", str(root / "scripts" / "run-menubar")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(cached.returncode, 0, cached.stderr)
+            self.assertEqual(cached.stdout.strip(), "menu-bar-launched")
+
+            (root / "menubar" / "TokenMeterMenuBar.swift").write_text(
+                "import AppKit\n// changed source\n"
+            )
+            stale = subprocess.run(
+                ["bash", str(root / "scripts" / "run-menubar"), "--check"],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertNotEqual(stale.returncode, 0)
+
+
+@unittest.skipUnless(os.name == "posix", "POSIX shell integration")
 class InstallerModeTests(unittest.TestCase):
     def write_executable(self, path, source):
         path.write_text(textwrap.dedent(source).lstrip())
@@ -121,6 +256,14 @@ class InstallerModeTests(unittest.TestCase):
             fake_bin / "swiftc",
             """
             #!/usr/bin/env bash
+            while (($#)); do
+              if [[ "$1" == "-o" ]]; then
+                printf '#!/bin/sh\nexit 0\n' > "$2"
+                chmod +x "$2"
+                exit 0
+              fi
+              shift
+            done
             exit 0
             """,
         )
@@ -185,6 +328,133 @@ class InstallerModeTests(unittest.TestCase):
             capture_output=True,
             text=True,
         ).stdout.strip()
+
+    def test_macos_full_install_rejects_unbuildable_staged_menu_bar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, install_root, command_log = self.installer_environment(workspace, "Darwin")
+            env.pop("BASH_ENV")
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                "#!/bin/sh\necho 'SDK is not supported by the compiler' >&2\nexit 1\n",
+            )
+            self.write_executable(
+                workspace / "bin" / "xcrun",
+                "#!/bin/sh\necho '/no/installed/SDKs/MacOSX27.0.sdk'\n",
+            )
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("compatible", result.stderr)
+            self.assertTrue(install_root.exists())
+            if command_log.exists():
+                self.assertNotIn("com.token-meter.menubar.plist", command_log.read_text())
+
+    def test_macos_full_install_rejects_failed_native_build_after_sdk_probe(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, _, command_log = self.installer_environment(workspace, "Darwin")
+            env.pop("BASH_ENV")
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                """#!/bin/bash
+if [[ "$*" == *-typecheck* ]]; then exit 0; fi
+echo 'native source failed to compile' >&2
+exit 1
+""",
+            )
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("native source failed to compile", result.stderr)
+            if command_log.exists():
+                self.assertNotIn("com.token-meter.menubar.plist", command_log.read_text())
+
+    def test_macos_full_install_rejects_native_smoke_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, _, command_log = self.installer_environment(workspace, "Darwin")
+            env.pop("BASH_ENV")
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                """#!/bin/bash
+while (($#)); do
+  if [[ "$1" == "-o" ]]; then
+    printf '#!/bin/sh\necho "native smoke failed" >&2\nexit 1\n' > "$2"
+    chmod +x "$2"
+    exit 0
+  fi
+  shift
+done
+exit 0
+""",
+            )
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("native smoke failed", result.stderr)
+            self.assertNotIn(
+                f"bootstrap gui/{os.getuid()} "
+                + str(Path(env["HOME"]) / "Library" / "LaunchAgents" / "com.token-meter.menubar.plist"),
+                command_log.read_text(),
+            )
+
+    def test_macos_full_install_adopts_legacy_binary_without_swiftc_after_server_is_ready(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, install_root, command_log = self.installer_environment(workspace, "Darwin")
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                "#!/bin/sh\necho 'compiler unavailable' >&2\nexit 1\n",
+            )
+            self.write_executable(
+                workspace / "bin" / "xcrun",
+                "#!/bin/sh\necho '/no/installed/SDKs/MacOSX27.0.sdk'\n",
+            )
+            contents = install_root / ".build" / "Token Meter Menu Bar.app" / "Contents"
+            (contents / "MacOS").mkdir(parents=True)
+            source_info = ROOT / "menubar" / "Info.plist"
+            contents.joinpath("Info.plist").write_bytes(source_info.read_bytes())
+            legacy_bin = contents / "MacOS" / "token-meter-menubar"
+            self.write_executable(
+                legacy_bin,
+                """#!/bin/sh
+grep -q 'bootstrap .*com.token-meter.server' "$TEST_COMMAND_LOG" 2>/dev/null || exit 1
+exit 0
+""",
+            )
+            source_swift = ROOT / "menubar" / "TokenMeterMenuBar.swift"
+            newer = max(source_swift.stat().st_mtime, source_info.stat().st_mtime) + 3600
+            os.utime(legacy_bin, (newer, newer))
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue((contents / "source.sha256").exists())
+            self.assertIn("com.token-meter.menubar.plist", command_log.read_text())
 
     def feature_and_main_source_checkout(self, workspace, *, advance_main):
         remote = workspace / "upstream.git"

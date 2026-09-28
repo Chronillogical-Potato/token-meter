@@ -126,7 +126,7 @@ The authoritative ownership and data-flow explanation is
 | `menubar/TokenMeterMenuBar.swift` | Native macOS menu bar companion |
 | `menubar/token_meter_tray.py` | Native Linux AppIndicator companion |
 | `scripts/run-tray.ps1` | Native Windows NotifyIcon companion |
-| `token_meter_mcp.py` | Read-only local MCP integration |
+| `token_meter_mcp.py` | Bounded local MCP integration with explicit session-budget setters |
 | `tests/` | Python tests |
 | `scripts/` | Installation and runtime helpers |
 | `runtime-manifest.txt` | Shared staged-runtime inventory for every installer |

@@ -925,7 +925,7 @@ class BuilderRecapStandalonePageTests(unittest.TestCase):
         self.assertTrue(page_path.is_file())
         page = page_path.read_text()
         for marker in (
-            'href="/#efficiency"', 'id=range-controls', 'data-range=7',
+            'href="/#subagents"', 'href="/#efficiency"', 'id=range-controls', 'data-range=7',
             'data-range=30', 'data-range=90',
             '<span>Name</span><input id=builder-name maxlength=40',
             'id=include-usage type=checkbox', 'id=reset type=button',
@@ -1011,6 +1011,8 @@ class BuilderRecapStandalonePageTests(unittest.TestCase):
         self.assertNotIn("evidence-note", markup.by_id)
         self.assertEqual(markup.by_id["status"][1]["role"], "status")
         primary = page.split("<div class=railPrimary>", 1)[1].split("</div>", 1)[0]
+        self.assertLess(primary.index('href="/#models"'), primary.index('href="/#subagents"'))
+        self.assertLess(primary.index('href="/#subagents"'), primary.index('href="/#efficiency"'))
         self.assertLess(primary.index('href="/#efficiency"'), primary.index('href="/#git"'))
         self.assertLess(primary.index('href="/#git"'), primary.index("id=tab-performance"))
         self.assertNotIn("Make it yours.", page)
@@ -6751,7 +6753,9 @@ console.log(JSON.stringify({
         for marker in (
             "id=session-budget-control", "id=budget-slider type=range",
             "id=budget type=number", "id=session-budget-spend",
-            "function syncSessionBudgetControls", "tm_session_budgets",
+            "function syncSessionBudgetControls", "function persistSessionBudget",
+            "function queueSessionBudget", "const sessionBudgetWrites=new Map()",
+            "'/settings/session-budget'", "s?.session_budget?.budget_usd",
             "$('budget-slider').addEventListener('input'",
         ):
             self.assertIn(marker, self.page)
@@ -6779,10 +6783,23 @@ console.log(JSON.stringify({
             "Default session budget",
             "function sessionBudgetForSession(s)",
             "defaultSessionBudget=Number(settings.default_session_budget||10)",
-            "Number.isFinite(saved)&&saved>0?saved:defaultSessionBudget",
+            "s?.session_budget?.budget_usd",
+            "legacySessionBudgets",
             "default_session_budget:budgetNumber('budget-input-session-default')",
         ):
             self.assertIn(marker, self.page)
+
+    def test_session_budget_writes_are_serialized_and_migration_is_superseded(self):
+        budget = self.page[
+            self.page.index("const SESSION_BUDGET_SLIDER_MIN"):
+            self.page.index("function dollarInputValue")
+        ]
+        self.assertIn("while(entry.pending)", budget)
+        self.assertIn("if(entry.saving)return entry.promise", budget)
+        self.assertIn("queueSessionBudget(CURRENT,n)", budget)
+        self.assertIn(
+            "syncSessionBudgetControls(sessionBudgetForSession(s),s)", budget,
+        )
 
     def test_promoted_current_is_dense_complete_and_settings_stay_dedicated(self):
         for marker in (
@@ -13444,7 +13461,6 @@ class InstallationTests(unittest.TestCase):
         info = plistlib.loads((root / "menubar" / "Info.plist").read_bytes())
         self.assertIn('APP="$ROOT/.build/Token Meter Menu Bar.app"', script)
         self.assertIn('ditto "$ROOT/menubar/Info.plist" "$INFO"', script)
-        self.assertIn('swiftc "$ROOT/menubar/TokenMeterMenuBar.swift" -o "$BIN"', script)
         self.assertIn('exec "$BIN"', script)
         self.assertEqual(info["CFBundleIdentifier"], "com.token-meter.menubar")
         self.assertEqual(info["CFBundleExecutable"], "token-meter-menubar")
@@ -14653,6 +14669,115 @@ class DailySummaryTests(unittest.TestCase):
 
 
 class MonthlyBudgetTests(unittest.TestCase):
+    def test_budget_settings_persist_session_overrides_without_changing_defaults(self):
+        """A session cap survives settings writes and remains distinct from its default."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "settings.json"
+            result = meter.set_budget_settings({
+                "default_session_budget": 10,
+                "session_budgets": {"session-1": 25.5},
+                "allocations": {},
+                "thresholds": [80, 90, 100],
+                "native_notifications": True,
+            }, str(path))
+            stored = json.loads(path.read_text())
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["budgets"].get("default_session_budget"), 10.0)
+        self.assertEqual(result["budgets"].get("session_budgets"), {"session-1": 25.5})
+        self.assertEqual(stored["budgets"].get("session_budgets"), {"session-1": 25.5})
+
+    def test_general_budget_save_preserves_existing_session_overrides(self):
+        """The Settings form must not erase caps it does not display or submit."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "settings.json"
+            meter.set_session_budget_override("session-1", 25, path=str(path))
+            result = meter.set_budget_settings({
+                "default_session_budget": 12,
+                "allocations": {},
+                "thresholds": [80, 90, 100],
+                "native_notifications": True,
+            }, str(path))
+            stored = json.loads(path.read_text())
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(stored["budgets"]["default_session_budget"], 12.0)
+        self.assertEqual(stored["budgets"]["session_budgets"], {"session-1": 25.0})
+
+    def test_concurrent_session_compare_and_set_allows_one_writer(self):
+        """Competing confirmed writes must serialize to success plus stale response."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "settings.json")
+            ready = threading.Barrier(2)
+            results = []
+
+            def change(budget):
+                ready.wait()
+                results.append(meter.set_session_budget_override(
+                    "session-1", budget, expected_current_budget_usd=10, path=path,
+                ))
+
+            first = threading.Thread(target=change, args=(12,))
+            second = threading.Thread(target=change, args=(15,))
+            first.start()
+            second.start()
+            first.join()
+            second.join()
+
+        self.assertEqual(sum(result["ok"] for result in results), 1)
+        self.assertEqual(sum("changed" in result.get("error", "") for result in results), 1)
+
+    def test_default_session_budget_compare_and_set_rejects_a_stale_budget(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "settings.json")
+            first = meter.set_default_session_budget_value(
+                12, expected_current_budget_usd=10, path=path,
+            )
+            stale = meter.set_default_session_budget_value(
+                15, expected_current_budget_usd=10, path=path,
+            )
+
+        self.assertTrue(first["ok"])
+        self.assertFalse(stale["ok"])
+        self.assertIn("changed", stale["error"])
+
+    def test_agent_budget_projection_excludes_unrequested_global_configuration(self):
+        source = {"id": "session-1", "provider": "codex", "client": "Codex"}
+        state = {"total_cost": 3, "availability": {"cost": True}}
+        settings = meter.normalize_budget_settings({
+            "default_session_budget": 10,
+            "session_budgets": {"session-1": 5},
+            "allocations": {}, "thresholds": [80, 90, 100],
+            "native_notifications": True,
+        })
+        with mock.patch.object(meter, "resolve_agent_source", return_value=(source, "explicit")), \
+                mock.patch.object(meter, "recompute", return_value=state), \
+                mock.patch.object(meter, "budget_settings", return_value=settings):
+            result = meter.agent_budget(session_id="session-1")
+
+        self.assertEqual(result["session"]["budget_usd"], 5)
+        self.assertNotIn("default_session_budget_usd", result)
+        self.assertNotIn("session_budget_overrides", result)
+
+    def test_session_override_compare_and_set_rejects_a_stale_budget(self):
+        """A delayed agent must not silently replace a newer session cap."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "settings.json"
+            first = meter.set_session_budget_override(
+                "session-1", 12, expected_current_budget_usd=10, path=str(path),
+            )
+            stale = meter.set_session_budget_override(
+                "session-1", 15, expected_current_budget_usd=10, path=str(path),
+            )
+            effective, source = meter.effective_session_budget(
+                "session-1", meter.budget_settings(str(path)),
+            )
+
+        self.assertTrue(first["ok"])
+        self.assertFalse(stale["ok"])
+        self.assertIn("changed", stale["error"])
+        self.assertEqual((effective, source), (12.0, "session_override"))
+
     def test_missing_default_session_budget_migrates_to_ten(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"

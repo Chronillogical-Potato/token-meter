@@ -55,10 +55,10 @@ response bodies through localhost, or include them in logs and errors. Provider
 requests use fixed HTTPS endpoints, hard timeouts, bounded response sizes, and
 sanitized failures. Third-party Claude auth must fail closed as unavailable.
 
-The optional `tokenmeter` MCP server is also local and read-only. It uses stdio,
-does not open another listening port, and returns bounded derived evidence. It
+The optional `tokenmeter` MCP server is local and uses stdio; it does not open
+another listening port. Its evidence tools return bounded derived evidence. It
 must never return prompts, messages, reasoning text, tool arguments, tool
-results, credentials, environment variables, configuration values, or log
+results, credentials, environment variables, unrelated configuration values, or log
 paths. `check` detail is limited to the caller's matched current runtime and
 project. Query tools may return opaque session IDs and content-free historical
 evidence, but never session titles, project names, source paths, or native
@@ -87,7 +87,12 @@ Dashboard connection actions are protected by the existing local-origin action
 token and fixed subprocess argument vectors. They may add or remove only the
 exact user-level MCP entry named `tokenmeter`, must refuse a conflicting entry,
 and must verify the persisted state before reporting success. The MCP tools
-themselves cannot change configuration, budgets, sessions, or Token Meter state.
+themselves cannot change configuration, budgets, sessions, or Token Meter state,
+except for the narrowly scoped `set_session_budget` and
+`set_default_session_budget` tools. Those setters require `confirm: true`,
+accept only a validated USD cap, can compare against an expected current cap,
+and write only the atomically persisted session-cap/default-cap settings. They
+cannot alter monthly allocations, pricing, connections, traces, or sessions.
 
 Dashboard session deletion uses the same local-origin action token and accepts
 only a canonical ID from the currently discovered session inventory. It moves

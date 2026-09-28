@@ -25,7 +25,7 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
 | `token_meter/projections.py` | Explicit allowlisted public compatibility projections |
 | `page.html` | Entire browser dashboard: markup, styles, routing, and JavaScript |
 | `menubar/TokenMeterMenuBar.swift` | Native AppKit companion, preferences, notifications |
-| `token_meter_mcp.py` | Bounded read-only MCP interface |
+| `token_meter_mcp.py` | Bounded MCP interface; evidence is read-only except explicit confirmed session-budget changes |
 | `tests/test_meter.py` | Server, parser, UI-contract, installer, and Swift-source tests |
 | `tests/test_mcp_server.py` | MCP contract and privacy tests |
 | `runtime-manifest.txt` | Shared source-to-runtime packaging contract |
@@ -167,18 +167,20 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
 - When the user authorizes checking out, reviewing, or managing pull requests,
   post one contributor-facing status reply on each inspected PR after checking
   its current head and discussion. Thank the contributor, state the
-  evidence-backed merge status or next step, say the team will follow up soon,
-  and identify the reply as from Pratik's agent. Do not duplicate an equivalent
-  same-head status reply. The PR-management request is standing approval for
-  these replies only; merges, closes, pushes, review requests, and unrelated
-  actions remain separately gated unless that request explicitly authorizes
-  them.
+  evidence-backed merge status or next step, and identify the reply as from
+  Pratik's agent. Mention a follow-up only when the team owns an actual next
+  action; when the work is complete, do not promise one. Do not duplicate an
+  equivalent same-head status reply. The PR-management request is standing
+  approval for these replies only; merges, closes, pushes, review requests,
+  and unrelated actions remain separately gated unless that request explicitly
+  authorizes them.
 - When a contributor later reports results after Pratik's agent asked them to
   check out or test a pull request, acknowledge every existing discussion
-  thread containing those results. Thank them, say the team will follow up
+  thread containing those results. Thank them, state any actual next action
   without inventing a diagnosis or deadline, and identify the reply as from
-  Pratik's agent. Keep Slack to the same short follow-up contract with no code or
-  procedural next steps. This is standing approval for that narrow acknowledgment.
+  Pratik's agent. Omit a follow-up promise when the work is complete. Keep Slack
+  to the same short follow-up contract with no code or procedural next steps.
+  This is standing approval for that narrow acknowledgment.
 - Commits, pushes, pull requests, reviews posted to GitHub, Slack messages,
   releases, and other external side effects require explicit user approval.
 

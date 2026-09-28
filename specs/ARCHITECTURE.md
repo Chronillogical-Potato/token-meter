@@ -23,7 +23,7 @@ flowchart LR
   mcp_queries["MCP query validation, schema, and allowlists"]
   browser["Browser dashboard"]
   native["macOS, Linux, and Windows companions"]
-  mcp["Read-only local MCP"]
+  mcp["Bounded local MCP"]
 
   traces --> adapters --> contracts --> domain --> app --> projections
   projections --> browser
@@ -51,7 +51,7 @@ executable and import-compatibility facade; current composition lives in
 | MCP query layer | `token_meter/mcp/` | Validate filters, bind opaque cursors to query revisions, positively allowlist standardized and native-structure fields, aggregate metrics, and publish schema metadata. |
 | HTTP transport | `token_meter/web/`, `page.html` | Serve the loopback API, routes, actions, and the single-file dashboard. |
 | Native clients | `menubar/`, Windows scripts | Render the compact `/menubar` payload and delegate deep review to the browser. |
-| Local MCP | `token_meter_mcp.py` | Return bounded read-only current-run or aggregate evidence over stdio. |
+| Local MCP | `token_meter_mcp.py` | Return bounded current-run or aggregate evidence over stdio, plus explicitly confirmed session-budget updates. |
 | Packaging | `runtime-manifest.txt`, `token_meter/packaging.py`, `scripts/` | Stage one manifest-owned runtime and install platform-native lifecycle components. |
 | Telemetry mapping | `token_meter/telemetry/` | Produce a pure OpenTelemetry-shaped mapping from an immutable privacy projection; perform no export or I/O. |
 
@@ -254,7 +254,9 @@ Windows NotifyIcon clients read the compact `/menubar` projection and use the
 runtime catalog for generic labels, colors, and capabilities. Provider quota
 views use cached normalized windows; unavailable is never rendered as 0%.
 
-The optional MCP server is local stdio, read-only, and independently bounded.
+The optional MCP server is local stdio and independently bounded. Its evidence
+tools are read-only; its two budget setters require explicit confirmation and
+can mutate only the validated per-session/default cap store.
 Its decision tools use caller-matched or aggregate projections. Its `sessions`,
 `trace`, `stats`, and `schema` query tools select content-free session IDs, read
 one standardized or sanitized-native trace, aggregate only standardized

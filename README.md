@@ -192,19 +192,22 @@ signal, not a code-quality or productivity score.
 ### Configure budgets and agent access
 
 Manage monthly budgets, model pricing, language signals, native preferences,
-and local read-only connections for Codex and Claude. Software update checks
+and local agent connections for Codex and Claude. Software update checks
 and automatic installation are separate settings; both are on by default.
 
 <p align="center">
-  <img src="images/mcp.png" alt="Token Meter Settings view for local read-only agent connections" width="900">
+  <img src="images/mcp.png" alt="Token Meter Settings view for local agent connections" width="900">
 </p>
 
-The local MCP exposes seven read-only tools:
+The local MCP exposes eight read-only evidence tools plus two explicit session-budget setters:
 
 | Tool | Use |
 | --- | --- |
 | `check` | Make a bounded decision about the caller-matched current run. |
 | `usage` | Review aggregate spend, model, tool, or change evidence. |
+| `budget` | Read the matched or selected run's effective cap, estimated spend, remaining amount, and threshold state. |
+| `set_session_budget` | Set one matched or selected run's cap; requires `confirm: true`. |
+| `set_default_session_budget` | Change the default cap for new/unoverridden runs; requires `confirm: true`. |
 | `capabilities` | Review optional user-installed skill-pack evidence. |
 | `sessions` | Select content-free session IDs using runtime, client, model, state, or time filters. |
 | `trace` | Read a standardized trace or sanitized runtime-native structure for one session. |
@@ -221,6 +224,9 @@ The `native_structure` trace view is not raw trace content. It keeps only
 allowlisted event types/subtypes, model and tool identities, statuses,
 relationships, timestamps, and numeric evidence. It does not expose raw trace
 content, prompts, responses, reasoning text, tool payloads, or trace paths.
+Budget setters accept only USD caps in Token Meter's validated range. They do
+not alter monthly allocations or pricing. Use `expected_current_budget_usd`
+when a concurrent update must fail rather than overwrite a changed cap.
 
 ### Check without opening the dashboard
 

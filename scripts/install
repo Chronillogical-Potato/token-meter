@@ -56,18 +56,11 @@ fail() {
 }
 
 required_commands=(git python3 curl launchctl ditto)
-if (( ! BACKEND_ONLY )); then
-  required_commands+=(swiftc)
-fi
 for command_name in "${required_commands[@]}"; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
-    if [[ "$command_name" == "swiftc" ]]; then
-      fail "swiftc is missing. Install the Xcode Command Line Tools, then run this script again."
-    fi
     fail "$command_name is required but was not found."
   fi
 done
-
 RUNTIME_MANIFEST="$SOURCE_ROOT/runtime-manifest.txt"
 [[ -f "$RUNTIME_MANIFEST" ]] \
   || fail "the repository checkout is incomplete: $RUNTIME_MANIFEST is missing."
@@ -279,6 +272,16 @@ if not matches:
 if (( BACKEND_ONLY )); then
   printf '%s\n' "backend-only" > "$INSTALL_ROOT/INSTALL_MODE"
 else
+  curl -fsS --max-time 5 "$MENUBAR_URL" \
+    | python3 -c 'import json, sys; json.load(sys.stdin)' \
+    || fail "the menu bar endpoint did not return valid JSON."
+  if ! "$INSTALL_ROOT/scripts/run-menubar" --check; then
+    fail "the native companion cannot build with the installed Swift toolchain and macOS SDKs."
+  fi
+  TOKEN_METER_MENUBAR_SMOKE=1 \
+    "$INSTALL_ROOT/.build/Token Meter Menu Bar.app/Contents/MacOS/token-meter-menubar" \
+    >/dev/null || fail "the native menu bar companion failed its installed smoke check."
+
   "$INSTALL_ROOT/scripts/install-launch-agent" menubar-only
 
   if ! menubar_launch_state="$(launchctl print "gui/$UID/$MENUBAR_LABEL" 2>&1)"; then
@@ -287,9 +290,6 @@ else
   [[ "$menubar_launch_state" == *"$INSTALL_ROOT/scripts/run-menubar"* ]] \
     || fail "a different Token Meter installation owns the menu bar LaunchAgent."
 
-  curl -fsS --max-time 5 "$MENUBAR_URL" \
-    | python3 -c 'import json, sys; json.load(sys.stdin)' \
-    || fail "the menu bar endpoint did not return valid JSON."
   printf '%s\n' "full" > "$INSTALL_ROOT/INSTALL_MODE"
 fi
 

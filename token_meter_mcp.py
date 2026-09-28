@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only stdio MCP server for Token Meter. Standard library only."""
+"""Bounded stdio MCP server for Token Meter. Standard library only."""
 
 import json
 import os
@@ -19,7 +19,7 @@ SUPPORTED_PROTOCOL_VERSIONS = {
     "2024-11-05",
 }
 SERVER_INSTRUCTIONS = (
-    "Token Meter is a local, read-only source of cost, efficiency, and structural trace evidence for supported agent runtimes. "
+    "Token Meter is a local source of cost, efficiency, and structural trace evidence for supported agent runtimes. "
     "Use check for a decision about the caller's current run, usage for aggregate historical change, "
     "capabilities for optional skill-pack hygiene, sessions to select runs, trace for standardized or "
     "sanitized runtime-native structure, stats for comparable aggregates, and schema to discover fields. "
@@ -28,11 +28,19 @@ SERVER_INSTRUCTIONS = (
     "continuous monitoring: tools run only when called. Results omit prompts, messages, reasoning text, tool "
     "arguments, tool results, credentials, config values, filesystem paths, project names, and session titles. "
     "Native trace output preserves only allowlisted structure and numeric evidence; it is not byte-faithful raw data. "
-    "Follow pagination cursors when more rows are needed. The server cannot mutate Token Meter or agent configuration."
+    "Follow pagination cursors when more rows are needed. All tools except explicit budget setters are read-only. "
+    "Budget setters require confirm: true and must be used only for direct user requests."
 )
 
 READ_ONLY_ANNOTATIONS = {
     "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": False,
+}
+
+WRITE_ANNOTATIONS = {
+    "readOnlyHint": False,
     "destructiveHint": False,
     "idempotentHint": True,
     "openWorldHint": False,
@@ -127,6 +135,64 @@ TOOLS = [
         },
         "outputSchema": COMMON_OUTPUT_SCHEMA,
         "annotations": READ_ONLY_ANNOTATIONS,
+    },
+    {
+        "name": "budget",
+        "title": "Read session budget",
+        "description": (
+            "Read the effective cap for the caller's matched current run or one selected session. "
+            "Returns the cap source, estimated spend, remaining amount, and threshold state."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string", "minLength": 1, "maxLength": 240},
+            },
+            "additionalProperties": False,
+        },
+        "outputSchema": COMMON_OUTPUT_SCHEMA,
+        "annotations": READ_ONLY_ANNOTATIONS,
+    },
+    {
+        "name": "set_session_budget",
+        "title": "Set session budget",
+        "description": (
+            "Set the cap for the caller's matched current run or one selected session. "
+            "Use only for a direct user request; confirm must be true."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["budget_usd", "confirm"],
+            "properties": {
+                "session_id": {"type": "string", "minLength": 1, "maxLength": 240},
+                "budget_usd": {"type": "number", "minimum": 0.5, "maximum": 100000000},
+                "expected_current_budget_usd": {"type": "number", "minimum": 0.5, "maximum": 100000000},
+                "confirm": {"const": True},
+            },
+            "additionalProperties": False,
+        },
+        "outputSchema": COMMON_OUTPUT_SCHEMA,
+        "annotations": WRITE_ANNOTATIONS,
+    },
+    {
+        "name": "set_default_session_budget",
+        "title": "Set default session budget",
+        "description": (
+            "Set the default cap applied when a session has no override. "
+            "Use only for a direct user request; confirm must be true."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["budget_usd", "confirm"],
+            "properties": {
+                "budget_usd": {"type": "number", "minimum": 0.5, "maximum": 100000000},
+                "expected_current_budget_usd": {"type": "number", "minimum": 0.5, "maximum": 100000000},
+                "confirm": {"const": True},
+            },
+            "additionalProperties": False,
+        },
+        "outputSchema": COMMON_OUTPUT_SCHEMA,
+        "annotations": WRITE_ANNOTATIONS,
     },
     {
         "name": "capabilities",
@@ -317,6 +383,28 @@ def call_tool(name, arguments):
             if set(arguments) - allowed:
                 raise ValueError("usage received an unsupported argument")
             data = meter.application().agent_api.usage(**arguments)
+        elif name == "budget":
+            allowed = {"session_id"}
+            if set(arguments) - allowed:
+                raise ValueError("budget received an unsupported argument")
+            data = meter.application().agent_api.budget(
+                caller=caller_context(), **arguments
+            )
+        elif name == "set_session_budget":
+            allowed = {
+                "session_id", "budget_usd", "expected_current_budget_usd",
+                "confirm",
+            }
+            if set(arguments) - allowed:
+                raise ValueError("set_session_budget received an unsupported argument")
+            data = meter.application().agent_api.set_session_budget(
+                caller=caller_context(), **arguments
+            )
+        elif name == "set_default_session_budget":
+            allowed = {"budget_usd", "expected_current_budget_usd", "confirm"}
+            if set(arguments) - allowed:
+                raise ValueError("set_default_session_budget received an unsupported argument")
+            data = meter.application().agent_api.set_default_session_budget(**arguments)
         elif name == "capabilities":
             allowed = {"scope", "limit"}
             if set(arguments) - allowed:

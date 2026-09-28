@@ -265,10 +265,10 @@ older reflog entries are not imported again.
 
 ### Settings
 
-Settings contains the default session budget, monthly budget allocations and
+Settings contains the default session budget, server-persisted per-session caps, monthly budget allocations and
 thresholds, effective-dated model pricing, Git evidence history, software updates,
 menu-bar preferences, language signals, and local agent connections. The default session
-budget applies whenever that browser has no saved cap for a session; changing it
+budget applies whenever a session has no saved cap; changing it
 does not replace existing per-session caps. Model pricing shows the review date
 and provider sources for bundled rates. Select the models to change, edit their
 prices, choose **From now**, **From date**, or **All history**, and save them
@@ -288,7 +288,7 @@ Menu-bar title fields and quota notifications are configurable in Settings.
 
 ## Ask From Codex or Claude
 
-Open **Settings → Agent connections** to connect the read-only local MCP entry
+Open **Settings → Agent connections** to connect the local MCP entry
 named `tokenmeter`. Start a new agent session after connecting.
 
 The bounded tools are:
@@ -296,6 +296,12 @@ The bounded tools are:
 - `mcp__tokenmeter__check` for the caller-matched current run and optional
   execution drill-down;
 - `mcp__tokenmeter__usage` for aggregate spend, model, tool, or change review;
+- `mcp__tokenmeter__budget` for the effective selected-session cap, estimated
+  spend, remaining amount, and threshold state;
+- `mcp__tokenmeter__set_session_budget` to set a matched or selected session
+  cap, with `confirm: true` and optional compare-and-set protection;
+- `mcp__tokenmeter__set_default_session_budget` to change the default cap for
+  sessions without an override, with `confirm: true`;
 - `mcp__tokenmeter__capabilities` for named user-installed skill-pack evidence;
 - `mcp__tokenmeter__sessions` for content-free session selection by runtime,
   client, model, state, and time;

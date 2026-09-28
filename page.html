@@ -631,7 +631,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div id=session-budget-home>
   <div class="card sessionBudget" id=session-budget-control>
    <div class=sessionBudgetHead>
-    <div><div class="label fieldtip" tabindex=0 title="Browser-local cost cap for this session. Token Meter alerts when the live session crosses it." data-tip="Browser-local cost cap for this session. Token Meter alerts when the live session crosses it.">Session budget</div></div>
+    <div><div class="label fieldtip" tabindex=0 title="Saved cost cap for this session. Token Meter alerts when the live session crosses it." data-tip="Saved cost cap for this session. Token Meter alerts when the live session crosses it.">Session budget</div></div>
     <label class=sessionBudgetExact><span>Cap $</span><input id=budget type=number min=0.5 step=0.5 value=10 aria-label="Exact session budget in USD"></label>
    </div>
    <div class=sessionBudgetTrack>
@@ -639,7 +639,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <input id=budget-slider type=range min=0.5 max=100 step=0.5 value=10 aria-label="Session budget slider">
     <span class=mono id=budget-slider-max>$100.00</span>
    </div>
-   <div class=sessionBudgetMeta><span id=session-budget-spend>Session spend $0.00</span><span>Saved for this session in this browser</span></div>
+   <div class=sessionBudgetMeta><span id=session-budget-spend>Session spend $0.00</span><span>Saved for this session on this device</span></div>
   </div>
   </div>
 
@@ -2902,14 +2902,52 @@ renderNotifyLog();
 
 const SESSION_BUDGET_SLIDER_MIN=0.5;
 const SESSION_BUDGET_SLIDER_BASE_MAX=100;
-let sessionBudgets={};
-try{sessionBudgets=JSON.parse(localStorage.getItem('tm_session_budgets')||'{}')||{};}catch(e){sessionBudgets={};}
+let legacySessionBudgets={};
+const sessionBudgetWrites=new Map();
+try{legacySessionBudgets=JSON.parse(localStorage.getItem('tm_session_budgets')||'{}')||{};}catch(e){legacySessionBudgets={};}
 localStorage.removeItem('tm_budget');
 function budgetSessionKey(s){return String(s?.source?.id||s?.session||'unknown');}
-function saveSessionBudgets(){try{localStorage.setItem('tm_session_budgets',JSON.stringify(sessionBudgets));}catch(e){}}
+function saveLegacySessionBudgets(){try{localStorage.setItem('tm_session_budgets',JSON.stringify(legacySessionBudgets));}catch(e){}}
 function sessionBudgetForSession(s){
- const saved=parseFloat(sessionBudgets[budgetSessionKey(s)]);
- return Number.isFinite(saved)&&saved>0?saved:defaultSessionBudget;
+ const saved=parseFloat(s?.session_budget?.budget_usd);
+ if(Number.isFinite(saved)&&saved>0)return saved;
+ const legacy=parseFloat(legacySessionBudgets[budgetSessionKey(s)]);
+ if(Number.isFinite(legacy)&&legacy>0)return legacy;
+ return defaultSessionBudget;
+}
+function sessionBudgetSource(s){return s?.session_budget?.source||'legacy';}
+async function persistSessionBudget(s,value,{migrating=false}={}){
+ const sessionId=budgetSessionKey(s),response=await fetch('/settings/session-budget',{method:'POST',headers:{'Content-Type':'application/json','X-Token-Meter-Action':agentActionToken()},body:JSON.stringify({session_id:sessionId,budget_usd:value})});
+ const result=await response.json();
+ if(!response.ok||!result.ok)throw new Error(result.error||'Could not save session budget.');
+ if(s)s.session_budget=result.session_budget;
+ if(migrating){delete legacySessionBudgets[sessionId];saveLegacySessionBudgets();}
+ return result.session_budget;
+}
+function queueSessionBudget(s,value,{migrating=false}={}){
+ const sessionId=budgetSessionKey(s);
+ let entry=sessionBudgetWrites.get(sessionId);
+ if(!entry){entry={pending:false,saving:false,write:null,promise:null};sessionBudgetWrites.set(sessionId,entry);}
+ entry.write={value,migrating};entry.pending=true;
+ if(entry.saving)return entry.promise;
+ entry.saving=true;
+ entry.promise=(async()=>{
+  let finalError=null;
+  while(entry.pending){
+   const write=entry.write;entry.pending=false;
+   try{await persistSessionBudget(s,write.value,{migrating:write.migrating});finalError=null;}
+   catch(error){finalError=error;}
+  }
+  entry.saving=false;
+  if(sessionBudgetWrites.get(sessionId)===entry)sessionBudgetWrites.delete(sessionId);
+  if(finalError)throw finalError;
+ })();
+ return entry.promise;
+}
+function migrateLegacySessionBudget(s){
+ const sessionId=budgetSessionKey(s),legacy=parseFloat(legacySessionBudgets[sessionId]);
+ if(sessionBudgetSource(s)!=='default'||!Number.isFinite(legacy)||legacy<=0)return;
+ queueSessionBudget(s,legacy,{migrating:true}).then(()=>{if(s===CURRENT)syncSessionBudgetControls(sessionBudgetForSession(s),s);}).catch(()=>{});
 }
 function sessionBudgetSliderMax(s,value){
  const reference=Math.max(defaultSessionBudget,Number(value)||0,Number(s?.total_cost)||0);
@@ -2929,14 +2967,14 @@ function syncSessionBudgetControls(value,s=CURRENT){
 }
 function loadBudgetForSession(s){
  syncSessionBudgetControls(sessionBudgetForSession(s),s);
+ migrateLegacySessionBudget(s);
 }
 function saveBudgetForSession(value){
  if(!CURRENT)return;
  const n=parseFloat(value);
  if(!Number.isFinite(n)||n<=0)return;
- sessionBudgets[budgetSessionKey(CURRENT)]=n;
- saveSessionBudgets();
  syncSessionBudgetControls(n,CURRENT);
+ queueSessionBudget(CURRENT,n).catch(error=>showAppToast({title:'Session budget could not be saved',body:error.message||String(error),kind:'warn',sticky:true}));
  return n;
 }
 $('budget').value=String(defaultSessionBudget);

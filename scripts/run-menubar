@@ -4,17 +4,73 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 case "$(uname -s)" in
   Darwin)
-    if [[ "${1:-}" == "--check" ]]; then
-      command -v swiftc >/dev/null 2>&1
-      exit
-    fi
     APP="$ROOT/.build/Token Meter Menu Bar.app"
     CONTENTS="$APP/Contents"
     BIN="$CONTENTS/MacOS/token-meter-menubar"
     INFO="$CONTENTS/Info.plist"
-    mkdir -p "$CONTENTS/MacOS"
-    ditto "$ROOT/menubar/Info.plist" "$INFO"
-    swiftc "$ROOT/menubar/TokenMeterMenuBar.swift" -o "$BIN"
+    STAMP="$CONTENTS/source.sha256"
+    fingerprint="$(shasum -a 256 "$ROOT/menubar/TokenMeterMenuBar.swift" "$ROOT/menubar/Info.plist" | awk '{print $1}')" || exit 1
+    if [[ -x "$BIN" && -f "$INFO" && ! -e "$STAMP"
+          && "$BIN" -nt "$ROOT/menubar/TokenMeterMenuBar.swift"
+          && "$BIN" -nt "$ROOT/menubar/Info.plist" ]] \
+        && cmp -s "$INFO" "$ROOT/menubar/Info.plist"; then
+      # Older installs have a binary but no stamp. Adopt it only if it is newer
+      # than both inputs and can still run against the local menu endpoint.
+      if TOKEN_METER_MENUBAR_SMOKE=1 "$BIN" >/dev/null 2>&1; then
+        printf '%s\n' "$fingerprint" > "$STAMP" || exit 1
+      fi
+    fi
+    if [[ -x "$BIN" && -f "$INFO" && -f "$STAMP" && "$(cat "$STAMP")" == "$fingerprint" ]]; then
+      if [[ "${1:-}" == "--check" ]]; then
+        exit 0
+      fi
+      exec "$BIN"
+    fi
+
+    selected_swift_sdk=""
+    select_swift_sdk() {
+      command -v swiftc >/dev/null 2>&1 || {
+        echo "Token Meter menu bar build failed: swiftc is missing." >&2
+        return 1
+      }
+      if printf 'import AppKit\n' | swiftc -typecheck - >/dev/null 2>&1; then
+        return 0
+      fi
+
+      local default_sdk sdk sdk_dir index
+      default_sdk="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)"
+      sdk_dir="${default_sdk%/*}"
+      if [[ -n "$default_sdk" && -d "$sdk_dir" ]]; then
+        local -a sdks=("$sdk_dir"/MacOSX*.sdk)
+        for ((index = ${#sdks[@]} - 1; index >= 0; index--)); do
+          sdk="${sdks[index]}"
+          [[ -d "$sdk" && ! -L "$sdk" ]] || continue
+          if printf 'import AppKit\n' | swiftc -sdk "$sdk" -typecheck - >/dev/null 2>&1; then
+            selected_swift_sdk="$sdk"
+            return 0
+          fi
+        done
+      fi
+      echo "Token Meter menu bar build failed: no installed macOS SDK is compatible with swiftc. Update the Xcode Command Line Tools." >&2
+      return 1
+    }
+    select_swift_sdk || exit 1
+    mkdir -p "$CONTENTS/MacOS" || exit 1
+    ditto "$ROOT/menubar/Info.plist" "$INFO" || exit 1
+    build_dir="$(mktemp -d "$CONTENTS/MacOS/.build.XXXXXX")" || exit 1
+    trap 'rm -rf "$build_dir"' EXIT
+    if [[ -n "$selected_swift_sdk" ]]; then
+      swiftc -sdk "$selected_swift_sdk" "$ROOT/menubar/TokenMeterMenuBar.swift" -o "$build_dir/token-meter-menubar" || exit 1
+    else
+      swiftc "$ROOT/menubar/TokenMeterMenuBar.swift" -o "$build_dir/token-meter-menubar" || exit 1
+    fi
+    mv -f "$build_dir/token-meter-menubar" "$BIN" || exit 1
+    rmdir "$build_dir" || exit 1
+    trap - EXIT
+    printf '%s\n' "$fingerprint" > "$STAMP" || exit 1
+    if [[ "${1:-}" == "--check" ]]; then
+      exit 0
+    fi
     exec "$BIN"
     ;;
   Linux)

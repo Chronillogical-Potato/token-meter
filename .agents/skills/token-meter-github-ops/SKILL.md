@@ -78,8 +78,9 @@ status reply on each inspected PR. Before posting, inspect the current head and
 existing discussion and preview the exact text. Do not duplicate an equivalent
 same-head status reply.
 
-Thank the contributor, state the evidence-backed merge status or next step, say
-the team will follow up soon, and identify the message as from Pratik's agent.
+Thank the contributor, state the evidence-backed merge status or next step, and
+identify the message as from Pratik's agent. Mention a follow-up only when the
+team owns an actual next action; when the work is complete, do not promise one.
 This standing approval covers only those status replies. A merge, close, push,
 review request, or unrelated external action still requires explicit authority
 in the current task.

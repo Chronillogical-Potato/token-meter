@@ -314,6 +314,7 @@ DEFAULT_BUDGET_THRESHOLDS = (80, 90, 100)
 DEFAULT_SESSION_BUDGET = 10.0
 MIN_SESSION_BUDGET = 0.5
 MAX_MONTHLY_BUDGET = 100_000_000.0
+MAX_SESSION_BUDGETS = 500
 OPENCODE_DETAIL_MESSAGE_LIMIT = 200
 UPDATE_CHECK_INTERVAL_S = 10 * 60
 GIT_DELIVERY_INTERVAL_S = 5 * 60
@@ -611,19 +612,26 @@ def load_json(path, default=None):
 def atomic_write_text(path, text):
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
-    tmp = os.path.join(directory, f".{os.path.basename(path)}.token-meter-{os.getpid()}")
+    tmp = os.path.join(
+        directory,
+        f".{os.path.basename(path)}.token-meter-{os.getpid()}-{secrets.token_hex(8)}",
+    )
     mode = None
     try:
         mode = os.stat(path).st_mode & 0o777
     except OSError:
         pass
-    with open(tmp, "w", encoding="utf-8") as fh:
-        fh.write(text)
-        fh.flush()
-        os.fsync(fh.fileno())
-    if mode is not None:
-        os.chmod(tmp, mode)
-    os.replace(tmp, path)
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        if mode is not None:
+            os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp)
 
 
 def normalize_language_signal_terms(values, group="language signal"):
@@ -1722,6 +1730,20 @@ def set_session_model_identity(session_key, model=None, provider="codex", remove
     }
 
 
+def normalize_session_budget_value(value, label="Session budget"):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{label} must be a number.")
+    value = float(value)
+    if (not math.isfinite(value)
+            or value < MIN_SESSION_BUDGET
+            or value > MAX_MONTHLY_BUDGET):
+        raise ValueError(
+            f"{label} must be between "
+            f"{MIN_SESSION_BUDGET:g} and {MAX_MONTHLY_BUDGET:,.0f}."
+        )
+    return value
+
+
 def normalize_budget_settings(values):
     """Validate one machine-wide monthly budget configuration."""
     if values is None:
@@ -1735,17 +1757,23 @@ def normalize_budget_settings(values):
     default_session_budget = values.get(
         "default_session_budget", DEFAULT_SESSION_BUDGET,
     )
-    if (isinstance(default_session_budget, bool)
-            or not isinstance(default_session_budget, (int, float))):
-        raise ValueError("Default session budget must be a number.")
-    default_session_budget = float(default_session_budget)
-    if (not math.isfinite(default_session_budget)
-            or default_session_budget < MIN_SESSION_BUDGET
-            or default_session_budget > MAX_MONTHLY_BUDGET):
-        raise ValueError(
-            "Default session budget must be between "
-            f"{MIN_SESSION_BUDGET:g} and {MAX_MONTHLY_BUDGET:,.0f}."
-        )
+    default_session_budget = normalize_session_budget_value(
+        default_session_budget, "Default session budget",
+    )
+
+    raw_session_budgets = values.get("session_budgets") or {}
+    if not isinstance(raw_session_budgets, dict):
+        raise ValueError("Session budgets must be an object.")
+    if len(raw_session_budgets) > MAX_SESSION_BUDGETS:
+        raise ValueError(f"Token Meter supports at most {MAX_SESSION_BUDGETS} saved session budgets.")
+    session_budgets = {}
+    for raw_session_id, raw_budget in raw_session_budgets.items():
+        if not isinstance(raw_session_id, str):
+            raise ValueError("Session budget IDs must be strings.")
+        session_id = raw_session_id.strip()
+        if not session_id or len(session_id) > 240:
+            raise ValueError("Session budget IDs must be 1 to 240 characters.")
+        session_budgets[session_id] = normalize_session_budget_value(raw_budget)
 
     raw_allocations = values.get("allocations") or {}
     if not isinstance(raw_allocations, dict):
@@ -1792,6 +1820,7 @@ def normalize_budget_settings(values):
     return {
         "currency": "USD",
         "default_session_budget": default_session_budget,
+        "session_budgets": session_budgets,
         "monthly_total": total,
         "allocations": allocations,
         "thresholds": thresholds,
@@ -1810,23 +1839,142 @@ def budget_settings(path=None):
         return normalize_budget_settings({})
 
 
+_budget_settings_locks = {}
+_budget_settings_locks_guard = threading.Lock()
+
+
+def _budget_settings_lock(path):
+    """Serialize each machine settings file across dashboard and MCP processes."""
+    path = os.path.abspath(path)
+    with _budget_settings_locks_guard:
+        lock = _budget_settings_locks.setdefault(path, threading.RLock())
+
+    @contextlib.contextmanager
+    def hold():
+        with lock:
+            lock_path = f"{path}.budget-lock"
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(lock_path, "a+", encoding="utf-8") as fh:
+                try:
+                    if os.name == "nt":
+                        import msvcrt
+                        fh.seek(0)
+                        if not fh.read(1):
+                            fh.seek(0)
+                            fh.write("0")
+                            fh.flush()
+                        fh.seek(0)
+                        msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+                    else:
+                        import fcntl
+                        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+                    yield
+                finally:
+                    if os.name == "nt":
+                        fh.seek(0)
+                        with contextlib.suppress(OSError):
+                            msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        with contextlib.suppress(OSError):
+                            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+    return hold()
+
+
+def _update_budget_settings(update, path):
+    """Run one validated budget update as a single locked read/modify/write."""
+    try:
+        with _budget_settings_lock(path):
+            settings = load_json(path, {})
+            if not isinstance(settings, dict):
+                settings = {}
+            current = normalize_budget_settings(settings.get("budgets"))
+            normalized = normalize_budget_settings(update(current))
+            changed = settings.get("budgets") != normalized
+            settings["budgets"] = normalized
+            atomic_write_text(path, json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+    except ValueError as error:
+        return {"ok": False, "error": str(error)}
+    except OSError as error:
+        return {"ok": False, "error": f"Token Meter could not save settings: {error}"}
+    return {"ok": True, "changed": changed, "budgets": normalized}
+
+
 def set_budget_settings(values, path=None):
     """Persist a validated machine-wide monthly budget atomically."""
     path = path or TOKEN_METER_SETTINGS
     try:
-        normalized = normalize_budget_settings(values)
+        supplied = dict(values)
+    except (TypeError, ValueError) as error:
+        return {"ok": False, "error": str(error)}
+
+    def update(current):
+        if "session_budgets" not in supplied:
+            supplied["session_budgets"] = current["session_budgets"]
+        return supplied
+
+    return _update_budget_settings(update, path)
+
+
+def effective_session_budget(session_id, settings=None):
+    """Return one opaque session's cap and whether it overrides the default."""
+    settings = normalize_budget_settings(settings if settings is not None else budget_settings())
+    session_id = str(session_id or "").strip()
+    override = (settings.get("session_budgets") or {}).get(session_id)
+    if override is not None:
+        return float(override), "session_override"
+    return float(settings["default_session_budget"]), "default"
+
+
+def set_session_budget_override(session_id, budget_usd, *, expected_current_budget_usd=None,
+                                path=None):
+    """Atomically persist a validated override for a discovered opaque session ID."""
+    session_id = str(session_id or "").strip()
+    if not session_id or len(session_id) > 240:
+        return {"ok": False, "error": "Session budget ID must be 1 to 240 characters."}
+    try:
+        budget_usd = normalize_session_budget_value(budget_usd)
+        expected = (
+            normalize_session_budget_value(
+                expected_current_budget_usd, "Expected current budget",
+            ) if expected_current_budget_usd is not None else None
+        )
     except ValueError as error:
         return {"ok": False, "error": str(error)}
-    settings = load_json(path, {})
-    if not isinstance(settings, dict):
-        settings = {}
-    changed = settings.get("budgets") != normalized
-    settings["budgets"] = normalized
+
+    def update(current):
+        current_budget, _source = effective_session_budget(session_id, current)
+        if expected is not None and expected != current_budget:
+            raise ValueError("The current session budget changed; read it again before updating.")
+        updated = dict(current)
+        overrides = dict(current.get("session_budgets") or {})
+        overrides[session_id] = budget_usd
+        updated["session_budgets"] = overrides
+        return updated
+
+    return _update_budget_settings(update, path or TOKEN_METER_SETTINGS)
+
+
+def set_default_session_budget_value(budget_usd, *, expected_current_budget_usd=None,
+                                     path=None):
+    """Atomically persist the default cap, optionally protecting a stale read."""
     try:
-        atomic_write_text(path, json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-    except OSError as error:
-        return {"ok": False, "error": f"Token Meter could not save settings: {error}"}
-    return {"ok": True, "changed": changed, "budgets": normalized}
+        budget_usd = normalize_session_budget_value(budget_usd, "Default session budget")
+        expected = (
+            normalize_session_budget_value(
+                expected_current_budget_usd, "Expected current budget",
+            ) if expected_current_budget_usd is not None else None
+        )
+    except ValueError as error:
+        return {"ok": False, "error": str(error)}
+
+    def update(current):
+        if expected is not None and expected != current["default_session_budget"]:
+            raise ValueError("The default session budget changed; read it again before updating.")
+        updated = dict(current)
+        updated["default_session_budget"] = budget_usd
+        return updated
+
+    return _update_budget_settings(update, path or TOKEN_METER_SETTINGS)
 
 
 def normalize_update_settings(values):
@@ -5990,6 +6138,9 @@ def attach_cross_session(state, cross=None):
         return state
     cross = cross or cross_session()
     state["xsession"] = cross
+    state["session_budget"] = session_budget_snapshot(
+        state.get("source") or {}, state,
+    )
     state["optional_capabilities"] = session_optional_capabilities(state, cross.get("capabilities") or {})
     source_id = str(((state.get("source") or {}).get("id") or ""))
     group = _domain_find_agent_group(
@@ -8026,6 +8177,102 @@ def agent_no_session(message, panel="summary"):
     })
 
 
+def session_budget_snapshot(source, state, settings=None):
+    """Build the bounded budget state shared by dashboard and MCP surfaces."""
+    source = source or {}
+    state = state or {}
+    session_id = str(source.get("id") or "").strip()
+    budget_usd, source_kind = effective_session_budget(session_id, settings)
+    cost_available = metric_available(state, "cost")
+    spend_usd = round(float(state.get("total_cost") or 0), 4) if cost_available else None
+    percent_used = round((100 * spend_usd / budget_usd), 2) if spend_usd is not None else None
+    remaining_usd = round(budget_usd - spend_usd, 4) if spend_usd is not None else None
+    thresholds = list((normalize_budget_settings(
+        settings if settings is not None else budget_settings()
+    ).get("thresholds") or ()))
+    reached = [value for value in thresholds if percent_used is not None and percent_used >= value]
+    return {
+        "id": session_id,
+        "budget_usd": budget_usd,
+        "source": source_kind,
+        "spend_usd": spend_usd,
+        "remaining_usd": remaining_usd,
+        "percent_used": percent_used,
+        "threshold_state": (
+            "unavailable" if percent_used is None else
+            "exceeded" if percent_used >= 100 else
+            "threshold_reached" if reached else "within_budget"
+        ),
+        "reached_thresholds": reached,
+        "cost_available": cost_available,
+    }
+
+
+def agent_budget(session_id=None, caller=None):
+    source, resolution = resolve_agent_source(session_id=session_id, caller=caller)
+    if not source:
+        return agent_no_session(resolution)
+    state = recompute(source)
+    if not state:
+        return agent_no_session("Token Meter found the run but could not read its metrics.")
+    session = session_budget_snapshot(source, state, budget_settings())
+    return bounded_agent_result({
+        "ok": True,
+        "answer": "Session budget is available for this run.",
+        "evidence": [],
+        "recommended_action": "Use the remaining session budget when deciding whether to continue or narrow scope.",
+        "caveat": "Spend is an estimate when this runtime uses public API rates.",
+        "dashboard_url": agent_dashboard_url(source.get("id"), "summary"),
+        "as_of": agent_as_of(),
+        "data_scope": "session_budget",
+        "selected_session": agent_session_summary(source),
+        "selection": resolution,
+        "session": session,
+        "approximate_fields": (["cost"] if state.get("cost_approx") and session["cost_available"] else []),
+    })
+
+
+def agent_set_session_budget(session_id=None, budget_usd=None,
+                             expected_current_budget_usd=None, confirm=False,
+                             caller=None):
+    if confirm is not True:
+        raise ValueError("set_session_budget requires confirm: true")
+    source, resolution = resolve_agent_source(session_id=session_id, caller=caller)
+    if not source:
+        return agent_no_session(resolution)
+    result = set_session_budget_override(
+        source.get("id"), budget_usd,
+        expected_current_budget_usd=expected_current_budget_usd,
+    )
+    if not result.get("ok"):
+        raise ValueError(result.get("error") or "Token Meter could not save the session budget.")
+    return agent_budget(session_id=source.get("id"), caller=caller)
+
+
+def agent_set_default_session_budget(budget_usd=None,
+                                     expected_current_budget_usd=None,
+                                     confirm=False):
+    if confirm is not True:
+        raise ValueError("set_default_session_budget requires confirm: true")
+    result = set_default_session_budget_value(
+        budget_usd,
+        expected_current_budget_usd=expected_current_budget_usd,
+    )
+    if not result.get("ok"):
+        raise ValueError(result.get("error") or "Token Meter could not save the default session budget.")
+    return bounded_agent_result({
+        "ok": True,
+        "answer": "Default session budget updated.",
+        "evidence": [],
+        "recommended_action": "Existing session overrides keep their configured caps.",
+        "caveat": "This changes only the default cap, not monthly allocations.",
+        "dashboard_url": agent_dashboard_url(panel="settings-budgets"),
+        "as_of": agent_as_of(),
+        "data_scope": "session_budget",
+        "default_session_budget_usd": result["budgets"]["default_session_budget"],
+    })
+
+
 def safe_execution_trace(state, execution_idx, limit=5):
     allowed = {"tool_call", "tool_result", "usage", "complete", "context", "reasoning", "coordination", "start"}
     out = []
@@ -9536,7 +9783,7 @@ class H(BaseHTTPRequestHandler):
                             "/agent-access/toggle", "/session/delete",
                             "/settings/frustration", "/settings/language-signals",
                             "/settings/model-pricing", "/settings/session-model-identity",
-                            "/settings/budgets", "/settings/updates",
+                            "/settings/budgets", "/settings/session-budget", "/settings/updates",
                             "/git-delivery/clear", "/updates/check", "/updates/install"):
             self.send_error(404)
             return
@@ -9643,6 +9890,22 @@ class H(BaseHTTPRequestHandler):
                 result["budgets"] = cross.get("budgets") or result["budgets"]
                 result["budget"] = cross.get("budget") or {}
                 result["monthly"] = cross.get("monthly") or []
+            self._send(json.dumps(result), "application/json",
+                       status=200 if result.get("ok") else 400)
+            return
+        if req_path == "/settings/session-budget":
+            session_id = str(payload.get("session_id") or "").strip()
+            source = find_session(session_id) if session_id else None
+            if source is None:
+                result = {"ok": False, "error": "The requested Token Meter session was not found."}
+            else:
+                result = set_session_budget_override(
+                    session_id, payload.get("budget_usd"),
+                    expected_current_budget_usd=payload.get("expected_current_budget_usd"),
+                )
+                if result.get("ok"):
+                    state = cached_session_state(source) or recompute(source) or {}
+                    result["session_budget"] = session_budget_snapshot(source, state)
             self._send(json.dumps(result), "application/json",
                        status=200 if result.get("ok") else 400)
             return
@@ -9880,6 +10143,9 @@ def application():
                     runtime_descriptors=lambda: runtime_registry().descriptors,
                     now=time.time,
                 ),
+                lambda **kwargs: agent_budget(**kwargs),
+                lambda **kwargs: agent_set_session_budget(**kwargs),
+                lambda **kwargs: agent_set_default_session_budget(**kwargs),
             ),
             current_state=lambda: current_state(),
             cross_session=lambda: cross_session(),
