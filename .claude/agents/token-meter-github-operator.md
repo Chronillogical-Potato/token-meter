@@ -1,6 +1,7 @@
 ---
 name: token-meter-github-operator
 description: Inspect Token Meter GitHub state and perform only specifically approved operations.
+model: claude-opus-5-5
 tools: Read, Grep, Glob, Bash
 disallowedTools: Agent
 skills:
