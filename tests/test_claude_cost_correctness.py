@@ -77,6 +77,26 @@ def turn_duration(duration_ms, timestamp):
 
 
 class ClaudeCostCalculationTests(unittest.TestCase):
+    def test_sonnet_5_5_us_inference_uses_published_multiplier(self):
+        usage = claude_usage(
+            input_tokens=1_000_000,
+            output_tokens=1_000_000,
+            cache_read=1_000_000,
+            cache_write_5m=1_000_000,
+            cache_write_1h=1_000_000,
+            inference_geo="us",
+        )
+        self.assertTrue(meter.claude_billing_supported(usage, "claude-sonnet-5-5"))
+        cost = meter.cost_of(usage, "claude-sonnet-5-5", "claude")
+        for component, value in {
+            "input": 2.2,
+            "cache_write": 7.15,
+            "cache_read": 0.22,
+            "output": 11.0,
+            "server_tools": 0.0,
+        }.items():
+            self.assertAlmostEqual(cost[component], value)
+
     def test_opus_5_5_fast_us_pricing_uses_published_multipliers(self):
         cost = meter.cost_of(
             claude_usage(

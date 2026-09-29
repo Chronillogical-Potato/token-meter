@@ -3262,7 +3262,7 @@ class FrustrationSignalTests(unittest.TestCase):
 class PricingTests(unittest.TestCase):
     def test_builtin_pricing_exposes_reviewed_primary_sources(self):
         pricing = meter.model_pricing_settings()
-        self.assertEqual(pricing["reviewed_on"], "2026-09-24")
+        self.assertEqual(pricing["reviewed_on"], "2026-09-29")
         self.assertEqual(
             [source["provider"] for source in pricing["sources"]],
             ["anthropic", "openai", "cursor"],
@@ -3304,6 +3304,28 @@ class PricingTests(unittest.TestCase):
         price, approximate = meter.price_for("claude-sonnet-5", "claude")
         self.assertEqual(price, {"input": 2.0, "output": 10.0, "cache_write": 2.5, "cache_read": 0.2})
         self.assertFalse(approximate)
+
+    def test_sonnet_5_5_uses_published_rates_in_settings_and_estimates(self):
+        expected = {
+            "input": 2.0, "output": 10.0,
+            "cache_write": 2.5, "cache_read": 0.2,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = [
+                item for item in meter.model_pricing_settings(
+                    path=str(Path(tmp) / "settings.json"),
+                )["models"]
+                if item["provider"] == "claude"
+                and item["model"] == "claude-sonnet-5-5"
+            ]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["prices"], expected)
+        self.assertTrue(row["builtin"])
+        self.assertEqual(row["source"], "built-in")
+        price, unavailable = meter.price_for("claude-sonnet-5-5", "claude")
+        self.assertEqual(price, expected)
+        self.assertFalse(unavailable)
 
     def test_unknown_models_do_not_inherit_runtime_default_prices(self):
         for provider, model, default_price in (

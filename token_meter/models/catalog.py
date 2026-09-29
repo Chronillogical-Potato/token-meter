@@ -16,7 +16,7 @@ MODEL_PROVIDER_TO_SETTINGS_PROVIDER = {
     for legacy_provider, model_provider in LEGACY_PROVIDER_TO_MODEL_PROVIDER.items()
 }
 MODEL_PRICE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/+-]{0,159}$")
-BUILTIN_PRICE_REVIEWED_ON = "2026-09-24"
+BUILTIN_PRICE_REVIEWED_ON = "2026-09-29"
 BUILTIN_PRICE_SOURCES = (
     {
         "provider": "anthropic",
@@ -37,6 +37,9 @@ BUILTIN_PRICE_SOURCES = (
 
 
 ANTHROPIC_PRICE = {
+    "claude-sonnet-5-5": {
+        "input": 2.0, "output": 10.0, "cache_write": 2.50, "cache_read": 0.20,
+    },
     "claude-opus-5-5": {
         "input": 4.0, "output": 20.0, "cache_write": 5.0, "cache_read": 0.20,
     },

@@ -33,7 +33,6 @@ class CurrentModelCatalogTests(unittest.TestCase):
             for row in settings["models"]
         }
 
-        self.assertEqual(settings["reviewed_on"], "2026-09-24")
         for (provider, model), prices in expected.items():
             with self.subTest(provider=provider, model=model):
                 actual, unavailable = meter.price_for(model, provider)
