@@ -51,10 +51,23 @@ def normalize_compare_ids(raw):
 
 
 def trace_key(row):
-    """Stable per-trace selector; session ids are shared by forked and spawned threads."""
+    """Opaque per-trace selector; ids are shared by forks and file names repeat across runtimes."""
     path = str((row or {}).get("path") or "")
-    stem = os.path.basename(path).rsplit(".", 1)[0] if path else ""
-    return stem or str((row or {}).get("id") or "")
+    if not path:
+        return str((row or {}).get("id") or "")
+    # Two FNV-1a passes over UTF-16 code units, mirrored by compareKeyFor in page.html.
+    first, second = 0x811C9DC5, 0x9DC5811C
+    data = path.encode("utf-16-le")
+    for index in range(0, len(data), 2):
+        unit = data[index] | (data[index + 1] << 8)
+        first = ((first ^ unit) * 0x01000193) & 0xFFFFFFFF
+        second = ((second ^ unit) * 0x5BD1E995) & 0xFFFFFFFF
+    return f"t{first:08x}{second:08x}"
+
+
+def trace_stem(row):
+    path = str((row or {}).get("path") or "")
+    return os.path.basename(path).rsplit(".", 1)[0] if path else ""
 
 
 def title_key(title):
@@ -70,7 +83,7 @@ def _num(value):
     return number if number == number else None
 
 
-def _series(state, cost_available):
+def _series(state, cost_available, tokens_available=True):
     rows = [row for row in (state.get("series") or []) if isinstance(row, dict)]
     points, cost, tokens = [], 0.0, 0
     for index, row in enumerate(rows, 1):
@@ -79,7 +92,7 @@ def _series(state, cost_available):
         points.append({
             "i": int(_num(row.get("i")) or index),
             "cost": round(cost, 6) if cost_available else None,
-            "tokens": tokens,
+            "tokens": tokens if tokens_available else None,
         })
     if len(points) <= MAX_SERIES_POINTS:
         return points
@@ -87,7 +100,7 @@ def _series(state, cost_available):
     return [points[round(k * step)] for k in range(MAX_SERIES_POINTS)]
 
 
-def compare_entry(summary, state, key=None):
+def compare_entry(summary, state, key=None, open_id=None):
     """Project one session into an allowlisted, content-free comparison record."""
     summary, state = summary or {}, state or {}
     availability = state.get("availability") or summary.get("availability") or {}
@@ -114,6 +127,7 @@ def compare_entry(summary, state, key=None):
     return {
         "key": str(key or trace_key(summary)),
         "id": str(summary.get("id") or ""),
+        "open_id": str(open_id or summary.get("id") or "")[:MAX_ID_LENGTH],
         "title": str(summary.get("title") or "(untitled log)")[:160],
         "title_key": title_key(summary.get("title")),
         "label": str(summary.get("label") or summary.get("provider") or ""),
@@ -148,9 +162,9 @@ def compare_entry(summary, state, key=None):
         "cache_saved": _num(cache.get("saved")) if has("cache") and has("cost") else None,
         "context_peak": int(peak) if peak is not None else None,
         "context_window": int(window) if window else None,
-        "tool_calls": int(_num(tools.get("total_calls")) or 0),
+        "tool_calls": int(_num(tools.get("total_calls")) or 0) if tools_available else None,
         "tool_errors": int(_num(tools.get("total_errors")) or 0) if tools_available else None,
-        "tools_unique": int(_num(tools.get("unique_used")) or 0),
+        "tools_unique": int(_num(tools.get("unique_used")) or 0) if tools_available else None,
         "top_tools": [
             {"name": str(row.get("name") or "")[:80], "calls": int(_num(row.get("calls")) or 0)}
             for row in sorted(
@@ -159,7 +173,7 @@ def compare_entry(summary, state, key=None):
             )[:MAX_TOP_TOOLS]
         ],
         "reasoning_share": _num((analyses.get("reasoning") or {}).get("share")),
-        "series": _series(state, cost is not None),
+        "series": _series(state, cost is not None, has("tokens")),
     }
 
 
@@ -226,7 +240,8 @@ def _setup_insight(sessions, same_title):
             diffs.append(f"{name} ({detail})")
     if diffs:
         return {"kind": "setup", "tone": "info", "text": "Setup differs by " + ", ".join(diffs) + "."}
-    tail = " — remaining differences are run-to-run variance." if same_title else "."
+    tail = (" — if these ran the same prompt, remaining differences reflect run-to-run variance."
+            if same_title else ".")
     return {"kind": "setup", "tone": "info", "text": "Identical setup: same app, model, effort, and project" + tail}
 
 
@@ -248,8 +263,8 @@ def _cost_insights(sessions):
             key, delta = max(deltas.items(), key=lambda item: item[1])
             if delta > gap:
                 out.append({"kind": "cost_driver", "tone": "info", "text": (
-                    f"{COST_PART_LABELS[key].capitalize()} drive the cost difference: {high['letter']} spent "
-                    f"{_money(delta)} more on them than {low['letter']}, partly offset elsewhere "
+                    f"The biggest cost difference is {COST_PART_LABELS[key]}: {high['letter']} spent "
+                    f"{_money(delta)} more there than {low['letter']}, partly offset elsewhere "
                     f"for a net gap of {_money(gap)}.")})
             elif delta > 0 and delta / gap >= 0.4:
                 out.append({"kind": "cost_driver", "tone": "info", "text": (
@@ -276,7 +291,7 @@ def _variance_insight(sessions, same_title):
     if not parts:
         return []
     return [{"kind": "variance", "tone": "info", "text": (
-        f"Across {len(sessions)} runs of the same prompt, run-to-run spread is " + ", ".join(parts) + ".")}]
+        f"Across {len(sessions)} runs with matching titles, the spread is " + ", ".join(parts) + ".")}]
 
 
 def _evidence_insights(sessions):
@@ -315,7 +330,7 @@ def compare_sessions(entries):
     insights = []
     if same_title:
         insights.append({"kind": "prompt", "tone": "info", "text": (
-            f"All {len(sessions)} sessions share the same opening prompt (matched by title).")})
+            f"All {len(sessions)} sessions have matching titles, which usually means the same opening prompt.")})
     insights.append(_setup_insight(sessions, same_title))
     insights += _cost_insights(sessions)
     insights += _ratio_insight(sessions, "duration_s", "speed", 1.25, lambda low, high: (
@@ -345,7 +360,7 @@ def compare_sessions(entries):
         insights.append({"kind": "tools", "tone": "warn", "text": (
             f"{session['letter']} hit {session['tool_errors']} tool "
             f"{'error' if session['tool_errors'] == 1 else 'errors'}{tail}.")})
-    low, high = _extremes([s for s in sessions if s["tool_calls"] or s.get("tool_errors") is not None], "tool_calls")
+    low, high = _extremes(sessions, "tool_calls")
     if low and high and high["tool_calls"] >= 5 and high["tool_calls"] >= 1.5 * max(1, low["tool_calls"]):
         insights.append({"kind": "tools", "tone": "info", "text": (
             f"{high['letter']} made {high['tool_calls']} tool calls vs {low['tool_calls']} for {low['letter']}.")})
@@ -356,7 +371,7 @@ def compare_sessions(entries):
     return {"sessions": sessions, "same_title": same_title, "best": best, "insights": insights}
 
 
-def matching_sessions(entries, rows, limit=12):
+def matching_sessions(entries, rows, limit=12, open_id=None):
     """Other recorded sessions whose public title matches a selected session's title."""
     keys = {entry.get("title_key") for entry in entries if entry.get("title_key")}
     selected = {entry.get("key") for entry in entries}
@@ -368,6 +383,7 @@ def matching_sessions(entries, rows, limit=12):
         matches.append({
             "key": trace_key(row),
             "id": str(row.get("id") or ""),
+            "open_id": str((open_id(row) if open_id else None) or row.get("id") or "")[:MAX_ID_LENGTH],
             "title": str(row.get("title") or "")[:160],
             "label": str(row.get("label") or row.get("provider") or ""),
             "provider": str(row.get("provider") or ""),

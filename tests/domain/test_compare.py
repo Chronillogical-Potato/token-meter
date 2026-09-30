@@ -117,6 +117,13 @@ class CompareEntryTests(unittest.TestCase):
         for key in ("cost", "cost_parts", "cost_per_turn", "duration_s", "output_tps",
                     "cache_hit_ratio", "context_peak", "wait_avg_s", "tool_errors"):
             self.assertIsNone(entry[key], key)
+        self.assertIsNone(entry["tool_calls"])
+        self.assertIsNone(entry["tools_unique"])
+        self.assertIsNone(entry["series"][-1]["cost"])
+        no_tokens = make_state(availability={"cost": True, "tokens": False})
+        entry = compare_entry(make_summary("b"), no_tokens)
+        self.assertIsNone(entry["tokens"])
+        self.assertIsNone(entry["series"][-1]["tokens"])
 
     def test_series_is_downsampled(self):
         state = make_state(turns=500)
@@ -128,7 +135,7 @@ class CompareEntryTests(unittest.TestCase):
 
 class CompareSessionsTests(unittest.TestCase):
     def entries(self, *pairs):
-        return [compare_entry(make_summary(sid, **summary), make_state(**state))
+        return [compare_entry(make_summary(sid, **summary), make_state(**state), key=sid)
                 for sid, summary, state in pairs]
 
     def test_letters_best_and_same_prompt(self):
@@ -142,7 +149,7 @@ class CompareSessionsTests(unittest.TestCase):
         self.assertEqual(result["best"]["duration_s"], "b")
         self.assertEqual(result["sessions"][0]["key"], "a")
         texts = " ".join(item["text"] for item in result["insights"])
-        self.assertIn("same opening prompt", texts)
+        self.assertIn("matching titles", texts)
         self.assertIn("3.0×", texts)
         self.assertIn("Identical setup", texts)
 
@@ -164,7 +171,7 @@ class CompareSessionsTests(unittest.TestCase):
         ))
         driver = [i["text"] for i in result["insights"] if i["kind"] == "cost_driver"]
         self.assertEqual(len(driver), 1)
-        self.assertIn("Cache reads drive the cost difference", driver[0])
+        self.assertIn("The biggest cost difference is cache reads", driver[0])
         self.assertIn("net gap of $0.50", driver[0])
 
     def test_context_pressure_is_one_grouped_warning(self):
@@ -197,7 +204,7 @@ class CompareSessionsTests(unittest.TestCase):
         self.assertFalse(result["same_title"])
         texts = " ".join(item["text"] for item in result["insights"])
         self.assertIn("B hit 4 tool errors", texts)
-        self.assertNotIn("same opening prompt", texts)
+        self.assertNotIn("matching titles", texts)
 
     def test_single_session_has_no_insights(self):
         result = compare_sessions(self.entries(("a", {}, {})))
@@ -211,19 +218,31 @@ class CompareSessionsTests(unittest.TestCase):
 
 
 class TraceKeyTests(unittest.TestCase):
-    def test_forked_threads_sharing_an_id_get_distinct_keys(self):
+    def test_keys_are_opaque_and_distinct_for_forks_and_repeated_file_names(self):
         parent = {"id": "root", "path": "/x/rollout-1-root.jsonl"}
         fork = {"id": "root", "path": "/x/rollout-2-root_child.jsonl"}
-        self.assertEqual(trace_key(parent), "rollout-1-root")
-        self.assertNotEqual(trace_key(parent), trace_key(fork))
+        kiro_a = {"id": "a", "path": "/kiro/ws1/sess-a/messages.jsonl"}
+        kiro_b = {"id": "b", "path": "/kiro/ws1/sess-b/messages.jsonl"}
+        keys = [trace_key(row) for row in (parent, fork, kiro_a, kiro_b)]
+        self.assertEqual(len(set(keys)), 4)
+        for key in keys:
+            self.assertRegex(key, r"^t[0-9a-f]{16}$")
+            self.assertNotIn("/", key)
+        self.assertEqual(trace_key(parent), trace_key(dict(parent)))
         self.assertEqual(trace_key({"id": "only-id"}), "only-id")
-        self.assertEqual(trace_key({"id": "o", "path": "opencode:ses_1"}), "opencode:ses_1")
+
+    def test_key_matches_dashboard_hash_for_non_ascii_paths(self):
+        # Mirrors compareKeyFor in page.html; the JS side is checked in test_meter.
+        self.assertEqual(trace_key({"path": "/Users/é/日本/x.jsonl"}), trace_key({"path": "/Users/é/日本/x.jsonl"}))
+        self.assertNotEqual(trace_key({"path": "/a/b"}), trace_key({"path": "/a/c"}))
 
     def test_fork_with_same_id_is_still_a_match(self):
-        selected = [compare_entry(make_summary("root", path="/x/rollout-1-root.jsonl"), make_state())]
-        rows = [make_summary("root", path="/x/rollout-1-root.jsonl"),
-                make_summary("root", path="/x/rollout-2-root_child.jsonl")]
-        self.assertEqual([m["key"] for m in matching_sessions(selected, rows)], ["rollout-2-root_child"])
+        parent_path, fork_path = "/x/rollout-1-root.jsonl", "/x/rollout-2-root_child.jsonl"
+        selected = [compare_entry(make_summary("root", path=parent_path), make_state())]
+        rows = [make_summary("root", path=parent_path), make_summary("root", path=fork_path)]
+        matches = matching_sessions(selected, rows, open_id=lambda row: "open-" + row["path"][-10:])
+        self.assertEqual([m["key"] for m in matches], [trace_key({"path": fork_path})])
+        self.assertEqual(matches[0]["open_id"], "open-" + fork_path[-10:])
 
 
 class MatchingSessionsTests(unittest.TestCase):
@@ -236,7 +255,7 @@ class MatchingSessionsTests(unittest.TestCase):
             make_summary("d", title="FIX the flaky test…", mtime=200.0, availability={"cost": False}),
         ]
         matches = matching_sessions(selected, rows)
-        self.assertEqual([m["key"] for m in matches], ["b", "d"])
+        self.assertEqual([m["id"] for m in matches], ["b", "d"])
         self.assertNotIn("path", matches[0])
         self.assertEqual(matches[0]["cost"], 0.5)
         self.assertIsNone(matches[1]["cost"])

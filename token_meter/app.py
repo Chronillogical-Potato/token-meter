@@ -95,6 +95,8 @@ from token_meter.domain.compare import (
     compare_sessions as _compare_sessions,
     matching_sessions as _compare_matching_sessions,
     normalize_compare_ids,
+    trace_key as _compare_trace_key,
+    trace_stem as _compare_trace_stem,
 )
 from token_meter.domain.insights import (
     build_cost_insights as _domain_build_cost_insights,
@@ -7734,24 +7736,33 @@ def spend_logs_state(start_day, end_day):
 
 
 def compare_sessions_state(raw_ids):
-    """Compare up to four selected sessions with a bounded, content-free projection."""
-    ids, error = normalize_compare_ids(raw_ids)
+    """Compare up to four selected traces with a bounded, content-free projection."""
+    keys, error = normalize_compare_ids(raw_ids)
     if error:
         return {"ok": False, "error": error}, 400
     inventory, ready = cached_session_sources()
-    sources = inventory if ready else None
+    pool = inventory if ready else all_session_sources()
+    by_key = {_compare_trace_key(source): source for source in pool}
+    stem_counts = defaultdict(int)
+    for source in pool:
+        stem_counts[_compare_trace_stem(source)] += 1
+
+    def open_id(row):
+        stem = _compare_trace_stem(row)
+        return stem if stem and stem_counts.get(stem) == 1 else str(row.get("id") or "")
+
     entries, missing = [], []
-    for sid in ids:
-        source = find_session(sid, sources)
+    for key in keys:
+        source = by_key.get(key)
         state = cached_session_state(source) if source else None
         if not state:
-            missing.append(sid)
+            missing.append(key)
             continue
-        entries.append(_compare_entry(session_summary(source), state, key=sid))
+        entries.append(_compare_entry(session_summary(source), state, key=key, open_id=open_id(source)))
     if not entries:
         return {
             "ok": False,
-            "error": "The selected sessions are no longer available.",
+            "error": "The selected sessions could not be loaded.",
             "missing": missing,
         }, 404
     comparison = _compare_sessions(entries)
@@ -7760,7 +7771,7 @@ def compare_sessions_state(raw_ids):
         "ok": True,
         **comparison,
         "missing": missing,
-        "matches": _compare_matching_sessions(comparison["sessions"], rows),
+        "matches": _compare_matching_sessions(comparison["sessions"], rows, open_id=open_id),
     }, 200
 
 

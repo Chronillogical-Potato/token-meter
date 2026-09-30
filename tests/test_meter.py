@@ -6340,7 +6340,7 @@ const fork={{id:'root',path:'/x/rollout-2-root_child.jsonl',title:'Same'}};
 const merged=mergeAllSessionInventory([parent,fork],[{{...fork,cost:2}}]);
 process.stdout.write(JSON.stringify({{
  route:sessionScopeRoute('compare'),
- keys:[compareKeyFor(parent),compareKeyFor(fork),compareKeyFor({{id:'only'}}),compareKeyFor({{id:'o',path:'opencode:ses_1'}})],
+ keys:[compareKeyFor(parent),compareKeyFor(fork),compareKeyFor({{id:'only'}}),compareKeyFor({{id:'o',path:'opencode:ses_1'}}),compareKeyFor({{path:'/k/a/messages.jsonl'}}),compareKeyFor({{path:'/Users/é/日本/😀.jsonl'}})],
  merged:merged.length,
  liveWins:merged.find(row=>row.path===fork.path).cost,
  cheaper:compareDelta({{lower:true}},0.5,1),
@@ -6354,7 +6354,16 @@ process.stdout.write(JSON.stringify({{
             ["node", "-e", script], capture_output=True, text=True, check=True,
         ).stdout)
         self.assertEqual(payload["route"], "sessions-compare")
-        self.assertEqual(payload["keys"], ["rollout-1-root", "rollout-2-root_child", "only", "opencode:ses_1"])
+        from token_meter.domain.compare import trace_key
+        self.assertEqual(payload["keys"], [
+            trace_key({"path": "/x/rollout-1-root.jsonl"}),
+            trace_key({"path": "/x/rollout-2-root_child.jsonl"}),
+            "only",
+            trace_key({"path": "opencode:ses_1"}),
+            trace_key({"path": "/k/a/messages.jsonl"}),
+            trace_key({"path": "/Users/é/日本/😀.jsonl"}),
+        ])
+        self.assertEqual(len(set(payload["keys"])), 6)
         self.assertEqual(payload["merged"], 2)
         self.assertEqual(payload["liveWins"], 2)
         self.assertIn("better", payload["cheaper"])
@@ -14822,15 +14831,18 @@ class CapabilityConfigTests(unittest.TestCase):
 
 class DailySummaryTests(unittest.TestCase):
     def test_compare_sessions_state_projects_selected_sessions_without_content(self):
-        sources = {
-            sid: {"id": sid, "path": f"/private/traces/{sid}.jsonl", "provider": "claude"}
-            for sid in ("one", "two")
-        }
+        from token_meter.domain.compare import trace_key
+        pool = [
+            {"id": "one", "path": "/private/traces/ws/one/messages.jsonl", "provider": "kiro"},
+            {"id": "two", "path": "/private/traces/ws/two/messages.jsonl", "provider": "kiro"},
+            {"id": "root", "path": "/private/traces/rollout-9-root.jsonl", "provider": "codex"},
+        ]
+        key = {source["id"]: trace_key(source) for source in pool}
 
         def summary(source):
             return {
                 "id": source["id"], "path": source["path"], "title": "Same prompt",
-                "label": "Claude Code", "provider": "claude", "models": ["opus-5-5"],
+                "label": "Kiro", "provider": source["provider"], "models": ["m"],
                 "usage_basis": "reported", "availability": {"cost": True},
             }
 
@@ -14848,18 +14860,17 @@ class DailySummaryTests(unittest.TestCase):
         saved_cache = dict(meter._xsess)
         try:
             meter._xsess["sessions"] = [
-                {"id": "one", "title": "Same prompt"},
-                {"id": "three", "title": "same prompt", "mtime": 5, "cost": 0.4},
-                {"id": "four", "title": "Different"},
+                {"id": "one", "title": "Same prompt", "path": pool[0]["path"]},
+                {"id": "root", "title": "same prompt", "mtime": 5, "cost": 0.4, "path": pool[2]["path"]},
+                {"id": "four", "title": "Different", "path": "/private/traces/four.jsonl"},
             ]
-            with mock.patch.object(meter, "cached_session_sources", return_value=([], True)), \
-                    mock.patch.object(meter, "find_session", side_effect=lambda sid, pool=None: sources.get(sid)), \
+            with mock.patch.object(meter, "cached_session_sources", return_value=(pool, True)), \
                     mock.patch.object(meter, "session_summary", side_effect=summary), \
                     mock.patch.object(meter, "cached_session_state", side_effect=state):
-                payload, status = meter.compare_sessions_state("one,two,gone")
-                single, single_status = meter.compare_sessions_state("one")
+                payload, status = meter.compare_sessions_state(f"{key['one']},{key['two']},tgone")
+                single, single_status = meter.compare_sessions_state(key["one"])
                 empty, empty_status = meter.compare_sessions_state("")
-                missing, missing_status = meter.compare_sessions_state("gone,also-gone")
+                missing, missing_status = meter.compare_sessions_state("tgone,talsogone")
         finally:
             meter._xsess.clear()
             meter._xsess.update(saved_cache)
@@ -14867,16 +14878,19 @@ class DailySummaryTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(payload["ok"])
         self.assertEqual([row["letter"] for row in payload["sessions"]], ["A", "B"])
-        self.assertEqual(payload["missing"], ["gone"])
+        self.assertEqual([row["id"] for row in payload["sessions"]], ["one", "two"])
+        # Repeated file names fall back to the session id; unique stems open the exact trace.
+        self.assertEqual([row["open_id"] for row in payload["sessions"]], ["one", "two"])
+        self.assertEqual(payload["missing"], ["tgone"])
         self.assertTrue(payload["same_title"])
-        self.assertEqual(payload["best"]["cost"], "one")
-        self.assertEqual([row["key"] for row in payload["matches"]], ["three"])
+        self.assertEqual(payload["best"]["cost"], key["one"])
+        self.assertEqual([row["key"] for row in payload["matches"]], [key["root"]])
+        self.assertEqual(payload["matches"][0]["open_id"], "rollout-9-root")
         encoded = json.dumps(payload)
         self.assertNotIn("PRIVATE PROMPT TEXT", encoded)
         self.assertNotIn("/private/traces", encoded)
         self.assertEqual(single_status, 200)
         self.assertEqual(single["insights"], [])
-        self.assertEqual([row["key"] for row in single["matches"]], ["three"])
         self.assertEqual((empty_status, empty["ok"]), (400, False))
         self.assertEqual((missing_status, missing["ok"]), (404, False))
         self.assertIn(
