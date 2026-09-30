@@ -6378,6 +6378,22 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(payload["missing"], "")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_compare_clears_stale_missing_notice_when_selection_empties(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`async function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('){{',start)+1,depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+let compareIds=[],compareData={{sessions:[]}},compareError='',compareNotice='1 selected session could not be loaded right now.',compareMissing=['tgone'],compareLoadedKey='tgone',compareLoading=false,compareRequestSeq=0,rendered=0;
+function renderComparison(){{rendered++;}}
+eval(extract('loadComparison'));
+loadComparison().then(()=>process.stdout.write(JSON.stringify({{compareNotice,compareMissing,compareData,rendered}})));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload, {"compareNotice": "", "compareMissing": [], "compareData": None, "rendered": 1})
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagents_have_a_primary_page_and_canonical_return_route(self):
         self.assertIn("id=tab-subagents", self.page)
         self.assertIn("id=view-subagents", self.page)

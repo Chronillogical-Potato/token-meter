@@ -6330,7 +6330,7 @@ $('compare-tray').onclick=event=>{
 };
 async function loadComparison({force=false}={}){
  const key=compareIds.join(',');
- if(!compareIds.length){compareData=null;compareError='';compareLoadedKey='';renderComparison();return;}
+ if(!compareIds.length){compareData=null;compareError='';compareNotice='';compareMissing=[];compareLoadedKey='';renderComparison();return;}
  if(!force&&key===compareLoadedKey&&(compareData||compareError))return;
  const request=++compareRequestSeq;
  compareLoading=true;
