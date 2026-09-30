@@ -6319,7 +6319,7 @@ function syncCompareSelectionUi(){
  const tray=$('compare-tray');
  tray.hidden=!count;
  if(!count){setLogHtml(tray,'');return;}
- const note=count<2?'Select one more session, or open Compare to find runs with the same prompt.':full?`Comparison is full (${COMPARE_MAX}).`:'';
+ const note=count<2?'Select one more session, or open Compare to find runs with the same title.':full?`Comparison is full (${COMPARE_MAX}).`:'';
  setLogHtml(tray,`<div class=compareTrayItems>${compareIds.map((id,index)=>`<span class=compareChip><b class=compareLetter style="--compare-color:${compareColor(index)}">${COMPARE_LETTERS[index]}</b><span title="${esc(compareTitle(id))}">${esc(compareTitle(id))}</span><button type=button data-compare-remove="${esc(id)}" aria-label="Remove ${esc(compareTitle(id))} from comparison">×</button></span>`).join('')}</div><div class=compareTrayActions>${note?`<span class=compareTrayNote>${esc(note)}</span>`:''}<button class=tbtn type=button data-compare-open>Compare ${count}</button><button class="tbtn compareClear" type=button data-compare-clear>Clear</button></div>`);
 }
 $('compare-tray').onclick=event=>{
@@ -6334,7 +6334,7 @@ async function loadComparison({force=false}={}){
  if(!force&&key===compareLoadedKey&&(compareData||compareError))return;
  const request=++compareRequestSeq;
  compareLoading=true;
- if(key!==compareLoadedKey){compareError='';renderComparison();}
+ if(key!==compareLoadedKey){compareError='';compareNotice='';compareMissing=[];renderComparison();}
  try{
   const response=await fetch(`/session/compare?ids=${encodeURIComponent(key)}`,{cache:'no-store'});
   const payload=await response.json().catch(()=>({}));
@@ -6458,7 +6458,7 @@ function compareBreakdownHtml(sessions){
 }
 function compareMatchesHtml(matches,sessions){
  const full=compareIds.length>=COMPARE_MAX,same=sessions.length&&sessions.every(s=>s.title_key&&s.title_key===sessions[0].title_key);
- const heading=same||sessions.length===1?'Other runs with the same opening prompt':'Other runs with a matching opening prompt';
+ const heading=same||sessions.length===1?'Other runs with the same title':'Other runs with a matching title';
  const body=(matches||[]).length?`<div class=compareMatches>${matches.map(m=>`<div class=compareMatch><div style="min-width:0"><div class=t title="${esc(m.title)}">${esc(m.title)}</div><div class=meta>${esc(m.label)} · ${esc((m.models||[]).join(', ')||'model unknown')} · ${esc(m.last||m.start||'')} · ${f(m.turns)} execs · ${m.cost==null?'cost unavailable':esc(money(m.cost))}</div></div><div class=compareMatchActions><button class=tbtn type=button data-compare-open-session="${esc(m.open_id||m.id)}">Open</button><button class=tbtn type=button data-compare-add="${esc(m.key)}"${full?' disabled title="Comparison is full"':''}>Add</button></div></div>`).join('')}</div>`:'<div class=signalEmpty>No other recorded sessions share these titles yet. Run the same prompt again and the new session will appear here.</div>';
  return `<section class="card compareSection"><h3>${heading}</h3>${body}</section>`;
 }

@@ -57,7 +57,7 @@ def trace_key(row):
         return str((row or {}).get("id") or "")
     # Two FNV-1a passes over UTF-16 code units, mirrored by compareKeyFor in page.html.
     first, second = 0x811C9DC5, 0x9DC5811C
-    data = path.encode("utf-16-le")
+    data = path.encode("utf-16-le", "surrogatepass")
     for index in range(0, len(data), 2):
         unit = data[index] | (data[index + 1] << 8)
         first = ((first ^ unit) * 0x01000193) & 0xFFFFFFFF

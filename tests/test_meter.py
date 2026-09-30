@@ -6340,7 +6340,7 @@ const fork={{id:'root',path:'/x/rollout-2-root_child.jsonl',title:'Same'}};
 const merged=mergeAllSessionInventory([parent,fork],[{{...fork,cost:2}}]);
 process.stdout.write(JSON.stringify({{
  route:sessionScopeRoute('compare'),
- keys:[compareKeyFor(parent),compareKeyFor(fork),compareKeyFor({{id:'only'}}),compareKeyFor({{id:'o',path:'opencode:ses_1'}}),compareKeyFor({{path:'/k/a/messages.jsonl'}}),compareKeyFor({{path:'/Users/é/日本/😀.jsonl'}})],
+ keys:[compareKeyFor(parent),compareKeyFor(fork),compareKeyFor({{id:'only'}}),compareKeyFor({{id:'o',path:'opencode:ses_1'}}),compareKeyFor({{path:'/k/a/messages.jsonl'}}),compareKeyFor({{path:'/Users/é/日本/😀.jsonl'}}),compareKeyFor({{path:'/home/u/bad-\\udcff.jsonl'}})],
  merged:merged.length,
  liveWins:merged.find(row=>row.path===fork.path).cost,
  cheaper:compareDelta({{lower:true}},0.5,1),
@@ -6362,8 +6362,9 @@ process.stdout.write(JSON.stringify({{
             trace_key({"path": "opencode:ses_1"}),
             trace_key({"path": "/k/a/messages.jsonl"}),
             trace_key({"path": "/Users/é/日本/😀.jsonl"}),
+            trace_key({"path": "/home/u/bad-\udcff.jsonl"}),
         ])
-        self.assertEqual(len(set(payload["keys"])), 6)
+        self.assertEqual(len(set(payload["keys"])), 7)
         self.assertEqual(payload["merged"], 2)
         self.assertEqual(payload["liveWins"], 2)
         self.assertIn("better", payload["cheaper"])

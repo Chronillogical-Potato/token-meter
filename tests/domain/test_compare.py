@@ -236,6 +236,10 @@ class TraceKeyTests(unittest.TestCase):
         self.assertEqual(trace_key({"path": "/Users/é/日本/x.jsonl"}), trace_key({"path": "/Users/é/日本/x.jsonl"}))
         self.assertNotEqual(trace_key({"path": "/a/b"}), trace_key({"path": "/a/c"}))
 
+    def test_undecodable_file_names_do_not_raise(self):
+        key = trace_key({"path": "/home/u/bad-\udcff.jsonl"})
+        self.assertRegex(key, r"^t[0-9a-f]{16}$")
+
     def test_fork_with_same_id_is_still_a_match(self):
         parent_path, fork_path = "/x/rollout-1-root.jsonl", "/x/rollout-2-root_child.jsonl"
         selected = [compare_entry(make_summary("root", path=parent_path), make_state())]
