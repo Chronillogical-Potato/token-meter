@@ -1760,6 +1760,10 @@ class CursorTraceTests(unittest.TestCase):
             ]
             for sid, updated, subagent, model in rows:
                 header = {"name": sid.title(), "workspaceIdentifier": {"uri": {"fsPath": "/repo"}}}
+                if subagent:
+                    header["subagentInfo"] = {
+                        "parentComposerId": "newer", "subagentTypeName": "explore",
+                    }
                 composer = {"modelConfig": {"modelName": model}}
                 conn.execute("INSERT INTO composerHeaders VALUES (?, ?, ?, ?, 0, ?, 0, ?)",
                              (sid, "workspace", updated - 1000, updated, subagent, json.dumps(header)))
@@ -1770,6 +1774,11 @@ class CursorTraceTests(unittest.TestCase):
                 transcript = trace_dir / f"{sid}.jsonl"
                 transcript.write_text(json.dumps({"role": "user"}) + "\n")
                 os.utime(transcript, (updated / 1000, updated / 1000))
+            nested = (projects / "Users-test-repo" / "agent-transcripts" / "newer" /
+                      "subagents" / "nested.jsonl")
+            nested.parent.mkdir(parents=True)
+            nested.write_text(json.dumps({"role": "user"}) + "\n")
+            os.utime(nested, (1_784_548_000, 1_784_548_000))
             duplicate = projects / "empty-window" / "agent-transcripts" / "newer" / "newer.jsonl"
             duplicate.parent.mkdir(parents=True)
             duplicate.write_text(json.dumps({"role": "user", "replica": "newest"}) + "\n")
@@ -1796,8 +1805,20 @@ class CursorTraceTests(unittest.TestCase):
                     mock.patch.object(meter, "CLAUDE_DESKTOP_DATA_ROOTS", []), \
                     mock.patch.object(meter, "claude_desktop_index", return_value={}):
                 sources = meter.all_session_sources()
-            self.assertEqual({row["id"] for row in sources}, {"older", "newer"})
-            self.assertEqual(len(sources), 2)
+            self.assertEqual({row["id"] for row in sources}, {"older", "newer", "child", "nested"})
+            self.assertEqual(len(sources), 4)
+            by_id = {row["id"]: row for row in sources}
+            parent_agent = meter.cursor_agent_id("newer")
+            self.assertEqual(by_id["newer"]["agent_kind"], "root")
+            self.assertEqual(by_id["newer"]["agent_id"], parent_agent)
+            self.assertIsNone(by_id["newer"]["agent_parent_id"])
+            self.assertEqual(by_id["child"]["agent_kind"], "spawned")
+            self.assertEqual(by_id["child"]["agent_parent_id"], parent_agent)
+            self.assertEqual(by_id["child"]["agent_role"], "explore")
+            self.assertEqual(by_id["nested"]["agent_kind"], "spawned")
+            self.assertEqual(by_id["nested"]["agent_parent_id"], parent_agent)
+            self.assertTrue(by_id["nested"]["project"].endswith("test/repo"))
+            self.assertNotIn("newer", by_id["newer"]["agent_id"])
             self.assertEqual(max(sources, key=lambda row: row["mtime"])["id"], "newer")
             newer = next(row for row in sources if row["id"] == "newer")
             self.assertEqual(newer["path"], str(duplicate))
@@ -1805,6 +1826,87 @@ class CursorTraceTests(unittest.TestCase):
             self.assertEqual(newer["project"], "/repo")
             self.assertEqual(newer["signature_mtime"], newer["mtime"])
             self.assertTrue(newer["request_revision"])
+
+    def test_cursor_forked_subagent_skips_inherited_bubbles_and_joins_parent_group(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "state.vscdb"
+            conn = sqlite3.connect(db_path)
+            conn.execute("CREATE TABLE composerHeaders (composerId TEXT, workspaceId TEXT, createdAt INTEGER, lastUpdatedAt INTEGER, isArchived INTEGER, isSubagent INTEGER, checkpointAt INTEGER, value TEXT)")
+            conn.execute("CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT)")
+            base_ms = 1_784_548_800_000
+
+            def bubble(sid, bid, kind, offset, text):
+                conn.execute("INSERT INTO cursorDiskKV VALUES (?, ?)", (
+                    f"bubbleId:{sid}:{bid}", json.dumps({
+                        "type": kind, "bubbleId": bid, "createdAt": base_ms + offset,
+                        "text": text, "modelInfo": {"modelName": "gpt-5.6-sol"},
+                        **({"turnDurationMs": 1000} if kind == 2 else {}),
+                    })))
+
+            shared = [("u1", 1, 0, "parent ask"), ("a1", 2, 1000, "p" * 400)]
+            for sid, header, own in (
+                ("parent", {}, []),
+                ("fork", {"subagentInfo": {
+                    "parentComposerId": "parent", "forkedFromComposerId": "parent",
+                    "conversationLengthAtSpawn": 2, "subagentTypeName": "generalPurpose",
+                }}, [("u2", 1, 5000, "child ask"), ("a2", 2, 6000, "c" * 40)]),
+            ):
+                rows = shared + own
+                for bid, kind, offset, text in rows:
+                    bubble(sid, bid, kind, offset, text)
+                conn.execute("INSERT INTO composerHeaders VALUES (?, 'w', ?, ?, 0, ?, 0, ?)", (
+                    sid, base_ms, base_ms + 7000, 1 if own else 0, json.dumps(header)))
+                conn.execute("INSERT INTO cursorDiskKV VALUES (?, ?)", (
+                    f"composerData:{sid}", json.dumps({
+                        "modelConfig": {"modelName": "gpt-5.6-sol"},
+                        "contextTokensUsed": 1000,
+                        "fullConversationHeadersOnly": [{"bubbleId": row[0]} for row in rows],
+                    })))
+            conn.commit()
+            conn.close()
+            adapter = meter._cursor_adapter_for(
+                projects_root=str(Path(tmp) / "projects"), database_path=str(db_path),
+                request_logs=str(Path(tmp) / "logs"),
+            )
+            fork = adapter.snapshot("fork")
+            self.assertEqual([item["bubbleId"] for item in fork["bubbles"]], ["u2", "a2"])
+            conn = sqlite3.connect(db_path)
+            conn.execute("UPDATE cursorDiskKV SET value=? WHERE key='composerData:parent'", (
+                json.dumps({"fullConversationHeadersOnly": [{"bubbleId": "u1"}, {"bubbleId": "other"}]}),))
+            conn.commit()
+            conn.close()
+            adapter.reset_metadata_cache()
+            partial = adapter.snapshot("fork")
+            self.assertEqual([item["bubbleId"] for item in partial["bubbles"]], ["a1", "u2", "a2"])
+            conn = sqlite3.connect(db_path)
+            conn.execute("UPDATE cursorDiskKV SET value=? WHERE key='composerData:parent'", (
+                json.dumps({"fullConversationHeadersOnly": [{"bubbleId": "u1"}, {"bubbleId": "a1"}]}),))
+            conn.commit()
+            conn.close()
+
+            parent_source = {**self.source("/tmp/parent.jsonl", "parent"),
+                             "agent_id": meter.cursor_agent_id("parent"),
+                             "agent_kind": "root", "agent_parent_id": None, "agent_role": ""}
+            fork_source = {**self.source("/tmp/fork.jsonl", "fork"),
+                           "agent_id": meter.cursor_agent_id("fork"), "agent_kind": "spawned",
+                           "agent_parent_id": meter.cursor_agent_id("parent"),
+                           "agent_role": "generalPurpose"}
+            with mock.patch.object(meter, "cursor_snapshot", side_effect=adapter.snapshot_legacy), \
+                    mock.patch.object(meter, "cursor_request_spans", return_value=[]), \
+                    mock.patch.object(meter, "load", return_value=[]):
+                rows = [adapter.summarize_legacy(parent_source),
+                        adapter.summarize_legacy(fork_source)]
+        fork_record = rows[1]["_agent_records"][0]
+        self.assertEqual(fork_record["output_tokens"], 10)
+        self.assertEqual(fork_record["role"], "generalPurpose")
+        self.assertEqual(fork_record["session_id"], "fork")
+        self.assertEqual(fork_record["activity_state"], "complete")
+        groups = meter._domain_build_agent_groups(rows)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["root_session_id"], "parent")
+        self.assertEqual(groups[0]["coverage"]["relationships"], "complete")
+        self.assertEqual([agent["kind"] for agent in groups[0]["agents"]], ["root", "spawned"])
+        self.assertEqual(groups[0]["child_totals"]["tokens"], 1010)
 
     def test_cursor_recompute_exposes_context_tools_reasoning_wait_ttft_and_retries(self):
         with mock.patch.object(meter, "cursor_snapshot", return_value=self.snapshot()), \
@@ -1840,6 +1942,68 @@ class CursorTraceTests(unittest.TestCase):
         self.assertTrue(state["cost_approx"])
         self.assertTrue(state["token_estimate"])
 
+    def test_cursor_turn_timing_attributes_each_span_to_the_turn_it_started_in(self):
+        base = 1_784_548_800.0
+        starts = [base, base + 76.5, base + 86.6]
+        spans = [
+            {"name": "agent.request.attempt", "start_ts": base + 0.2,
+             "end_ts": base + 76.6, "duration_s": 76.4, "request_id": "a", "error": False},
+            {"name": "agent.request.attempt", "start_ts": base + 76.7,
+             "end_ts": base + 101.6, "duration_s": 24.9, "request_id": "b", "error": False},
+            {"name": "agent.request.attempt", "start_ts": base + 84.1,
+             "end_ts": base + 90.0, "duration_s": 5.9, "request_id": "c", "error": False},
+        ]
+        timings = [
+            meter.cursor_turn_timing(
+                spans, start, starts[index + 1] if index + 1 < len(starts) else 0,
+                start + 1,
+            )
+            for index, start in enumerate(starts)
+        ]
+        self.assertEqual([round(item["active_s"], 1) for item in timings], [76.4, 24.9, 5.9])
+        self.assertEqual([item["attempts"] for item in timings], [1, 1, 1])
+        self.assertAlmostEqual(timings[1]["wait_s"], 25.1, places=3)
+        self.assertAlmostEqual(timings[2]["end_ts"], base + 90.0, places=3)
+
+        retry = {"name": "agent.request.attempt", "start_ts": base + 80.0,
+                 "end_ts": base + 82.0, "duration_s": 2.0, "request_id": "turn-a",
+                 "error": False}
+        claimed = frozenset(("turn-a", "turn-b"))
+        turn_a = meter.cursor_turn_timing(
+            [spans[0], retry], base, base + 10, base + 1,
+            request_id="turn-a", claimed_request_ids=claimed,
+        )
+        turn_b = meter.cursor_turn_timing(
+            [spans[0], retry], base + 10, 0, base + 11,
+            request_id="turn-b", claimed_request_ids=claimed,
+        )
+        self.assertEqual((turn_a["attempts"], turn_b["attempts"]), (2, 0))
+        self.assertAlmostEqual(turn_a["end_ts"], base + 82.0, places=3)
+
+    def test_cursor_tool_identity_classifies_orchestration_interaction_and_mcp_tools(self):
+        expected = {
+            "task_v2": ("Subagent", "orchestration", "tool"),
+            "update_current_step": ("Update step", "planning", "tool"),
+            "ask_question": ("Ask question", "interaction", "tool"),
+            "switch_mode": ("Switch mode", "interaction", "tool"),
+            "set_active_branch": ("Set branch", "workspace", "tool"),
+            "search_conversations": ("Search chats", "search", "tool"),
+            "get_mcp_tools": ("MCP tool lookup", "tool_search", "tool"),
+            "mcp-cursor-app-control-open_resource": (
+                "open_resource", "cursor-app-control", "mcp",
+            ),
+        }
+        for name, (display, namespace, kind) in expected.items():
+            with self.subTest(name=name):
+                ident = meter.cursor_tool_identity(name)
+                self.assertEqual(ident["name"], name)
+                self.assertEqual(
+                    (ident["display"], ident["namespace"], ident["kind"]),
+                    (display, namespace, kind),
+                )
+        self.assertEqual(meter.cursor_tool_identity("Read")["name"], "read_file_v2")
+        self.assertEqual(meter.cursor_tool_identity("mcp-")["kind"], "tool")
+
     def test_cursor_transcript_fallback_survives_missing_database(self):
         transcript = [
             {"role": "user", "message": {"content": [{"type": "text", "text": "<user_query>hello</user_query>"}]}},
@@ -1872,6 +2036,64 @@ class CursorTraceTests(unittest.TestCase):
         self.assertTrue(approximate)
         self.assertEqual(meter.cursor_price_variant(self.snapshot()["composer"], "composer-2.5"),
                          "fast")
+
+    def test_cursor_pricing_uses_published_third_party_and_grok_rates(self):
+        after_sol_update = 1_788_000_000
+        cases = {
+            ("claude-opus-5-5", ""): (4.0, 5.0, 0.2, 20.0),
+            ("claude-opus-5-5-medium", ""): (4.0, 5.0, 0.2, 20.0),
+            ("gpt-5.6-sol", ""): (4.0, 5.0, 0.4, 20.0),
+            ("gpt-5.6-sol-xhigh", ""): (4.0, 5.0, 0.4, 20.0),
+            ("grok-4.7", "standard"): (2.0, 0.0, 0.5, 6.0),
+            ("grok-4.7", "fast"): (4.0, 0.0, 1.0, 12.0),
+            ("grok-4.7", "500k-standard"): (4.0, 0.0, 1.0, 12.0),
+            ("grok-4.7", "500k-fast"): (6.0, 0.0, 1.5, 18.0),
+        }
+        for (model, variant), rates in cases.items():
+            with self.subTest(model=model, variant=variant):
+                price, _ = meter.price_for(model, "cursor", variant, at=after_sol_update)
+                self.assertEqual(
+                    (price["input"], price["cache_write"], price["cache_read"], price["output"]),
+                    rates,
+                )
+        before, _ = meter.price_for("gpt-5.6-sol", "cursor", "", at=1_786_000_000)
+        self.assertEqual((before["input"], before["output"]), (5.0, 30.0))
+        for model, variant in (("claude-opus-5-5", "fast"), ("gpt-5.6-sol", "max"),
+                               ("composer-2.5", "max"), ("claude-opus-5-5-turbo", "")):
+            with self.subTest(unpriced=model, variant=variant):
+                price, _ = meter.price_for(model, "cursor", variant)
+                self.assertEqual(price, meter.ZERO_PRICE)
+
+    def test_cursor_model_name_drops_effort_suffix_only_for_selected_model(self):
+        def composer(name, model_id):
+            return {"modelConfig": {"modelName": name, "selectedModels": [{"modelId": model_id}]}}
+        self.assertEqual(meter.cursor_model(composer("gpt-5.6-sol-xhigh", "gpt-5.6-sol")),
+                         "gpt-5.6-sol")
+        self.assertEqual(meter.cursor_model(composer("claude-opus-5-5-medium", "claude-opus-5-5")),
+                         "claude-opus-5-5")
+        self.assertEqual(meter.cursor_model(composer("gpt-5.6-sol-turbo", "gpt-5.6-sol")),
+                         "gpt-5.6-sol-turbo")
+        self.assertEqual(meter.cursor_model(composer("grok-4.6-high", "composer-2.5")),
+                         "grok-4.6-high")
+
+    def test_cursor_price_variant_reads_fast_max_and_context_parameters(self):
+        def composer(model, params, max_mode=False):
+            return {"modelConfig": {"modelName": model, "maxMode": max_mode, "selectedModels": [{
+                "modelId": model,
+                "parameters": [{"id": key, "value": value} for key, value in params.items()],
+            }]}}
+        self.assertEqual(meter.cursor_price_variant(
+            composer("claude-opus-5-5", {"fast": "false", "effort": "medium"}), "claude-opus-5-5"), "")
+        self.assertEqual(meter.cursor_price_variant(
+            composer("claude-opus-5-5", {"fast": "true"}), "claude-opus-5-5"), "fast")
+        self.assertEqual(meter.cursor_price_variant(
+            composer("gpt-5.6-sol", {}, max_mode=True), "gpt-5.6-sol"), "max")
+        self.assertEqual(meter.cursor_price_variant(
+            composer("composer-2.5", {"fast": "true"}, max_mode=True), "composer-2.5"), "max")
+        self.assertEqual(meter.cursor_price_variant(
+            composer("grok-4.7", {"fast": "true", "context": "500k"}), "grok-4.7"), "500k-fast")
+        self.assertEqual(meter.cursor_price_variant(
+            composer("grok-4.7", {"fast": "false"}), "grok-4.7"), "standard")
 
     def test_cursor_pricing_rejects_composer_lookalikes_and_accepts_qualified_alias(self):
         composer = self.snapshot()["composer"]
@@ -3262,7 +3484,7 @@ class FrustrationSignalTests(unittest.TestCase):
 class PricingTests(unittest.TestCase):
     def test_builtin_pricing_exposes_reviewed_primary_sources(self):
         pricing = meter.model_pricing_settings()
-        self.assertEqual(pricing["reviewed_on"], "2026-09-29")
+        self.assertEqual(pricing["reviewed_on"], "2026-09-30")
         self.assertEqual(
             [source["provider"] for source in pricing["sources"]],
             ["anthropic", "openai", "cursor"],

@@ -16,7 +16,7 @@ MODEL_PROVIDER_TO_SETTINGS_PROVIDER = {
     for legacy_provider, model_provider in LEGACY_PROVIDER_TO_MODEL_PROVIDER.items()
 }
 MODEL_PRICE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/+-]{0,159}$")
-BUILTIN_PRICE_REVIEWED_ON = "2026-09-29"
+BUILTIN_PRICE_REVIEWED_ON = "2026-09-30"
 BUILTIN_PRICE_SOURCES = (
     {
         "provider": "anthropic",
@@ -148,8 +148,30 @@ CURSOR_PRICE = {
     "grok-4.5-fast": {
         "input": 4.0, "output": 18.0, "cache_write": 0.0, "cache_read": 1.0,
     },
+    "grok-4.7-standard": {
+        "input": 2.0, "output": 6.0, "cache_write": 0.0, "cache_read": 0.50,
+    },
+    "grok-4.7-fast": {
+        "input": 4.0, "output": 12.0, "cache_write": 0.0, "cache_read": 1.0,
+    },
+    "grok-4.7-500k-standard": {
+        "input": 4.0, "output": 12.0, "cache_write": 0.0, "cache_read": 1.0,
+    },
+    "grok-4.7-500k-fast": {
+        "input": 6.0, "output": 18.0, "cache_write": 0.0, "cache_read": 1.50,
+    },
+    # Cursor charges selected third-party models at the model's API price.
+    "claude-opus-5-5": {
+        "input": 4.0, "output": 20.0, "cache_write": 5.0, "cache_read": 0.20,
+    },
+    # Cursor lists this as promotional pricing through 2026-11-21.
+    "gpt-5.6-sol": {
+        "input": 4.0, "output": 20.0, "cache_write": 5.0, "cache_read": 0.40,
+    },
 }
-CURSOR_VARIANT_MODEL_IDS = ("composer-2.5", "grok-4.6", "grok-4.5")
+CURSOR_VARIANT_MODEL_IDS = ("composer-2.5", "grok-4.7", "grok-4.6", "grok-4.5")
+CURSOR_UNPRICED_VARIANTS = frozenset(("fast", "max"))
+CURSOR_EFFORT_SUFFIX_RE = re.compile(r"-(?:none|minimal|low|medium|high|xhigh)$")
 
 GPT_56_PRICE_UPDATE_AT = 1_785_456_000  # 2026-07-31T00:00:00Z
 GPT_56_SOL_PRICE_UPDATE_AT = 1_787_270_400  # 2026-08-21T00:00:00Z
@@ -174,6 +196,12 @@ BUILTIN_MODEL_PRICE_HISTORY = {
         "gpt-5.6-luna": (
             (None, _GPT_56_PRE_UPDATE_PRICE),
             (GPT_56_PRICE_UPDATE_AT, OPENAI_PRICE["gpt-5.6-luna"]),
+        ),
+    },
+    "cursor": {
+        "gpt-5.6-sol": (
+            (None, _GPT_56_PRE_UPDATE_PRICE),
+            (GPT_56_SOL_PRICE_UPDATE_AT, CURSOR_PRICE["gpt-5.6-sol"]),
         ),
     },
 }

@@ -38,6 +38,7 @@ from token_meter.contracts import (
     UsageEvidence,
 )
 from token_meter.domain.timing import merge_execution_intervals as _merge_execution_intervals
+from token_meter.models.catalog import CURSOR_EFFORT_SUFFIX_RE
 
 
 CHARS_PER_TOKEN = 4
@@ -55,6 +56,13 @@ CURSOR_TOOL_IDENTITIES = {
     "web_fetch": ("Web fetch", "web"),
     "delete_file": ("Delete", "files"),
     "await": ("Await", "orchestration"),
+    "task_v2": ("Subagent", "orchestration"),
+    "update_current_step": ("Update step", "planning"),
+    "ask_question": ("Ask question", "interaction"),
+    "switch_mode": ("Switch mode", "interaction"),
+    "set_active_branch": ("Set branch", "workspace"),
+    "search_conversations": ("Search chats", "search"),
+    "get_mcp_tools": ("MCP tool lookup", "tool_search"),
 }
 CURSOR_TOOL_ALIASES = {
     "read": "read_file_v2", "readfile": "read_file_v2", "read_file": "read_file_v2",
@@ -63,7 +71,22 @@ CURSOR_TOOL_ALIASES = {
     "edit": "edit_file_v2", "applypatch": "apply_patch",
     "todowrite": "todo_write", "websearch": "web_search", "webfetch": "web_fetch",
     "delete": "delete_file", "deletefile": "delete_file",
+    "task": "task_v2",
 }
+CURSOR_MCP_TOOL_RE = re.compile(r"^mcp-([A-Za-z0-9_.-]+)-([A-Za-z0-9_.]+)$")
+
+
+def cursor_tool_identity(name):
+    """Return a content-free display identity for one Cursor tool name."""
+    raw = str(name or "?")
+    mcp = CURSOR_MCP_TOOL_RE.fullmatch(raw)
+    if mcp:
+        return {"name": raw, "display": mcp.group(2), "namespace": mcp.group(1),
+                "kind": "mcp", "mcp_server": mcp.group(1)}
+    alias = re.sub(r"[^a-z0-9_]", "", raw.lower())
+    canonical = CURSOR_TOOL_ALIASES.get(alias, raw)
+    display, namespace = CURSOR_TOOL_IDENTITIES.get(canonical, (canonical, "cursor"))
+    return {"name": canonical, "display": display, "namespace": namespace, "kind": "tool"}
 CURSOR_TRACE_SPANS = frozenset((
     "client.ttft",
     "agent.request.attempt",
@@ -71,6 +94,36 @@ CURSOR_TRACE_SPANS = frozenset((
     "ComposerChatService.submitChatMaybeAbortCurrent",
 ))
 CURSOR_TRACE_FIELD_RE = re.compile(r'(\w+)=("[^"]*"|\S+)')
+CURSOR_AGENT_ROLE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
+
+
+def _agent_role(value):
+    """Keep short configured subagent type names, never arbitrary prose."""
+    return value if isinstance(value, str) and CURSOR_AGENT_ROLE_RE.fullmatch(value) else ""
+
+
+def cursor_agent_id(composer_id):
+    """Return a stable public agent ID without exposing the Composer ID."""
+    composer_id = str(composer_id or "")
+    if not composer_id:
+        return ""
+    digest = hashlib.sha256(
+        b"token-meter:cursor-agent:v1\0" + composer_id.encode("utf-8", "replace")
+    ).hexdigest()
+    return "cursor-agent-" + digest
+
+
+def _subagent_info(header):
+    info = header.get("subagentInfo") if isinstance(header, dict) else None
+    return info if isinstance(info, dict) else {}
+
+
+def _fork_prefix_length(header):
+    """Return how many leading bubbles a forked subagent copied from its parent."""
+    info = _subagent_info(header)
+    if not info.get("forkedFromComposerId"):
+        return 0
+    return _safe_int(info.get("conversationLengthAtSpawn"))
 
 
 def _text_from_content(content):
@@ -155,10 +208,16 @@ def _workspace_path(*values):
     return ""
 
 
-def _model(composer, header=None):
+def cursor_model_name(composer, header=None):
     config = composer.get("modelConfig") if isinstance(composer, dict) else {}
     if isinstance(config, dict) and config.get("modelName"):
-        return str(config["modelName"])
+        name = str(config["modelName"])
+        for row in config.get("selectedModels") or []:
+            model_id = str(row.get("modelId") or "") if isinstance(row, dict) else ""
+            if (model_id and name.startswith(model_id + "-") and
+                    CURSOR_EFFORT_SUFFIX_RE.fullmatch(name[len(model_id):])):
+                return model_id
+        return name
     for value in (composer, header):
         if isinstance(value, dict) and value.get("model"):
             return str(value["model"])
@@ -274,7 +333,10 @@ class CursorRuntimeAdapter:
             composer_id = str(composer_id)
             header = _json_object(raw_header, {})
             composer = composers.get(composer_id, {})
+            info = _subagent_info(header)
             result[composer_id] = {
+                "parent_id": str(info.get("parentComposerId") or ""),
+                "role": _agent_role(info.get("subagentTypeName")),
                 "workspace_id": str(workspace_id or ""),
                 "created_at": _safe_int(
                     created_at or header.get("createdAt") or composer.get("createdAt")
@@ -291,7 +353,7 @@ class CursorRuntimeAdapter:
                 ),
                 "title": _compact(header.get("name") or composer.get("name")),
                 "project": _workspace_path(header, composer),
-                "model": _model(composer, header),
+                "model": cursor_model_name(composer, header),
             }
         return result
 
@@ -308,12 +370,15 @@ class CursorRuntimeAdapter:
         self._metadata_rows = {}
 
     def _transcript_paths(self):
-        pattern = str(
-            self.projects_root / "*" / "agent-transcripts" / "*" / "*.jsonl"
-        )
-        if self.path_cache is not None:
-            return self.path_cache.paths(pattern)
-        return glob.glob(pattern)
+        transcripts = self.projects_root / "*" / "agent-transcripts" / "*"
+        paths = []
+        for pattern in (transcripts / "*.jsonl", transcripts / "subagents" / "*.jsonl"):
+            pattern = str(pattern)
+            paths.extend(
+                self.path_cache.paths(pattern) if self.path_cache is not None
+                else glob.glob(pattern)
+            )
+        return paths
 
     def _legacy_records(self):
         metadata = self.metadata_index()
@@ -321,14 +386,18 @@ class CursorRuntimeAdapter:
         request_revisions = self.request_revision_index()
         for path in self._transcript_paths():
             session_id = os.path.basename(path).rsplit(".", 1)[0]
-            if os.path.basename(os.path.dirname(path)) != session_id:
+            container = os.path.dirname(path)
+            nested = os.path.basename(container) == "subagents"
+            if nested:
+                container = os.path.dirname(container)
+            elif os.path.basename(container) != session_id:
                 continue
             row = metadata.get(session_id) or {}
-            if row.get("is_subagent"):
-                continue
-            project_dir = os.path.basename(
-                os.path.dirname(os.path.dirname(os.path.dirname(path)))
+            spawned = nested or bool(row.get("is_subagent"))
+            parent_id = row.get("parent_id") or (
+                os.path.basename(container) if nested else ""
             )
+            project_dir = os.path.basename(os.path.dirname(os.path.dirname(container)))
             project = row.get("project") or self.project_decoder(project_dir)
             trace_mtime = self._mtime(path)
             metadata_mtime = max(
@@ -346,6 +415,13 @@ class CursorRuntimeAdapter:
                 "request_revision": request_revisions.get(session_id, ""),
                 "title": row.get("title") or None,
                 "model": row.get("model") or "unknown",
+                "agent_id": cursor_agent_id(session_id),
+                "agent_kind": "spawned" if spawned else "root",
+                "agent_parent_id": (
+                    cursor_agent_id(parent_id)
+                    if spawned and parent_id and parent_id != session_id else None
+                ),
+                "agent_role": row.get("role") or "",
             }
             previous = by_id.get(session_id)
             if not previous or (trace_mtime, path) > (
@@ -489,6 +565,10 @@ class CursorRuntimeAdapter:
             "request_revision": record["request_revision"],
             "title": record["title"],
             "model": record["model"],
+            "agent_id": record["agent_id"],
+            "agent_kind": record["agent_kind"],
+            "agent_parent_id": record["agent_parent_id"],
+            "agent_role": record["agent_role"],
         } for record in self._legacy_records())
 
     def _session_revision(self, session_id):
@@ -536,6 +616,11 @@ class CursorRuntimeAdapter:
                 header = _json_object(row[6], {})
                 composer = _json_object(composer_row[0], {}) if composer_row else {}
                 ordered = composer.get("fullConversationHeadersOnly") or []
+                if not isinstance(ordered, list):
+                    ordered = []
+                inherited = self._verified_fork_prefix(connection, header, ordered)
+                if inherited:
+                    ordered = ordered[inherited:]
                 bubble_ids = [
                     str(item.get("bubbleId"))
                     for item in ordered[:self.max_bubbles + 1]
@@ -571,6 +656,29 @@ class CursorRuntimeAdapter:
             "checkpoint_at": _safe_int(row[5]),
             "is_subagent": bool(row[4]),
         }
+
+    @staticmethod
+    def _verified_fork_prefix(connection, header, ordered):
+        """Count leading bubbles proven to be copies of the fork parent's history."""
+        limit = min(_fork_prefix_length(header), len(ordered))
+        if limit <= 0:
+            return 0
+        parent_id = str(_subagent_info(header).get("forkedFromComposerId") or "")
+        parent_row = connection.execute(
+            "SELECT value FROM cursorDiskKV WHERE key=?", ("composerData:" + parent_id,),
+        ).fetchone()
+        parent = _json_object(parent_row[0], {}) if parent_row else {}
+        parent_ordered = parent.get("fullConversationHeadersOnly") or []
+        if not isinstance(parent_ordered, list):
+            return 0
+        count = 0
+        for own, inherited in zip(ordered[:limit], parent_ordered):
+            own_id = own.get("bubbleId") if isinstance(own, dict) else None
+            parent_bubble = inherited.get("bubbleId") if isinstance(inherited, dict) else None
+            if not own_id or own_id != parent_bubble:
+                break
+            count += 1
+        return count
 
     @staticmethod
     def _empty_session(source, detail, warning):
@@ -762,7 +870,10 @@ class CursorRuntimeAdapter:
         series, executions, trace = [], [], []
         wait_samples, performance_samples, active_intervals = [], [], []
         first_ts = last_ts = 0.0
-    
+        claimed_request_ids = frozenset(
+            str(group.get("request_id")) for group in groups if group.get("request_id")
+        )
+
         for position, group in enumerate(groups):
             idx = position + 1
             start_ts = float(group.get("start_ts") or 0)
@@ -775,7 +886,11 @@ class CursorRuntimeAdapter:
                 (bubble.get("turnDurationMs") or 0 for bubble in bubbles if isinstance(bubble, dict)),
                 default=0,
             )
-            timing = cursor_turn_timing(spans, start_ts, next_start, terminal_ts, turn_duration_ms)
+            timing = cursor_turn_timing(
+                spans, start_ts, next_start, terminal_ts, turn_duration_ms,
+                request_id=str(group.get("request_id") or ""),
+                claimed_request_ids=claimed_request_ids,
+            )
             end_ts = timing.get("end_ts") or terminal_ts or start_ts
             active_intervals.extend(timing.get("active_intervals") or [])
             model = str(group.get("model") or source.get("model") or "unknown")
@@ -957,6 +1072,7 @@ class CursorRuntimeAdapter:
                             if cost_available else f"Execution {idx}: {len(tools)} tools · cost unavailable"),
                 "user_message": user_text, "user_input": user_text,
                 "availability": execution_availability,
+                "completed": bool(group.get("completed")),
             }
             executions.append(execution)
             tot["input"] += context_tokens
@@ -1266,7 +1382,63 @@ class CursorRuntimeAdapter:
         row["terminal"] = False
         row["tool_calls"] = int((state.get("tools") or {}).get("total_calls") or 0)
         row["tool_errors"] = int((state.get("tools") or {}).get("total_errors") or 0)
+        row["_agent_records"] = [self._agent_record(source, state, row)]
         return row
+
+    @staticmethod
+    def _agent_record(source, state, row):
+        executions = state.get("executions") or []
+        availability = state.get("availability") or {}
+        tokens = state.get("tokens") or {}
+        timing = state.get("timing") or {}
+        start_ts = float(timing.get("start_ts") or 0) or None
+        last_ts = float(timing.get("end_ts") or 0) or None
+        terminal = bool(executions and executions[-1].get("completed"))
+        last_activity = last_ts or float(source.get("mtime") or 0) or None
+        activity_state = (
+            "complete" if terminal
+            else "working" if last_activity and time.time() - last_activity <= 90
+            else "incomplete"
+        )
+        spawned = source.get("agent_kind") == "spawned"
+        return {
+            "id": source.get("agent_id") or cursor_agent_id(source.get("id")),
+            "parent_id": source.get("agent_parent_id") if spawned else None,
+            "session_id": source.get("id"),
+            "runtime": "cursor",
+            "client": "Cursor",
+            "kind": "spawned" if spawned else "root",
+            "depth": None,
+            "label": "",
+            "role": source.get("agent_role") or None,
+            "model": row.get("primary_model") or source.get("model") or "unknown",
+            "started_at": start_ts,
+            "ended_at": last_ts if terminal else None,
+            "last_activity_at": last_activity,
+            "activity_state": activity_state,
+            "input_tokens": int(tokens.get("input") or 0),
+            "output_tokens": int(tokens.get("output") or 0),
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "reasoning_tokens": sum(
+                int(execution.get("reasoning_tokens") or 0) for execution in executions
+            ),
+            "tokens": int(state.get("total_tokens") or 0),
+            "tokens_available": availability.get("tokens") is True,
+            "cost": float(state.get("total_cost") or 0),
+            "cost_available": availability.get("cost") is True,
+            "executions": len(executions),
+            "attempts": sum(int(execution.get("attempts") or 0) for execution in executions),
+            "retries": sum(int(execution.get("retries") or 0) for execution in executions),
+            "failed_attempts": sum(
+                int(execution.get("failed_attempts") or 0) for execution in executions
+            ),
+            "tool_calls": int(row.get("tool_calls") or 0),
+            "work_time_s": (
+                float(timing.get("duration_s") or 0)
+                if timing.get("duration_available") else None
+            ),
+        }
 
     def deletion_plan(self, source):
         if isinstance(source, SessionSource) and source.locator.kind == "transcript":

@@ -162,8 +162,13 @@ from token_meter.quotas import cursor as cursor_quotas
 from token_meter.quotas import openai as openai_quotas
 from token_meter.quotas.registry import QuotaRegistry
 from token_meter.runtimes.cursor import (
+    CURSOR_TOOL_ALIASES,
+    CURSOR_TOOL_IDENTITIES,
     CursorRuntimeAdapter,
     CursorRuntimeAdapterProxy,
+    cursor_agent_id,
+    cursor_model_name,
+    cursor_tool_identity,
 )
 from token_meter.runtimes.codex import (
     AUTO_REVIEW_MODEL,
@@ -2651,13 +2656,7 @@ def catalog_counts(catalog):
 
 
 def cursor_model(composer, header=None):
-    config = composer.get("modelConfig") if isinstance(composer, dict) else {}
-    if isinstance(config, dict) and config.get("modelName"):
-        return str(config["modelName"])
-    for value in (composer, header):
-        if isinstance(value, dict) and value.get("model"):
-            return str(value["model"])
-    return "unknown"
+    return cursor_model_name(composer, header)
 
 
 _claude_native_adapters = {}
@@ -2824,7 +2823,7 @@ def _cursor_compatibility():
         "cursor_timestamp": lambda *args: cursor_timestamp(*args),
         "cursor_tool_identity": lambda *args: cursor_tool_identity(*args),
         "cursor_transcript_groups": lambda *args: cursor_transcript_groups(*args),
-        "cursor_turn_timing": lambda *args: cursor_turn_timing(*args),
+        "cursor_turn_timing": lambda *args, **kwargs: cursor_turn_timing(*args, **kwargs),
         "cursor_visible_output": lambda *args: cursor_visible_output(*args),
         "duration_label": duration_label,
         "load": load,
@@ -3440,14 +3439,31 @@ def cursor_model_parameters(composer, model=None):
 
 
 def cursor_price_variant(composer, model):
+    config = composer.get("modelConfig") if isinstance(composer, dict) else {}
+    if isinstance(config, dict) and config.get("maxMode") is True:
+        return "max"
     for cursor_model_id in CURSOR_VARIANT_MODEL_IDS:
         if not _catalog_model_alias_matches(model, "cursor", cursor_model_id):
             continue
-        fast = cursor_model_parameters(composer, cursor_model_id).get("fast")
-        if str(fast).lower() == "true":
-            return "fast"
-        if str(fast).lower() == "false":
-            return "standard"
+        params = cursor_model_parameters(composer, cursor_model_id)
+        fast = str(params.get("fast")).lower()
+        context = str(params.get("context") or "").lower()
+        prefix = (
+            "500k-" if cursor_model_id == "grok-4.7" and context in ("500k", "500000")
+            else ""
+        )
+        if fast == "true":
+            return prefix + "fast"
+        if fast == "false":
+            return prefix + "standard"
+        return ""
+    selected = config.get("selectedModels") if isinstance(config, dict) else []
+    for row in selected or []:
+        model_id = str(row.get("modelId") or "") if isinstance(row, dict) else ""
+        if model_id and _catalog_model_alias_matches(model, "cursor", model_id):
+            if str(cursor_model_parameters(composer, model_id).get("fast")).lower() == "true":
+                return "fast"
+            break
     return ""
 
 
@@ -4699,37 +4715,6 @@ def claude_tool_results(objs):
     return chars_by_id, ts_by_id, errors_by_id
 
 
-CURSOR_TOOL_IDENTITIES = {
-    "read_file_v2": ("Read", "files"),
-    "ripgrep_raw_search": ("Grep", "search"),
-    "glob_file_search": ("Glob", "search"),
-    "run_terminal_command_v2": ("Shell", "shell"),
-    "edit_file_v2": ("Edit", "files"),
-    "apply_patch": ("Apply patch", "files"),
-    "todo_write": ("Todo", "planning"),
-    "web_search": ("Web search", "web"),
-    "web_fetch": ("Web fetch", "web"),
-    "delete_file": ("Delete", "files"),
-    "await": ("Await", "orchestration"),
-}
-CURSOR_TOOL_ALIASES = {
-    "read": "read_file_v2", "readfile": "read_file_v2", "read_file": "read_file_v2",
-    "grep": "ripgrep_raw_search", "rg": "ripgrep_raw_search",
-    "glob": "glob_file_search", "shell": "run_terminal_command_v2",
-    "edit": "edit_file_v2", "applypatch": "apply_patch",
-    "todowrite": "todo_write", "websearch": "web_search", "webfetch": "web_fetch",
-    "delete": "delete_file", "deletefile": "delete_file",
-}
-
-
-def cursor_tool_identity(name):
-    raw = str(name or "?")
-    alias = re.sub(r"[^a-z0-9_]", "", raw.lower())
-    canonical = CURSOR_TOOL_ALIASES.get(alias, raw)
-    display, namespace = CURSOR_TOOL_IDENTITIES.get(canonical, (canonical, "cursor"))
-    return {"name": canonical, "display": display, "namespace": namespace, "kind": "tool"}
-
-
 def cursor_timestamp(value):
     if isinstance(value, (int, float)):
         return float(value) / 1000.0 if float(value) > 10_000_000_000 else float(value)
@@ -4816,14 +4801,27 @@ def cursor_enriched_groups(snapshot):
     return groups
 
 
-def cursor_turn_timing(spans, start_ts, next_start_ts=0, terminal_ts=0, turn_duration_ms=0):
-    boundary = float(next_start_ts or (terminal_ts + 24 * 60 * 60) or float("inf"))
-    matches = [
-        row for row in spans or []
-        if row.get("end_ts", 0) >= float(start_ts or 0) - 1
-        and row.get("start_ts", 0) < boundary
-        and row.get("end_ts", 0) <= boundary + 1
-    ]
+CURSOR_SPAN_LEAD_S = 5.0
+
+
+def cursor_turn_timing(spans, start_ts, next_start_ts=0, terminal_ts=0, turn_duration_ms=0,
+                       request_id="", claimed_request_ids=frozenset()):
+    # Spans carrying a known turn requestId belong to that turn. Others are
+    # attributed by start: Cursor opens spans a few seconds before the user
+    # bubble's createdAt, and a turn's spans can outlive the next queued turn.
+    lower = float(start_ts or 0) - CURSOR_SPAN_LEAD_S
+    if next_start_ts:
+        upper = max(lower, float(next_start_ts) - CURSOR_SPAN_LEAD_S)
+    else:
+        upper = float((terminal_ts + 24 * 60 * 60) if terminal_ts else float("inf"))
+
+    def owned(row):
+        row_request = row.get("request_id") or ""
+        if row_request and row_request in claimed_request_ids:
+            return row_request == request_id
+        return lower <= row.get("start_ts", 0) < upper
+
+    matches = [row for row in spans or [] if owned(row)]
     submits = [row for row in matches if row.get("name") == "ComposerChatService.submitChatMaybeAbortCurrent"]
     attempts = [row for row in matches if row.get("name") == "agent.request.attempt"]
     rpc_errors = {
@@ -4831,7 +4829,7 @@ def cursor_turn_timing(spans, start_ts, next_start_ts=0, terminal_ts=0, turn_dur
         if row.get("name") == "rpc.run" and row.get("error") and row.get("request_id")
     }
     ttfts = [row for row in matches if row.get("name") == "client.ttft" and row.get("duration_s", 0) > 0]
-    final_ts = max((row["end_ts"] for row in submits), default=float(terminal_ts or 0))
+    final_ts = max((row["end_ts"] for row in submits + attempts), default=float(terminal_ts or 0))
     intervals = [(row["start_ts"], row["end_ts"]) for row in attempts]
     try:
         fallback_s = max(0.0, float(turn_duration_ms or 0) / 1000.0)
@@ -4974,7 +4972,8 @@ def cursor_pricing_note(model, variant, supported):
     rate = "selected-model public API rates"
     for cursor_model_id in CURSOR_VARIANT_MODEL_IDS:
         if _catalog_model_alias_matches(model, "cursor", cursor_model_id):
-            rate = f"{cursor_model_id.replace('-', ' ').title()} {variant.title()} public rates"
+            rate = (f"{cursor_model_id.replace('-', ' ').title()} "
+                    f"{variant.replace('-', ' ').title()} public rates")
             break
     return f"Local Cursor estimate ({basis}), priced with {rate}; cache and hidden model work are excluded."
 
@@ -7413,7 +7412,7 @@ def canonical_agent_sources(sources):
     selected = []
 
     for source in canonical_aggregation_sources(source_rows):
-        if source.get("provider") == "claude":
+        if source.get("provider") in ("claude", "cursor"):
             selected.append(source)
 
     groups = defaultdict(list)
