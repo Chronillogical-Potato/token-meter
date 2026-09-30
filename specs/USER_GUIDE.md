@@ -104,7 +104,15 @@ and select it from **Sessions**.
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches
-history by project, application, or activity window. **Sessions → Subagents**
+history by project, application, or activity window. Tick the box at the start
+of up to four rows and choose **Compare** to see them side by side in
+**Sessions → Compare**: setup differences, cost, tokens, cache, time, context,
+tools, cumulative cost or tokens by execution, where the cost went, and short
+insights. To judge repeated runs of one prompt, select one run and add the
+other sessions with the same title from the list below the comparison; with
+three or more same-prompt runs, Compare reports the run-to-run spread. Compare
+measures effort, not answer quality, and unavailable evidence shows `--`
+rather than zero. **Sessions → Subagents**
 investigates child-agent runs and issues; the top-level **Subagents** page compares
 roles. Selecting a session opens a
 durable local URL such as `/sessions/<id>#summary`.

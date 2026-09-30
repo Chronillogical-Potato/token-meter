@@ -134,7 +134,21 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .learnHead{max-width:760px;margin-bottom:22px}.learnSection{padding:18px 0;border-top:1px solid var(--line2)}.learnSection h2{font-size:16px;margin:0}.learnSteps{margin-top:10px}.learnStep{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 0;border-top:1px solid var(--line)}.learnStep:first-child{border-top:0}.learnStep .num{width:30px;height:30px;border:1px solid var(--line2);border-radius:50%;display:grid;place-items:center;color:var(--accent);font-weight:820}.learnStep h3{font-size:14px;margin:0}.learnStep p{font-size:12.5px;color:var(--dim);margin:3px 0 0;max-width:800px}.glossaryToolbar{display:grid;grid-template-columns:minmax(220px,420px) auto;gap:12px;align-items:center;margin-top:12px}.glossaryList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;margin-top:8px}.termRow{padding:13px 0;border-top:1px solid var(--line)}.termRow dt{font-weight:800}.termRow dd{margin:3px 0 0;color:var(--dim);font-size:12.5px}.bulkControls{max-height:220px;white-space:pre-wrap}
 .agentDiscovery{display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:12px 14px;border:1px solid rgba(0,188,235,.32);border-left:3px solid var(--accent);border-radius:8px;background:linear-gradient(90deg,rgba(0,188,235,.11),rgba(17,24,32,.88) 58%,rgba(17,24,32,.94));box-shadow:var(--shadow-soft)}.agentDiscovery[hidden]{display:none}.agentDiscoveryMain{flex:1;min-width:0}.agentDiscoveryTitle{font-weight:810}.agentDiscoveryText{color:var(--dim);font-size:12.5px;margin-top:2px}.agentDiscoveryClose{border:0;background:transparent;color:var(--faint);font:700 18px/1 inherit;cursor:pointer;padding:6px}.agentDiscoveryClose:hover{color:var(--fg)}
 .settingsPageHead{margin-bottom:14px}.settingsPageHead p{max-width:680px}.settingsGrid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);gap:12px;align-items:start}.agentAccess{overflow:hidden}.agentAccessHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.agentAccessHead h1,.agentAccessHead h2{font-size:22px;line-height:1.15;margin:4px 0 0}.agentAccessHead p{color:var(--dim);font-size:12.5px;margin:5px 0 0;max-width:650px}.agentAccessBadge{border:1px solid var(--line2);border-radius:999px;padding:4px 9px;color:var(--dim);font-size:11px;white-space:nowrap;background:rgba(255,255,255,.035)}.agentClients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}.agentClient{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.035);padding:10px 11px}.agentClientName{display:flex;align-items:center;gap:7px;font-weight:800}.agentClientState{font-size:11.5px;color:var(--faint);margin-top:2px}.agentClientState.connected{color:var(--good)}.agentClientState.warn{color:var(--warn)}.agentCommand{white-space:pre-wrap;overflow-wrap:anywhere}
-.slist{display:flex;flex-direction:column;gap:8px}.srow{display:grid;grid-template-columns:132px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(20,28,37,.94),rgba(13,18,24,.94));border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:border-color .16s,background .16s,transform .16s;min-width:0}.srow:hover{border-color:var(--line2);background:linear-gradient(180deg,rgba(24,34,44,.96),rgba(14,20,27,.96));transform:translateY(-1px)}.srow.active,.srow.live{border-color:rgba(0,188,235,.62);box-shadow:0 0 0 1px rgba(0,188,235,.12),var(--shadow-soft)}.srow .t{font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srow .meta{font-size:11.5px;color:var(--faint);margin-top:2px}.srow .c{font-weight:820;font-size:15px;text-align:right}.sMain{min-width:0}.sbar{height:4px;border-radius:4px;background:rgba(255,255,255,.045);overflow:hidden;margin-top:8px}.sbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:4px}.smetrics{text-align:right;min-width:88px}.smetrics .meta{font-size:11px}.badge{font-size:10.5px;color:var(--dim);background:rgba(255,255,255,.045);border:1px solid var(--line);padding:3px 7px;border-radius:6px;box-shadow:var(--inset)}.badge.codex{color:var(--orange3);border-color:rgba(0,188,235,.42);background:rgba(0,188,235,.12)}.badge.claude{color:#d4c0ff;border-color:rgba(183,140,255,.42);background:rgba(183,140,255,.12)}.badge.cursor{color:#80e6ae;border-color:rgba(102,217,144,.44);background:rgba(102,217,144,.12)}.badge.opencode{color:#f08cae;border-color:rgba(240,140,174,.42);background:rgba(240,140,174,.12)}
+.compareToggle{width:22px;height:22px;display:grid;place-items:center;padding:0;border:1px solid var(--line2);border-radius:6px;background:rgba(255,255,255,.035);color:transparent;cursor:pointer;transition:border-color .16s,background .16s,color .16s}.compareToggle svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.compareToggle:hover{border-color:rgba(0,188,235,.6);color:var(--faint)}.compareToggle:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(0,188,235,.22);border-color:rgba(0,188,235,.7)}.compareToggle[aria-pressed=true]{background:var(--compare-color,var(--accent));border-color:var(--compare-color,var(--accent));color:#05070a}.compareToggle[aria-disabled=true]{opacity:.35;cursor:not-allowed}.srow.compareSelected{border-color:color-mix(in srgb,var(--compare-color,var(--accent)) 55%,transparent)}
+.compareTabCount{margin-left:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#05070a;font-size:10.5px;font-weight:820;line-height:18px;text-align:center}.compareTabCount[hidden]{display:none}.tab[aria-selected=true] .compareTabCount{background:#062430;color:var(--orange3)}
+.compareTray{position:sticky;bottom:14px;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;padding:10px 12px;border:1px solid rgba(0,188,235,.42);border-radius:10px;background:linear-gradient(180deg,rgba(16,26,35,.97),rgba(9,14,19,.97));box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(14px)}.compareTray[hidden]{display:none}.compareTrayItems{display:flex;gap:6px;flex-wrap:wrap;min-width:0}.compareTrayActions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.compareTrayNote{color:var(--faint);font-size:11.5px;max-width:280px}
+.compareChip{display:inline-flex;align-items:center;gap:6px;max-width:240px;padding:3px 4px 3px 3px;border:1px solid var(--line2);border-radius:7px;background:rgba(255,255,255,.04);font-size:12px;color:var(--dim)}.compareChip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compareChip button{border:0;background:transparent;color:var(--faint);font:inherit;font-size:14px;line-height:1;padding:0 3px;cursor:pointer;border-radius:4px}.compareChip button:hover{color:var(--fg)}
+.compareLetter{flex:0 0 auto;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--compare-color,var(--accent));color:#05070a;font-size:11px;font-weight:860}
+.compareHeadActions{display:flex;gap:8px;align-items:center}.tbtn.compareClear{background:rgba(255,255,255,.04)}
+#compare-body{display:grid;gap:14px}.compareEmpty{padding:28px 24px;text-align:center;color:var(--dim)}.compareEmpty h3{margin:0 0 6px;font-size:16px;color:var(--fg)}.compareEmpty p{margin:0 auto 14px;max-width:560px;font-size:12.5px;line-height:1.55}.compareNote{padding:9px 12px;border:1px solid rgba(255,180,87,.35);border-radius:8px;background:rgba(255,180,87,.08);color:var(--warn);font-size:12px}
+.compareCards{display:grid;gap:10px}.compareCard{padding:12px 13px;border-top:3px solid var(--compare-color);display:flex;flex-direction:column;gap:5px;min-width:0}.compareCardTop{display:flex;align-items:center;gap:7px;min-width:0}.compareBaselineTag{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--compare-color)}.compareCardTitle{font-weight:740;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compareCardMeta{font-size:11.5px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compareCardCost{font-size:22px;font-weight:820;margin-top:2px}.compareCardActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.compareCardActions button{border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--dim);border-radius:6px;padding:4px 8px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}.compareCardActions button:hover:not(:disabled){color:var(--fg);border-color:rgba(0,188,235,.5)}.compareCardActions button:disabled{opacity:.45;cursor:default}
+.compareSection{padding:14px 16px}.compareSection h3{margin:0 0 10px;font-size:14px}.compareSectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.compareSectionHead h3{margin:0}
+.compareInsights{list-style:none;margin:0;padding:0;display:grid;gap:7px}.compareInsights li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:9px;align-items:baseline;font-size:13px;line-height:1.5;color:var(--dim)}.compareInsights li:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);transform:translateY(-1px)}.compareInsights li.warn:before{background:var(--warn)}.compareInsights li.good:before{background:var(--good)}.compareInsights li.caveat{color:var(--faint);font-size:12px}.compareInsights li.caveat:before{background:var(--faint)}
+.compareTableWrap{overflow-x:auto}.compareTable{width:100%;border-collapse:collapse;font-size:12.5px}.compareTable th,.compareTable td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}.compareTable th:first-child,.compareTable td:first-child{text-align:left;color:var(--dim);font-weight:650}.compareTable thead th{font-size:11px;color:var(--faint);font-weight:780;text-transform:uppercase;letter-spacing:.04em}.compareTable thead th .compareLetter{margin-right:6px;vertical-align:middle}.compareTable tr.compareGroup th{padding-top:14px;text-align:left;color:var(--orange3);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;border-bottom-color:var(--line2)}.compareTable td.text{max-width:220px;overflow:hidden;text-overflow:ellipsis}.compareTable tr.differs td:first-child:after{content:"differs";margin-left:8px;font-size:9.5px;font-weight:800;text-transform:uppercase;color:var(--warn)}.compareDelta{display:block;font-size:10.5px;font-weight:720;color:var(--faint)}.compareDelta.better{color:var(--good)}.compareDelta.worse{color:var(--bad)}.compareBest{margin-left:6px;padding:1px 5px;border-radius:4px;background:rgba(102,217,144,.14);color:var(--good);font-size:9.5px;font-weight:820;text-transform:uppercase;vertical-align:1px}.compareUnavailable{color:var(--faint)}
+.compareCaption{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.compareChart{width:100%;height:auto;display:block}.compareLegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--dim)}.compareLegend span{display:inline-flex;align-items:center;gap:6px}.compareLegend i{width:12px;height:3px;border-radius:2px;background:var(--compare-color)}.compareLegend i.part{width:10px;height:10px;border-radius:3px}
+.compareBreakdown{display:grid;gap:9px}.compareBreakdownRow{display:grid;grid-template-columns:28px minmax(0,1fr) 84px;gap:10px;align-items:center}.compareBreakdownBar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,.04)}.compareBreakdownBar i{display:block;height:100%}.compareBreakdownRow b{text-align:right;font-size:12.5px}
+.compareMatches{display:grid;gap:6px}.compareMatch{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.025)}.compareMatch .t{font-weight:680;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compareMatch .meta{font-size:11.5px;color:var(--faint)}.compareMatchActions{display:flex;gap:6px}
+.slist{display:flex;flex-direction:column;gap:8px}.srow{display:grid;grid-template-columns:26px 132px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(20,28,37,.94),rgba(13,18,24,.94));border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:border-color .16s,background .16s,transform .16s;min-width:0}.srow:hover{border-color:var(--line2);background:linear-gradient(180deg,rgba(24,34,44,.96),rgba(14,20,27,.96));transform:translateY(-1px)}.srow.active,.srow.live{border-color:rgba(0,188,235,.62);box-shadow:0 0 0 1px rgba(0,188,235,.12),var(--shadow-soft)}.srow .t{font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srow .meta{font-size:11.5px;color:var(--faint);margin-top:2px}.srow .c{font-weight:820;font-size:15px;text-align:right}.sMain{min-width:0}.sbar{height:4px;border-radius:4px;background:rgba(255,255,255,.045);overflow:hidden;margin-top:8px}.sbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:4px}.smetrics{text-align:right;min-width:88px}.smetrics .meta{font-size:11px}.badge{font-size:10.5px;color:var(--dim);background:rgba(255,255,255,.045);border:1px solid var(--line);padding:3px 7px;border-radius:6px;box-shadow:var(--inset)}.badge.codex{color:var(--orange3);border-color:rgba(0,188,235,.42);background:rgba(0,188,235,.12)}.badge.claude{color:#d4c0ff;border-color:rgba(183,140,255,.42);background:rgba(183,140,255,.12)}.badge.cursor{color:#80e6ae;border-color:rgba(102,217,144,.44);background:rgba(102,217,144,.12)}.badge.opencode{color:#f08cae;border-color:rgba(240,140,174,.42);background:rgba(240,140,174,.12)}
 .dailyGrid{align-items:start}
 .frustrationSection{margin-top:36px;padding-top:28px;border-top:1px solid var(--line2)}.frustrationNotice{margin:0 0 12px;padding:9px 12px;border:1px solid rgba(255,180,87,.24);border-left:3px solid var(--warn);border-radius:8px;background:linear-gradient(90deg,rgba(255,180,87,.07),rgba(255,180,87,.018));color:var(--dim);font-size:12px}.frustrationNotice b{color:var(--fg)}
 .frustrationHero .modelKpi{min-height:100px;background:linear-gradient(155deg,rgba(24,33,43,.98),rgba(12,17,23,.98));overflow:hidden}.frustrationHero .modelKpi:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--warn),rgba(255,111,111,.55),transparent 78%)}.frustrationHero .modelKpi:nth-child(2):before{background:linear-gradient(90deg,var(--bad),var(--warn),transparent 78%)}.frustrationHero .modelKpi:nth-child(3):before{background:linear-gradient(90deg,var(--accent),var(--orange3),transparent 78%)}.frustrationHero .modelKpi:nth-child(4):before{background:linear-gradient(90deg,#c7a7ff,var(--warn),transparent 78%)}
@@ -174,7 +188,7 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 @media(max-width:1120px) and (min-width:901px){.globalControls{grid-template-columns:minmax(220px,1fr) minmax(190px,.8fr) minmax(150px,.55fr)}.filterSort{grid-column:1/3}.filterCount{align-self:end}}
 @media(max-width:900px){.logsSummary{grid-template-columns:1fr}.logKpis,.modelHero{grid-template-columns:repeat(2,minmax(0,1fr))}.modelHead{align-items:flex-start;flex-direction:column}.modelControls{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.efficiencySupport{grid-template-columns:repeat(2,minmax(0,1fr))}.efficiencyHead{align-items:flex-start;flex-direction:column}.efficiencyRange{width:100%;min-width:0}}
 @media(max-width:900px){.budgetForm{grid-template-columns:1fr}.budgetAllocationFields{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:900px){.wrap{padding:14px}.top{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px 8px;padding-top:8px}.top .brand{grid-column:1/-1;min-width:0}.top .tabs{grid-column:1/-1;justify-self:stretch;justify-content:flex-start;width:100%;max-width:100%;overflow-x:auto}.top .spacer{display:none}.top .commandTrigger{grid-column:1;justify-self:start}.top .notify{grid-column:3;justify-self:end}.glob-hero,.wasteHero,.globalWasteGrid,.globalControls,.capHero,.capCharts,.capFilters,.capReview,.globalOverviewGrid,.dailyOverview,.dailyGrid,.dailyQualityGrid,.settingsGrid,.agentClients,.agentDisclosure,.frustrationBreakdown,.budgetDashboard,.budgetDetailGrid{grid-template-columns:1fr}.overviewKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.globalControls .seg,.capFilters .seg{justify-content:flex-start}.globalMeta{white-space:normal}.srow{grid-template-columns:132px minmax(0,1fr) auto}.srow .tok,.srow .models{display:none}.meter{font-size:46px;overflow-wrap:anywhere}.costcard .meter{font-size:54px}.sessionhead{flex-wrap:wrap}.sessid{max-width:100%}.pill{white-space:normal}.statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dailyHead{align-items:flex-start;flex-direction:column}.dailyQualityGrid{gap:16px}.agentDiscovery{align-items:flex-start;flex-wrap:wrap}.agentAccessHead{display:block}.agentAccessBadge{display:inline-block;margin-top:10px}.frustrationChart{height:240px}.chatSignalList{max-height:430px}}
+@media(max-width:900px){.wrap{padding:14px}.top{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px 8px;padding-top:8px}.top .brand{grid-column:1/-1;min-width:0}.top .tabs{grid-column:1/-1;justify-self:stretch;justify-content:flex-start;width:100%;max-width:100%;overflow-x:auto}.top .spacer{display:none}.top .commandTrigger{grid-column:1;justify-self:start}.top .notify{grid-column:3;justify-self:end}.glob-hero,.wasteHero,.globalWasteGrid,.globalControls,.capHero,.capCharts,.capFilters,.capReview,.globalOverviewGrid,.dailyOverview,.dailyGrid,.dailyQualityGrid,.settingsGrid,.agentClients,.agentDisclosure,.frustrationBreakdown,.budgetDashboard,.budgetDetailGrid{grid-template-columns:1fr}.overviewKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.globalControls .seg,.capFilters .seg{justify-content:flex-start}.globalMeta{white-space:normal}.srow{grid-template-columns:26px 132px minmax(0,1fr) auto}.srow .tok,.srow .models{display:none}.meter{font-size:46px;overflow-wrap:anywhere}.costcard .meter{font-size:54px}.sessionhead{flex-wrap:wrap}.sessid{max-width:100%}.pill{white-space:normal}.statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dailyHead{align-items:flex-start;flex-direction:column}.dailyQualityGrid{gap:16px}.agentDiscovery{align-items:flex-start;flex-wrap:wrap}.agentAccessHead{display:block}.agentAccessBadge{display:inline-block;margin-top:10px}.frustrationChart{height:240px}.chatSignalList{max-height:430px}}
 @media(max-width:900px){.previewHead{align-items:flex-start;flex-direction:column}.previewRunGrid,.previewBrief{grid-template-columns:1fr}.settingsMap{grid-template-columns:repeat(2,minmax(0,1fr))}.settingsMapIntro{grid-column:1/-1;padding:2px 2px 7px}.settingsMap button{border:1px solid var(--line);border-radius:7px;padding:8px}.previewChartSlot .chart{height:250px}.previewKpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:520px){body{overflow-x:hidden}.tab,.seg button{padding:7px 11px}.top{grid-template-columns:minmax(0,1fr) auto}.top .commandTrigger{grid-column:1;justify-self:start}.top .notify{grid-column:1/-1;justify-self:start}.commandPalette{width:calc(100vw - 20px)}.commandSearch{padding:12px}.commandFooter{justify-content:flex-start;flex-wrap:wrap}.commandDescription{white-space:normal}.sessionStart{grid-template-columns:1fr;gap:3px}.overview,.overviewKpis,.modelHero,.efficiencyHero{grid-template-columns:1fr;gap:8px}.efficiencySupport{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.efficiencyHeadline{min-height:226px;padding:17px}.efficiencyHeadline .v{font-size:38px}.efficiencyModelHead,.efficiencyEvidence{align-items:flex-start;flex-direction:column}.ov{padding:13px 12px}.stat .v,.ov .v{font-size:22px}.meter{font-size:44px}.costcard .meter{font-size:42px}.costcard .subline{white-space:normal}.costmeta,.statgrid,.modelControls{grid-template-columns:1fr}.repo{max-width:100%}.dailyHead{width:100%}.dailyPicker{width:100%}.dailyPicker select{flex:1;min-width:0}.dailySpendTop{display:block}.dailyDelta{margin-top:12px}.dailySpendValue{font-size:44px}.dailyMetric{padding-left:9px;padding-right:9px}.dailyMetric .v{font-size:18px}.dailySession{grid-template-columns:26px minmax(0,1fr) auto}.dailySessionValue{min-width:62px}.dailySession .tbtn{grid-column:2/-1;justify-self:end}.dailySectionHead{display:block}.dailySectionHead .globalMeta{margin-top:4px}.dailyQualityNumbers{grid-template-columns:1fr 1fr}.learnStep{grid-template-columns:34px minmax(0,1fr)}.learnStep .tbtn{grid-column:2;justify-self:start}.glossaryToolbar{grid-template-columns:1fr}.capReviewActions{justify-content:flex-start}.modelChart{height:230px}.modelTrendHead{display:block}.modelLegend{margin-top:7px}.outputPair{display:block}.outputRate{justify-items:start;margin-top:5px}.frustrationChart{height:220px}.signalPanelHead{display:block}.signalPanelHead .seg{display:inline-flex;margin-top:9px}.chatSignal{grid-template-columns:minmax(0,1fr) auto}.chatSignalMeta{max-width:220px}.settingsLexiconHead{display:block}.settingsStatus{width:100%;margin-left:0}}
 @media(max-width:520px){.previewHead h1{font-size:24px}.previewRunMeta{flex-wrap:wrap}.previewRunMeta .repo{max-width:100%;width:100%}.previewChartSlot #session-chart-module>.card{min-height:0}.previewChartSlot .chart{height:226px}.previewChartSlot .chartbar{align-items:flex-start}.previewChartSlot .chartbar .label{width:100%;margin:0}.previewKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.previewKpi{min-height:82px;padding:10px}.previewKpi .v{font-size:17px}.previewCost{font-size:34px}.budgetReadouts,.budgetForm,.settingsMap,.settingsSignalGrid{grid-template-columns:1fr}.budgetCoreFields,.budgetAllocationFields{grid-template-columns:repeat(2,minmax(0,1fr))}.budgetAllocationFields label:last-child{grid-column:1/-1}.budgetReadouts>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 8px;padding:10px 11px}.budgetReadouts .v{margin-top:0}.budgetReadouts .subline{grid-column:1/-1}.budgetLeadHeadActions{justify-content:flex-start;margin-top:10px}.learnSectionHead .budgetLeadHeadActions .tbtn{margin-top:0}.budgetConfigHead{display:block}.budgetConfigBadge{display:inline-block;margin-top:9px}.budgetActions .settingsStatus{width:auto}.budgetRuntimeValue{display:grid;gap:1px;justify-items:end}.budgetChartInner{min-width:440px}.settingsMap button{width:100%;margin:0}.settingsPageContent>.card{padding:13px}.settingsPageContent .modelPriceTableWrap{margin-left:-5px;margin-right:-5px}}
@@ -290,7 +304,7 @@ body.sessionRoute #view-session .sessionFlowHead[data-session-flow=idle] .pageSi
 body.sessionRoute #view-session .sessionFlowHead[data-session-flow=unavailable] .pageSignalField{opacity:.62}
 body.sessionRoute #view-session.sessionDetail .sessionFlowHead :is(.pageSignalField,.pageHeroBorder),body.sessionRoute #view-session.sessionDetail .spectrumPageActions{display:none}
 @keyframes sessionFlowStatusPulse{0%,70%{box-shadow:0 0 0 0 rgba(102,217,144,.4)}100%{box-shadow:0 0 0 9px transparent}}
-body.sessionRoute #view-session .sessionScopeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;width:100%;margin:-4px 0 12px;padding:4px;border-color:rgba(0,188,235,.24);background:rgba(7,12,17,.72)}
+body.sessionRoute #view-session .sessionScopeTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;width:100%;margin:-4px 0 12px;padding:4px;border-color:rgba(0,188,235,.24);background:rgba(7,12,17,.72)}
 body.sessionRoute #view-session .sessionScopeTabs .tab{display:flex;min-height:44px;align-items:center;justify-content:center;gap:8px;padding:10px 14px;text-align:center}
 body.sessionRoute #view-session .sessionScopeTabs .tab .tabIcon{width:17px;height:17px;flex:0 0 auto}
 body.sessionRoute #view-session .sessionScopeTabs .tab[aria-selected=true]{background:var(--spectrum-active);color:#062430;box-shadow:0 7px 20px rgba(0,188,235,.16)}
@@ -742,6 +756,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="tabs sessionScopeTabs" id=session-scope-tabs role=tablist aria-label="Sessions view">
    <button class=tab id=session-scope-current type=button role=tab aria-selected=true aria-controls=current-sessions-overview data-session-scope=current><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Current sessions</span></button>
    <button class=tab id=session-scope-all type=button role=tab aria-selected=false aria-controls=all-session-history data-session-scope=all><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span class=tabLabel>All sessions</span></button>
+   <button class=tab id=session-scope-compare type=button role=tab aria-selected=false aria-controls=session-compare data-session-scope=compare><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="3" y="5" width="7" height="14" rx="1.5"/><rect x="14" y="5" width="7" height="14" rx="1.5"/><path d="M6.5 9v6M17.5 12v3"/></svg><span class=tabLabel>Compare</span><span class=compareTabCount id=compare-tab-count hidden></span></button>
    <button class=tab id=session-scope-subagents type=button role=tab aria-selected=false aria-controls=subagent-explorer data-session-scope=subagents><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M12 4v5M5 12h14M5 12v6M12 12v6M19 12v6"/><circle cx="12" cy="3" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></svg><span class=tabLabel>Subagents</span></button>
   </div>
 
@@ -820,6 +835,14 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
      </details>
     </div>
     <div class=slist id=slist></div>
+    <div class=compareTray id=compare-tray role=region aria-label="Sessions selected for comparison" hidden></div>
+   </section>
+   <section id=session-compare role=tabpanel aria-labelledby=session-scope-compare hidden>
+    <div class=allSessionsHead>
+     <div><h2>Compare sessions</h2><p>Put up to four runs side by side — the same prompt run again, or any sessions you want to weigh against each other.</p></div>
+     <div class=compareHeadActions><button class=tbtn id=compare-pick type=button>Add from All sessions</button><button class="tbtn compareClear" id=compare-clear type=button>Clear</button></div>
+    </div>
+    <div id=compare-body aria-live=polite></div>
    </section>
    <section id=subagent-explorer role=tabpanel aria-labelledby=session-scope-subagents hidden>
     <div class="card subagentCommand">
@@ -1593,16 +1616,37 @@ function openSelectedSessionRoute(route='summary'){
  }
  setHashRoute(route);
 }
-const SESSION_SCOPES=['current','all','subagents'];
+const SESSION_SCOPES=['current','all','compare','subagents'];
 let sessionScope='current',sessionReturnScope='current';
+const COMPARE_MAX=4,COMPARE_LETTERS='ABCD',COMPARE_COLORS=['#00bceb','#c7a7ff','#ffb457','#66d990'];
+function loadCompareIds(){
+ try{
+  const stored=JSON.parse(localStorage.getItem('tm_compare_ids')||'[]');
+  return Array.isArray(stored)?[...new Set(stored.map(String).filter(id=>id&&id.length<=240))].slice(0,COMPARE_MAX):[];
+ }catch(error){return [];}
+}
+let compareIds=loadCompareIds(),compareBaseline=localStorage.getItem('tm_compare_baseline')||'';
+let compareChartMetric=localStorage.getItem('tm_compare_chart')==='tokens'?'tokens':'cost';
+let compareData=null,compareError='',compareLoading=false,compareRequestSeq=0,compareLoadedKey='',compareLoadedAt=0,compareNotice='';
+const compareTitles=new Map();
+let compareUiReady=false;
 function normalizeSessionScope(scope){return SESSION_SCOPES.includes(scope)?scope:'current';}
-function sessionScopeRoute(scope){scope=normalizeSessionScope(scope);return scope==='all'?'sessions-all':scope==='subagents'?'sessions-subagents':'sessions';}
+function sessionScopeRoute(scope){scope=normalizeSessionScope(scope);return scope==='all'?'sessions-all':scope==='compare'?'sessions-compare':scope==='subagents'?'sessions-subagents':'sessions';}
+function sessionScopeCopy(scope){
+ return {
+  all:['Local session history.','Search, filter, and compare local session history.'],
+  compare:['Selected sessions side by side.','Compare up to four selected sessions and review content-free insights.'],
+  subagents:['Investigate child-agent spend, completion, and role patterns.','Filter child agents, inspect incomplete work, and open their parent sessions.'],
+ }[scope]||['Live local traces · last 30 minutes.','Select a card to inspect it. Drag a card or press ⌥ and an arrow key to reorder.'];
+}
 function renderSessionScope(){
- const all=sessionScope==='all',subagents=sessionScope==='subagents',overview=currentPanel==='sessions';
+ const all=sessionScope==='all',subagents=sessionScope==='subagents',compare=sessionScope==='compare',overview=currentPanel==='sessions';
  $('view-session').classList.toggle('sessionAll',all);
  $('view-session').classList.toggle('sessionSubagents',subagents);
- $('current-sessions-overview').hidden=all||subagents;
+ $('view-session').classList.toggle('sessionCompare',compare);
+ $('current-sessions-overview').hidden=all||subagents||compare;
  $('all-session-history').hidden=!all;
+ $('session-compare').hidden=!compare;
  if($('subagent-explorer').parentElement===$('preview-surface-sessions'))$('subagent-explorer').hidden=!subagents;
  [...$('session-scope-tabs').querySelectorAll('[data-session-scope]')].forEach(button=>{
   const selected=button.dataset.sessionScope===sessionScope;
@@ -1611,8 +1655,15 @@ function renderSessionScope(){
   button.tabIndex=selected?0:-1;
  });
  if(overview){
-  $('current-description').textContent=all?'Local session history.':subagents?'Investigate child-agent spend, completion, and role patterns.':'Live local traces · last 30 minutes.';
-  $('session-page-title').setAttribute('aria-description',all?'Search, filter, and compare local session history.':subagents?'Filter child agents, inspect incomplete work, and open their parent sessions.':'Select a card to inspect it. Drag a card or press ⌥ and an arrow key to reorder.');
+  const [description,help]=sessionScopeCopy(sessionScope);
+  $('current-description').textContent=description;
+  $('session-page-title').setAttribute('aria-description',help);
+ }
+ if(compareUiReady)syncCompareSelectionUi();
+ if(compareUiReady&&compare&&overview){
+  renderComparison();
+  loadComparison();
+  if(!allSessionInventory)loadAllSessions();
  }
  if(all&&LATEST){
   renderAllSessions(LATEST.xsession);
@@ -1635,7 +1686,7 @@ function openSessionScope(scope,{replace=false}={}){
  if(history.pushState)history[replace?'replaceState':'pushState'](null,'',`/#${route}`);
  else location.hash=route;
  applyHashRoute();
- return sessionScope==='all'?allSessionInventory||[]:sessionScope==='subagents'?LATEST?.xsession?.agent_usage?.inventory||[]:LATEST?.xsession?.current_sessions||[];
+ return sessionScope==='all'?allSessionInventory||[]:sessionScope==='compare'?compareData?.sessions||[]:sessionScope==='subagents'?LATEST?.xsession?.agent_usage?.inventory||[]:LATEST?.xsession?.current_sessions||[];
 }
 
 const ONBOARDING_KEY='tm_onboarding_v1';
@@ -1753,6 +1804,7 @@ renderOnboarding();
 const NAV_COMMANDS=[
  {id:'sessions',label:'Sessions',description:'Choose a recently active local session',section:'Navigate',action:'sessions',directKey:'Digit1',glyph:'1'},
  {id:'all-sessions',label:'All sessions',description:'Search, filter, and open recorded session history',aliases:'logs',section:'Navigate',route:'sessions-all',glyph:'All'},
+ {id:'compare-sessions',label:'Compare sessions',description:'Put selected sessions side by side with insights',aliases:'diff same prompt runs',section:'Navigate',route:'sessions-compare',glyph:'A|B'},
  {id:'spend',label:'Spend',description:'Review spend across days and runtimes',section:'Navigate',route:'spend',directKey:'Digit2',glyph:'2'},
  {id:'models',label:'Models',description:'Compare model performance and review user language signals',section:'Navigate',route:'models',directKey:'Digit3',glyph:'3'},
  {id:'subagents',label:'Subagents',description:'Track custom-agent spend and inspect child runs',section:'Navigate',route:'subagents',directKey:'Digit4',glyph:'4'},
@@ -1883,10 +1935,10 @@ function showCurrentPanel(panel){
  $('view-session').classList.toggle('sessionDetail',!overview);
  document.querySelectorAll('[data-current-detail]').forEach(element=>element.classList.toggle('currentOverviewHidden',overview));
  $('session-page-title').textContent=overview?'Sessions':sessionDisplayName(CURRENT);
- const pageHelp=overview?(sessionScope==='all'?'Search, filter, and compare local session history.':'Select a card to inspect it. Drag a card or press ⌥ and an arrow key to reorder.'):'Review this session.';
+ const pageHelp=overview?sessionScopeCopy(sessionScope)[1]:'Review this session.';
  $('session-page-title').setAttribute('aria-description',pageHelp);
  $('session-page-title').dataset.tip=pageHelp;
- $('current-description').textContent=overview?(sessionScope==='all'?'Local session history.':'Live local traces · last 30 minutes.'):(pinned?'Pinned run · updates every two seconds.':'Live run · updates with the trace.');
+ $('current-description').textContent=overview?sessionScopeCopy(sessionScope)[0]:(pinned?'Pinned run · updates every two seconds.':'Live run · updates with the trace.');
  CURRENT_PANEL_KEYS.forEach(key=>$(`preview-surface-${key}`).classList.toggle('on',key===panel));
  restoreCurrentModules();
  if(panel==='sessions'){
@@ -1986,8 +2038,8 @@ function applyHashRoute(){
   if(LATEST)renderSubagentExplorer(LATEST.xsession?.agent_usage);
   return;
  }
- if(h==='sessions'||h==='sessions-all'||h==='current-sessions'){
- const scope=h==='sessions-all'?'all':'current',route=sessionScopeRoute(scope);
+ if(h==='sessions'||h==='sessions-all'||h==='sessions-compare'||h==='current-sessions'){
+ const scope=h==='sessions-all'?'all':h==='sessions-compare'?'compare':'current',route=sessionScopeRoute(scope);
  if((routedSessionId()||h==='current-sessions')&&history.replaceState)history.replaceState(null,'',`/#${route}`);
  if(pinned){sessionRequest++;pinned=null;CURRENT=LATEST;}
  setSessionScope(scope);
@@ -6151,7 +6203,7 @@ function renderFrustration(signals,sessions){
 }
 
 function logRowRenderKey(s,active){
- return JSON.stringify([active,sessionDeleteAvailable(s,renderedAllSessionActions),s.client,s.provider,s.label,s.title,s.project,s.last,s.start,s.wait_time,s.turns,s.cost,s.availability,s.models,s.model_identity,s.tokens,s.provenance,s.usage_basis,s.token_estimate,s.throughput,s.cost_approx]);
+ return JSON.stringify([active,compareIds.indexOf(compareKeyFor(s)),compareIds.length>=COMPARE_MAX,sessionDeleteAvailable(s,renderedAllSessionActions),s.client,s.provider,s.label,s.title,s.project,s.last,s.start,s.wait_time,s.turns,s.cost,s.availability,s.models,s.model_identity,s.tokens,s.provenance,s.usage_basis,s.token_estimate,s.throughput,s.cost_approx]);
 }
 function logRowContent(s){
  const rowCost=metricAvailable(s,'cost'),rowTokens=metricAvailable(s,'tokens'),localEstimate=hasLocalEstimate(s),avg=rowCost&&s.turns?money((s.cost||0)/s.turns)+estimateSuffix(s):'--';
@@ -6161,7 +6213,7 @@ function logRowContent(s){
  const unresolvedModelText=identity.kind==='auto_review'?'Auto-review · model unconfirmed':(candidates.length?`${candidates.join(', ')} · configured alias candidate`:`${identity.observed_label||'Hermes model'} · unconfirmed`);
  const modelText=unresolvedIdentity?unresolvedModelText:`${(s.models||[]).join(', ')||'--'}${identityLabel}`,throughput=s.throughput||{},speed=throughput.available?` · ${speedFmt(throughput.output_tps)} ${localEstimate?'visible out tok/s est':'out tok/s'}`:'';
  const identityAction=identity.assignable&&identity.key?`<button class=sessionModelAssign data-session-model-identity="${esc(identity.key)}" type=button>${assignedIdentity?'Change model':(identity.kind==='missing_model'?'Add model':'Assign model')}</button>`:'';
- return `<div><span class="badge app ${appBadgeClass(s)}">${runtimeMarkSvg(s)}${esc(s.label||s.provider)}</span></div>
+ return `${compareToggleHtml(s)}<div><span class="badge app ${appBadgeClass(s)}">${runtimeMarkSvg(s)}${esc(s.label||s.provider)}</span></div>
   <div class=sMain><div class=t>${esc(s.title)}</div><div class=meta>${esc(s.project||'local')} · ${esc(s.last||s.start||'')} · ${waitText} · ${f(s.turns)} execs · ${avg}/exec${speed}</div><div class=sbar><i></i></div></div>
   <div class="badge models">${esc(modelText)}</div>
   <div class="badge tok">${rowTokens?f(s.tokens)+' tok'+(localEstimate?' est':''):'tokens --'}</div>
@@ -6177,21 +6229,23 @@ function reconcileLogRows(sessions,maxCost,liveSessionIds=new Set()){
   return;
  }
  logHtmlCache.delete(root);
- const existing=new Map([...root.children].filter(row=>row.dataset.id).map(row=>[row.dataset.id,row]));
+ const existing=new Map([...root.children].filter(row=>row.dataset.rowKey).map(row=>[row.dataset.rowKey,row]));
  const desired=new Set();
  let cursor=root.firstElementChild;
  sessions.forEach(s=>{
-  const id=String(s.id),active=pinned?s.id===pinned:Boolean(LATEST&&s.id===stateSessionId(LATEST));
-  desired.add(id);
-  let row=existing.get(id);
+  const id=String(s.id),rowKey=compareKeyFor(s),active=pinned?s.id===pinned:Boolean(LATEST&&s.id===stateSessionId(LATEST));
+  desired.add(rowKey);
+  let row=existing.get(rowKey);
   if(!row){
    row=document.createElement('div');
    row.dataset.id=id;
+   row.dataset.rowKey=rowKey;
    row.setAttribute('role','button');
    row.tabIndex=0;
   }
   const live=liveSessionIds.has(id),renderKey=logRowRenderKey(s,active),restoreDeleteFocus=document.activeElement?.dataset.deleteSession===id;
-  const className=`srow${active?' active':''}${live?' live':''}`,ariaLabel=`Open ${s.title}`;
+  const compareIndex=compareIds.indexOf(rowKey),className=`srow${active?' active':''}${live?' live':''}${compareIndex>=0?' compareSelected':''}`,ariaLabel=`Open ${s.title}`;
+  if(compareIndex>=0)row.style.setProperty('--compare-color',COMPARE_COLORS[compareIndex]);else row.style.removeProperty('--compare-color');
   if(row.className!==className)row.className=className;
   if(row.getAttribute('aria-label')!==ariaLabel)row.setAttribute('aria-label',ariaLabel);
   if(row._logRenderKey!==renderKey){
@@ -6204,11 +6258,245 @@ function reconcileLogRows(sessions,maxCost,liveSessionIds=new Set()){
   if(row===cursor)cursor=cursor.nextElementSibling;
   else root.insertBefore(row,cursor);
  });
- [...root.children].forEach(row=>{if(!desired.has(row.dataset.id||''))row.remove();});
+ [...root.children].forEach(row=>{if(!desired.has(row.dataset.rowKey||''))row.remove();});
 }
+function compareColor(index){return COMPARE_COLORS[index%COMPARE_COLORS.length];}
+function compareKeyFor(row){
+ const name=String(row?.path||'').split(/[\\/]/).pop()||'',dot=name.lastIndexOf('.');
+ return (dot>0?name.slice(0,dot):name)||String(row?.id||'');
+}
+function compareToggleHtml(s){
+ const id=compareKeyFor(s),index=compareIds.indexOf(id),selected=index>=0,full=!selected&&compareIds.length>=COMPARE_MAX;
+ const label=selected?`Remove ${s.title||'session'} from comparison`:full?`Comparison is full (${COMPARE_MAX} sessions)`:`Add ${s.title||'session'} to comparison`;
+ return `<button class=compareToggle data-compare-toggle="${esc(id)}" data-compare-title="${esc(s.title||'')}" type=button aria-pressed="${selected}"${full?' aria-disabled=true':''} aria-label="${esc(label)}" title="${esc(selected?'Remove from comparison':full?`Comparison is full (${COMPARE_MAX})`:'Add to comparison')}"${selected?` style="--compare-color:${compareColor(index)}"`:''}><svg viewBox="0 0 16 16" aria-hidden=true><path d="M3.5 8.5l3 3 6-7"/></svg></button>`;
+}
+function compareTitle(key){
+ if(!compareTitles.has(key)){
+  const row=(compareData?.sessions||[]).find(item=>item.key===key)||(compareData?.matches||[]).find(item=>item.key===key)||(allSessionInventory||[]).find(item=>compareKeyFor(item)===key);
+  if(row?.title)compareTitles.set(key,row.title);
+ }
+ return compareTitles.get(key)||'Session';
+}
+function setCompareIds(ids,{reload=true}={}){
+ compareIds=[...new Set(ids.map(String).filter(Boolean))].slice(0,COMPARE_MAX);
+ localStorage.setItem('tm_compare_ids',JSON.stringify(compareIds));
+ if(!compareIds.includes(compareBaseline)){
+  compareBaseline=compareIds[0]||'';
+  localStorage.setItem('tm_compare_baseline',compareBaseline);
+ }
+ syncCompareSelectionUi();
+ if(reload&&$('view-session').classList.contains('on')&&sessionScope==='compare'){renderComparison();loadComparison();}
+}
+function toggleCompareId(id){
+ id=String(id||'');
+ if(!id)return;
+ if(compareIds.includes(id))setCompareIds(compareIds.filter(item=>item!==id));
+ else if(compareIds.length<COMPARE_MAX){compareTitle(id);setCompareIds([...compareIds,id]);}
+}
+function syncCompareSelectionUi(){
+ const count=compareIds.length,full=count>=COMPARE_MAX,badge=$('compare-tab-count');
+ badge.hidden=!count;
+ badge.textContent=count?String(count):'';
+ badge.setAttribute('aria-label',`${count} selected`);
+ document.querySelectorAll('#slist [data-compare-toggle]').forEach(button=>{
+  const id=button.dataset.compareToggle,index=compareIds.indexOf(id),selected=index>=0,row=button.closest('.srow');
+  button.setAttribute('aria-pressed',String(selected));
+  if(!selected&&full)button.setAttribute('aria-disabled','true');else button.removeAttribute('aria-disabled');
+  const title=button.dataset.compareTitle||'session';
+  button.setAttribute('aria-label',selected?`Remove ${title} from comparison`:full?`Comparison is full (${COMPARE_MAX} sessions)`:`Add ${title} to comparison`);
+  button.title=selected?'Remove from comparison':full?`Comparison is full (${COMPARE_MAX})`:'Add to comparison';
+  if(selected){button.style.setProperty('--compare-color',compareColor(index));row?.style.setProperty('--compare-color',compareColor(index));}
+  else{button.style.removeProperty('--compare-color');row?.style.removeProperty('--compare-color');}
+  row?.classList.toggle('compareSelected',selected);
+ });
+ const tray=$('compare-tray');
+ tray.hidden=!count;
+ if(!count){setLogHtml(tray,'');return;}
+ const note=count<2?'Select one more session, or open Compare to find runs with the same prompt.':full?`Comparison is full (${COMPARE_MAX}).`:'';
+ setLogHtml(tray,`<div class=compareTrayItems>${compareIds.map((id,index)=>`<span class=compareChip><b class=compareLetter style="--compare-color:${compareColor(index)}">${COMPARE_LETTERS[index]}</b><span title="${esc(compareTitle(id))}">${esc(compareTitle(id))}</span><button type=button data-compare-remove="${esc(id)}" aria-label="Remove ${esc(compareTitle(id))} from comparison">×</button></span>`).join('')}</div><div class=compareTrayActions>${note?`<span class=compareTrayNote>${esc(note)}</span>`:''}<button class=tbtn type=button data-compare-open>Compare ${count}</button><button class="tbtn compareClear" type=button data-compare-clear>Clear</button></div>`);
+}
+$('compare-tray').onclick=event=>{
+ const remove=event.target.closest('[data-compare-remove]');
+ if(remove){setCompareIds(compareIds.filter(id=>id!==remove.dataset.compareRemove));return;}
+ if(event.target.closest('[data-compare-open]')){openSessionScope('compare');return;}
+ if(event.target.closest('[data-compare-clear]'))setCompareIds([]);
+};
+async function loadComparison({force=false}={}){
+ const key=compareIds.join(',');
+ if(!compareIds.length){compareData=null;compareError='';compareLoadedKey='';renderComparison();return;}
+ if(!force&&key===compareLoadedKey&&compareData)return;
+ const request=++compareRequestSeq;
+ compareLoading=true;
+ if(key!==compareLoadedKey)renderComparison();
+ try{
+  const response=await fetch(`/session/compare?ids=${encodeURIComponent(key)}`,{cache:'no-store'});
+  const payload=await response.json().catch(()=>({}));
+  if(request!==compareRequestSeq)return;
+  if(!response.ok||!payload.ok){
+   compareData=null;
+   compareError=payload.error||`Comparison request failed (${response.status}).`;
+   if(response.status===404&&Array.isArray(payload.missing)){compareNotice='The selected sessions are no longer available and were removed.';setCompareIds(compareIds.filter(id=>!payload.missing.includes(id)),{reload:false});compareError='';}
+  }else{
+   compareError='';
+   compareData=payload;
+   [...(payload.sessions||[]),...(payload.matches||[])].forEach(row=>compareTitles.set(row.key,row.title));
+   if((payload.missing||[]).length){
+    compareNotice=`${payload.missing.length} selected ${countWord(payload.missing.length,'session is','sessions are')} no longer available and ${countWord(payload.missing.length,'was','were')} removed.`;
+    setCompareIds(compareIds.filter(id=>!payload.missing.includes(id)),{reload:false});
+   }
+  }
+  compareLoadedKey=compareIds.join(',');
+  compareLoadedAt=Date.now();
+ }catch(error){
+  if(request!==compareRequestSeq)return;
+  compareError='Token Meter could not load the comparison. Check that the local server is running.';
+ }finally{
+  if(request===compareRequestSeq){compareLoading=false;renderComparison();}
+ }
+}
+const COMPARE_ROWS=[
+ {group:'Spend'},
+ {key:'cost',label:'Cost',fmt:(v,s)=>money(v)+(s.cost_approx||s.usage_basis!=='reported'?' est':''),lower:true,tip:COST_UNAVAILABLE_TIP},
+ {key:'cost_per_turn',label:'Cost per execution',fmt:v=>money(v),lower:true},
+ {key:'cache_saved',label:'Saved by cache',fmt:v=>money(v),lower:false},
+ {group:'Tokens'},
+ {key:'tokens',label:'Total tokens',fmt:compactNumber,lower:true},
+ {key:'fresh_input_tokens',label:'Fresh input',fmt:compactNumber,lower:true},
+ {key:'cache_read_tokens',label:'Cache reads',fmt:compactNumber},
+ {key:'cache_write_tokens',label:'Cache writes',fmt:compactNumber,lower:true},
+ {key:'output_tokens',label:'Output',fmt:compactNumber},
+ {key:'cache_hit_ratio',label:'Cache hit rate',fmt:pct,lower:false,points:true},
+ {key:'tokens_per_turn',label:'Tokens per execution',fmt:compactNumber,lower:true},
+ {group:'Work'},
+ {key:'turns',label:'Executions',fmt:f,lower:true},
+ {key:'subagent_turns',label:'Subagent executions',fmt:f},
+ {key:'duration_s',label:'Active time',fmt:waitFmt,lower:true},
+ {key:'wall_duration_s',label:'Wall time',fmt:waitFmt,lower:true},
+ {key:'wait_avg_s',label:'Average wait',fmt:waitFmt,lower:true},
+ {key:'output_tps',label:'Output speed',fmt:v=>`${speedFmt(v)} tok/s`,lower:false},
+ {key:'context_peak',label:'Peak context',fmt:(v,s)=>compactNumber(v)+(s.context_window?` · ${pct(v/s.context_window)}`:''),lower:true},
+ {key:'reasoning_share',label:'Reasoning share',fmt:pct,points:true},
+ {group:'Tools'},
+ {key:'tool_calls',label:'Tool calls',fmt:f},
+ {key:'tool_errors',label:'Tool errors',fmt:f,lower:true},
+ {key:'tools_unique',label:'Distinct tools',fmt:f},
+ {key:'top_tools',label:'Most used',text:s=>(s.top_tools||[]).slice(0,3).map(t=>`${t.name} ${f(t.calls)}`).join(' · ')||'none'},
+];
+const COMPARE_SETUP_ROWS=[
+ {label:'App',text:s=>s.label||s.provider||'--'},
+ {label:'Model',text:s=>s.primary_model||(s.models||[]).join(', ')||'--'},
+ {label:'Reasoning effort',text:s=>s.reasoning_effort||'default'},
+ {label:'Project',text:s=>projectFilterLabel(s.project||'')||'local'},
+ {label:'Started',text:s=>s.start||'--',same:true},
+];
+function compareDelta(row,value,base){
+ if(value==null||base==null||row.text)return '';
+ if(row.points){
+  const diff=Math.round(100*(value-base));
+  if(!diff)return '<span class=compareDelta>same</span>';
+  const better=row.lower===undefined?'':(diff<0)===row.lower?' better':' worse';
+  return `<span class="compareDelta${better}">${diff>0?'+':'−'}${Math.abs(diff)} pts</span>`;
+ }
+ if(value===base)return '<span class=compareDelta>same</span>';
+ if(!base)return '';
+ const ratio=(value-base)/Math.abs(base),better=row.lower===undefined?'':(ratio<0)===row.lower?' better':' worse';
+ const text=Math.abs(ratio)>=1.95?`${(value/base).toFixed(1)}×`:`${ratio>0?'+':'−'}${Math.round(Math.abs(ratio)*100)}%`;
+ return `<span class="compareDelta${better}">${text}</span>`;
+}
+function compareTableHtml(sessions,best){
+ const baseline=sessions.find(s=>s.key===compareBaseline)||sessions[0];
+ const head=`<thead><tr><th scope=col>Metric</th>${sessions.map((s,i)=>`<th scope=col><span class=compareLetter style="--compare-color:${compareColor(i)}">${s.letter}</span>${s.key===baseline.key?'Baseline':'vs '+esc(baseline.letter)}</th>`).join('')}</tr></thead>`;
+ const setup=COMPARE_SETUP_ROWS.map(row=>{
+  const values=sessions.map(row.text),differs=!row.same&&new Set(values).size>1;
+  return `<tr${differs?' class=differs':''}><td>${esc(row.label)}</td>${values.map(value=>`<td class=text title="${esc(value)}">${esc(value)}</td>`).join('')}</tr>`;
+ }).join('');
+ const body=COMPARE_ROWS.map(row=>{
+  if(row.group)return `<tr class=compareGroup><th colspan=${sessions.length+1} scope=colgroup>${esc(row.group)}</th></tr>`;
+  if(row.text)return `<tr><td>${esc(row.label)}</td>${sessions.map(s=>`<td class=text title="${esc(row.text(s))}">${esc(row.text(s))}</td>`).join('')}</tr>`;
+  if(sessions.every(s=>s[row.key]==null))return '';
+  return `<tr><td>${esc(row.label)}</td>${sessions.map(s=>{
+   const value=s[row.key];
+   if(value==null)return `<td class="mono compareUnavailable"${row.key==='cost'?` ${tipAttrs(COST_UNAVAILABLE_TIP)}`:' title="Not reported for this session"'}>--</td>`;
+   const isBest=best[row.key]===s.key,delta=s.key===baseline.key?'':compareDelta(row,value,baseline[row.key]);
+   return `<td class=mono>${esc(row.fmt(value,s))}${isBest?'<span class=compareBest>best</span>':''}${delta}</td>`;
+  }).join('')}</tr>`;
+ }).join('');
+ return `<div class=compareTableWrap><table class=compareTable><caption class=compareCaption>Metric comparison against the baseline session</caption>${head}<tbody><tr class=compareGroup><th colspan=${sessions.length+1} scope=colgroup>Setup</th></tr>${setup}${body}</tbody></table></div>`;
+}
+function compareChartHtml(sessions){
+ const metric=compareChartMetric==='cost'&&sessions.some(s=>s.cost!=null)?'cost':'tokens';
+ const lines=sessions.map((s,i)=>({s,i,points:(s.series||[]).filter(p=>p[metric]!=null)})).filter(line=>line.points.length);
+ const toggle=`<div class=seg role=group aria-label="Chart metric"><button type=button data-compare-chart=cost aria-pressed="${metric==='cost'}" class="${metric==='cost'?'on':''}">Cost</button><button type=button data-compare-chart=tokens aria-pressed="${metric==='tokens'}" class="${metric==='tokens'?'on':''}">Tokens</button></div>`;
+ const head=`<div class=compareSectionHead><h3>Cumulative ${metric==='cost'?'cost':'tokens'} by execution</h3>${toggle}</div>`;
+ if(!lines.length)return `<section class="card compareSection">${head}<div class=signalEmpty>No execution series is available for these sessions.</div></section>`;
+ const VW=1040,VH=250,ML=64,MR=74,MT=14,MB=30,PW=VW-ML-MR,PH=VH-MT-MB;
+ const maxX=Math.max(1,...lines.map(line=>line.points[line.points.length-1].i)),maxY=Math.max(metric==='cost'?.001:1,...lines.map(line=>Math.max(...line.points.map(p=>p[metric]))));
+ const x=v=>ML+PW*(v/maxX),y=v=>MT+PH*(1-v/maxY),fmt=metric==='cost'?money:compactNumber;
+ let svg='';
+ for(let k=0;k<=4;k++){const yy=MT+PH*k/4;svg+=`<line x1="${ML}" x2="${ML+PW}" y1="${yy}" y2="${yy}" stroke="${CHART.grid}"/><text x="${ML-8}" y="${yy+4}" text-anchor="end" fill="${CHART.lbl}" font-size="10">${esc(fmt(maxY*(1-k/4)))}</text>`;}
+ const ticks=Math.min(8,maxX);
+ for(let k=0;k<=ticks;k++){const v=Math.round(maxX*k/ticks);svg+=`<text x="${x(v)}" y="${VH-10}" text-anchor="middle" fill="${CHART.lbl}" font-size="10">${f(v)}</text>`;}
+ lines.forEach(line=>{
+  const pts=[{i:0,[metric]:0},...line.points],color=compareColor(line.i),last=line.points[line.points.length-1];
+  svg+=`<path d="${pts.map((p,k)=>`${k?'L':'M'}${x(p.i).toFixed(1)},${y(p[metric]).toFixed(1)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${x(last.i)}" cy="${y(last[metric])}" r="4" fill="${color}" stroke="#07090c" stroke-width="2"/><text x="${Math.min(VW-4,x(last.i)+8)}" y="${y(last[metric])+4}" fill="${color}" font-size="11" font-weight="700"${x(last.i)+8>VW-MR?' text-anchor="end"':''}>${line.s.letter} ${esc(fmt(last[metric]))}</text>`;
+ });
+ const label=lines.map(line=>`${line.s.letter}: ${fmt(line.points[line.points.length-1][metric])} over ${f(line.points[line.points.length-1].i)} executions`).join('; ');
+ return `<section class="card compareSection">${head}<svg class=compareChart viewBox="0 0 ${VW} ${VH}" role=img aria-label="${esc(`Cumulative ${metric} by execution. ${label}`)}">${svg}<text x="${ML+PW}" y="${VH-10}" text-anchor="end" fill="${CHART.lbl}" font-size="10" dx="${MR-4}">execution</text></svg><div class=compareLegend>${lines.map(line=>`<span><i style="--compare-color:${compareColor(line.i)}"></i>${line.s.letter} · ${esc(line.s.title)}</span>`).join('')}</div></section>`;
+}
+function compareBreakdownHtml(sessions){
+ const rows=sessions.map((s,i)=>({s,i})).filter(row=>row.s.cost_parts&&row.s.cost>0);
+ if(!rows.length)return '';
+ const parts=[['input','Fresh input','var(--c-input)'],['cache_write','Cache writes','var(--c-cache-write)'],['cache_read','Cache reads','var(--c-cache-read)'],['output','Output','var(--c-output)'],['server_tools','Server tools','var(--faint)']];
+ const max=Math.max(...rows.map(row=>row.s.cost));
+ return `<section class="card compareSection"><h3>Where the cost went</h3><div class=compareBreakdown>${rows.map(({s,i})=>`<div class=compareBreakdownRow><span class=compareLetter style="--compare-color:${compareColor(i)}">${s.letter}</span><div class=compareBreakdownBar role=img aria-label="${esc(`${s.letter}: `+parts.filter(([key])=>s.cost_parts[key]>0).map(([key,label])=>`${label} ${money(s.cost_parts[key])}`).join(', '))}" style="width:${Math.max(4,100*s.cost/max)}%">${parts.filter(([key])=>s.cost_parts[key]>0).map(([key,label,color])=>`<i style="width:${100*s.cost_parts[key]/s.cost}%;background:${color}" title="${esc(`${label}: ${money(s.cost_parts[key])}`)}"></i>`).join('')}</div><b class=mono>${esc(money(s.cost))}</b></div>`).join('')}</div><div class=compareLegend>${parts.filter(([key])=>rows.some(row=>row.s.cost_parts[key]>0)).map(([,label,color])=>`<span><i class=part style="background:${color}"></i>${label}</span>`).join('')}</div></section>`;
+}
+function compareMatchesHtml(matches,sessions){
+ const full=compareIds.length>=COMPARE_MAX,same=sessions.length&&sessions.every(s=>s.title_key&&s.title_key===sessions[0].title_key);
+ const heading=same||sessions.length===1?'Other runs with the same opening prompt':'Other runs with a matching opening prompt';
+ const body=(matches||[]).length?`<div class=compareMatches>${matches.map(m=>`<div class=compareMatch><div style="min-width:0"><div class=t title="${esc(m.title)}">${esc(m.title)}</div><div class=meta>${esc(m.label)} · ${esc((m.models||[]).join(', ')||'model unknown')} · ${esc(m.last||m.start||'')} · ${f(m.turns)} execs · ${m.cost==null?'cost unavailable':esc(money(m.cost))}</div></div><div class=compareMatchActions><button class=tbtn type=button data-compare-open-session="${esc(m.key)}">Open</button><button class=tbtn type=button data-compare-add="${esc(m.key)}"${full?' disabled title="Comparison is full"':''}>Add</button></div></div>`).join('')}</div>`:'<div class=signalEmpty>No other recorded sessions share these titles yet. Run the same prompt again and the new session will appear here.</div>';
+ return `<section class="card compareSection"><h3>${heading}</h3>${body}</section>`;
+}
+function renderComparison(){
+ const root=$('compare-body');
+ if(!root)return;
+ const notice=compareNotice?`<div class=compareNote role=status>${esc(compareNotice)}</div>`:'';
+ if(!compareIds.length){
+  root.innerHTML=`${notice}<section class="card compareEmpty"><h3>No sessions selected</h3><p>In All sessions, use the check box at the start of a row to pick up to ${COMPARE_MAX} sessions. To compare repeated runs of one prompt, search for its title, select one run, and add the matching runs from here.</p><button class=tbtn type=button data-compare-pick>Choose sessions</button></section>`;
+  return;
+ }
+ if(compareError){root.innerHTML=`${notice}<section class="card compareEmpty"><h3>Comparison unavailable</h3><p>${esc(compareError)}</p><button class=tbtn type=button data-compare-retry>Try again</button></section>`;return;}
+ if(!compareData||compareLoadedKey!==compareIds.join(',')&&compareLoading){root.innerHTML=`${notice}<section class="card compareEmpty"><p>Loading comparison…</p></section>`;return;}
+ const sessions=compareData.sessions||[],best=compareData.best||{};
+ if(!sessions.some(s=>s.key===compareBaseline))compareBaseline=sessions[0]?.key||'';
+ const cards=`<div class=compareCards style="grid-template-columns:repeat(${Math.max(2,sessions.length)},minmax(0,1fr))">${sessions.map((s,i)=>{
+  const baseline=s.key===compareBaseline;
+  return `<article class="card compareCard" style="--compare-color:${compareColor(i)}"><div class=compareCardTop><span class=compareLetter>${s.letter}</span><span class="badge app ${appBadgeClass(s)}">${runtimeMarkSvg(s)}${esc(s.label||s.provider)}</span>${baseline&&sessions.length>1?'<span class=compareBaselineTag>Baseline</span>':''}</div><div class=compareCardTitle title="${esc(s.title)}">${esc(s.title)}</div><div class=compareCardMeta>${esc(s.primary_model||(s.models||[]).join(', ')||'model unknown')} · ${esc(s.start||'')}</div><div class="compareCardCost mono">${s.cost==null?costValueHtml('',false):esc(money(s.cost)+(s.cost_approx||s.usage_basis!=='reported'?' est':''))}</div><div class=compareCardMeta>${f(s.turns)} execs · ${s.duration_s==null?'time unavailable':esc(waitFmt(s.duration_s))+' active'} · ${s.tokens==null?'tokens unavailable':esc(compactNumber(s.tokens))+' tok'}</div><div class=compareCardActions><button type=button data-compare-open-session="${esc(s.key)}">Open</button>${sessions.length>1?`<button type=button data-compare-baseline="${esc(s.key)}"${baseline?' disabled':''}>${baseline?'Baseline':'Set as baseline'}</button>`:''}<button type=button data-compare-remove="${esc(s.key)}">Remove</button></div></article>`;
+ }).join('')}</div>`;
+ if(sessions.length<2){
+  root.innerHTML=`${notice}${cards}<section class="card compareEmpty"><h3>Add one more session</h3><p>Pick another session in All sessions, or add a matching run below, to see side-by-side metrics and insights.</p><button class=tbtn type=button data-compare-pick>Choose sessions</button></section>${compareMatchesHtml(compareData.matches,sessions)}`;
+  return;
+ }
+ const insights=`<section class="card compareSection"><h3>Insights</h3><ul class=compareInsights>${(compareData.insights||[]).map(item=>`<li class="${esc(item.kind==='caveat'?'caveat':item.tone||'info')}">${esc(item.text)}</li>`).join('')}</ul></section>`;
+ const table=`<section class="card compareSection"><div class=compareSectionHead><h3>Side by side</h3><span class=allSessionsHint>Deltas are against baseline ${esc((sessions.find(s=>s.key===compareBaseline)||sessions[0]).letter)} · unavailable evidence shows --</span></div>${compareTableHtml(sessions,best)}</section>`;
+ root.innerHTML=notice+cards+insights+table+compareChartHtml(sessions)+compareBreakdownHtml(sessions)+compareMatchesHtml(compareData.matches,sessions);
+}
+$('session-compare').onclick=event=>{
+ const target=event.target.closest('button');
+ if(!target||target.disabled)return;
+ if(target.id==='compare-pick'||target.hasAttribute('data-compare-pick')){openSessionScope('all');return;}
+ if(target.id==='compare-clear'){compareNotice='';setCompareIds([]);return;}
+ if(target.hasAttribute('data-compare-retry')){compareError='';loadComparison({force:true});return;}
+ if(target.dataset.compareRemove){compareNotice='';setCompareIds(compareIds.filter(id=>id!==target.dataset.compareRemove));return;}
+ if(target.dataset.compareAdd){compareNotice='';toggleCompareId(target.dataset.compareAdd);return;}
+ if(target.dataset.compareBaseline){compareBaseline=target.dataset.compareBaseline;localStorage.setItem('tm_compare_baseline',compareBaseline);renderComparison();return;}
+ if(target.dataset.compareChart){compareChartMetric=target.dataset.compareChart;localStorage.setItem('tm_compare_chart',compareChartMetric);renderComparison();return;}
+ if(target.dataset.compareOpenSession)selectSession(target.dataset.compareOpenSession,{returnScope:'compare'});
+};
+compareUiReady=true;
+renderSessionScope();
 function mergeAllSessionInventory(inventory,liveSessions){
- const rows=new Map((inventory||[]).map(row=>[String(row.id),row]));
- (liveSessions||[]).forEach(row=>rows.set(String(row.id),row));
+ const rows=new Map((inventory||[]).map(row=>[compareKeyFor(row),row]));
+ (liveSessions||[]).forEach(row=>rows.set(compareKeyFor(row),row));
  return [...rows.values()];
 }
 function subagentUsageIdentity(row,dimension){
@@ -6856,8 +7144,16 @@ function renderAllSessions(xs){
 	 setLogText($('g-count'),`${f(sessions.length)} of ${f(all.length)} sessions · ${money(shownCost)} covered spend · ${f(costCovered)} of ${f(sessions.length)} cost-covered${localEstimates?` · includes ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}`);
  const maxCost=Math.max(.001,...sessions.map(s=>s.cost||0));
  reconcileLogRows(sessions,maxCost,liveSessionIds);
+ if(compareIds.length)syncCompareSelectionUi();
 }
 $('slist').onclick=event=>{
+ const compareButton=event.target.closest('[data-compare-toggle]');
+ if(compareButton){
+  event.stopPropagation();
+  if(compareButton.dataset.compareTitle)compareTitles.set(compareButton.dataset.compareToggle,compareButton.dataset.compareTitle);
+  toggleCompareId(compareButton.dataset.compareToggle);
+  return;
+ }
  const identityButton=event.target.closest('[data-session-model-identity]');
  if(identityButton){
   event.stopPropagation();
@@ -7537,6 +7833,7 @@ function applyLiveState(state){
   if(inventoryStale)loadAllSessions();
   else renderAllSessions(LATEST.xsession);
  }
+ if(sessionSurfaceActive&&currentPanel==='sessions'&&sessionScope==='compare'&&compareIds.length&&!compareLoading&&Date.now()-compareLoadedAt>15000)loadComparison({force:true});
  if(sessionSurfaceActive&&currentPanel==='sessions'&&sessionScope==='subagents'){
   const inventoryStale=!allSessionInventory||allSessionInventoryAt!==Number(LATEST.xsession?.generated_at||0);
   renderSubagentExplorer(LATEST.xsession?.agent_usage);

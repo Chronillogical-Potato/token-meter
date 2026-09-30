@@ -90,6 +90,12 @@ from token_meter.domain.builder_recap import (
     VALID_RECAP_RANGES,
     build_builder_recap as _domain_build_builder_recap,
 )
+from token_meter.domain.compare import (
+    compare_entry as _compare_entry,
+    compare_sessions as _compare_sessions,
+    matching_sessions as _compare_matching_sessions,
+    normalize_compare_ids,
+)
 from token_meter.domain.insights import (
     build_cost_insights as _domain_build_cost_insights,
     enrich_insights as _domain_enrich_insights,
@@ -7727,6 +7733,37 @@ def spend_logs_state(start_day, end_day):
     }, 200
 
 
+def compare_sessions_state(raw_ids):
+    """Compare up to four selected sessions with a bounded, content-free projection."""
+    ids, error = normalize_compare_ids(raw_ids)
+    if error:
+        return {"ok": False, "error": error}, 400
+    inventory, ready = cached_session_sources()
+    sources = inventory if ready else None
+    entries, missing = [], []
+    for sid in ids:
+        source = find_session(sid, sources)
+        state = cached_session_state(source) if source else None
+        if not state:
+            missing.append(sid)
+            continue
+        entries.append(_compare_entry(session_summary(source), state, key=sid))
+    if not entries:
+        return {
+            "ok": False,
+            "error": "The selected sessions are no longer available.",
+            "missing": missing,
+        }, 404
+    comparison = _compare_sessions(entries)
+    rows = _xsess.get("sessions") or (_xsess.get("data") or {}).get("sessions") or ()
+    return {
+        "ok": True,
+        **comparison,
+        "missing": missing,
+        "matches": _compare_matching_sessions(comparison["sessions"], rows),
+    }, 200
+
+
 def enqueue_latest(q_, data):
     """Keep a slow SSE client subscribed by replacing queued stale snapshots."""
     try:
@@ -10023,6 +10060,11 @@ class H(BaseHTTPRequestHandler):
             }), "application/json")
         elif req_path == "/logs":
             self._send(json.dumps(log_sessions_state()), "application/json")
+        elif req_path == "/session/compare":
+            payload, status = compare_sessions_state(
+                (parse_qs(parsed.query).get("ids") or [""])[0],
+            )
+            self._send(json.dumps(payload), "application/json", status=status)
         elif req_path == "/spend/logs":
             query = parse_qs(parsed.query)
             payload, status = spend_logs_state(
