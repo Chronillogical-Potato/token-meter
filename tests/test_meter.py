@@ -6976,6 +6976,77 @@ process.stdout.write(JSON.stringify({{calls,drilldown,restored:{{view:subagentVi
         self.assertEqual(payload["sessionScope"], "all")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_session_compare_keys_forked_traces_and_routes_compare_scope(self):
+        self.assertIn("id=session-scope-compare", self.page)
+        self.assertIn("id=session-compare role=tabpanel", self.page)
+        self.assertIn("fetch(`/session/compare?ids=${encodeURIComponent(key)}`", self.page)
+        self.assertIn("{id:'compare-sessions',label:'Compare sessions'", self.page)
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const SESSION_SCOPES=['current','all','compare','subagents'];
+eval(extract('normalizeSessionScope'));eval(extract('sessionScopeRoute'));eval(extract('compareKeyFor'));
+eval(extract('mergeAllSessionInventory'));eval(extract('compareDelta'));
+const parent={{id:'root',path:'/x/rollout-1-root.jsonl',title:'Same'}};
+const fork={{id:'root',path:'/x/rollout-2-root_child.jsonl',title:'Same'}};
+const merged=mergeAllSessionInventory([parent,fork],[{{...fork,cost:2}}]);
+process.stdout.write(JSON.stringify({{
+ route:sessionScopeRoute('compare'),
+ keys:[compareKeyFor(parent),compareKeyFor(fork),compareKeyFor({{id:'only'}}),compareKeyFor({{id:'o',path:'opencode:ses_1'}}),compareKeyFor({{path:'/k/a/messages.jsonl'}}),compareKeyFor({{path:'/Users/é/日本/😀.jsonl'}}),compareKeyFor({{path:'/home/u/bad-\\udcff.jsonl'}})],
+ merged:merged.length,
+ liveWins:merged.find(row=>row.path===fork.path).cost,
+ cheaper:compareDelta({{lower:true}},0.5,1),
+ costlier:compareDelta({{lower:true}},3,1),
+ neutral:compareDelta({{}},2.5,2),
+ points:compareDelta({{lower:false,points:true}},0.9,0.6),
+ missing:compareDelta({{lower:true}},null,1),
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload["route"], "sessions-compare")
+        from token_meter.domain.compare import trace_key
+        self.assertEqual(payload["keys"], [
+            trace_key({"path": "/x/rollout-1-root.jsonl"}),
+            trace_key({"path": "/x/rollout-2-root_child.jsonl"}),
+            "only",
+            trace_key({"path": "opencode:ses_1"}),
+            trace_key({"path": "/k/a/messages.jsonl"}),
+            trace_key({"path": "/Users/é/日本/😀.jsonl"}),
+            trace_key({"path": "/home/u/bad-\udcff.jsonl"}),
+        ])
+        self.assertEqual(len(set(payload["keys"])), 7)
+        self.assertEqual(payload["merged"], 2)
+        self.assertEqual(payload["liveWins"], 2)
+        self.assertIn("better", payload["cheaper"])
+        self.assertIn("−50%", payload["cheaper"])
+        self.assertIn("worse", payload["costlier"])
+        self.assertIn("3.0×", payload["costlier"])
+        self.assertNotIn("better", payload["neutral"])
+        self.assertNotIn("worse", payload["neutral"])
+        self.assertIn("+30 pts", payload["points"])
+        self.assertIn("better", payload["points"])
+        self.assertEqual(payload["missing"], "")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_compare_clears_stale_missing_notice_when_selection_empties(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`async function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('){{',start)+1,depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+let compareIds=[],compareData={{sessions:[]}},compareError='',compareNotice='1 selected session could not be loaded right now.',compareMissing=['tgone'],compareLoadedKey='tgone',compareLoading=false,compareRequestSeq=0,rendered=0;
+function renderComparison(){{rendered++;}}
+eval(extract('loadComparison'));
+loadComparison().then(()=>process.stdout.write(JSON.stringify({{compareNotice,compareMissing,compareData,rendered}})));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload, {"compareNotice": "", "compareMissing": [], "compareData": None, "rendered": 1})
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagents_have_a_primary_page_and_canonical_return_route(self):
         self.assertIn("id=tab-subagents", self.page)
         self.assertIn("id=view-subagents", self.page)
@@ -10435,11 +10506,12 @@ console.log(JSON.stringify({
             "const interactingLogRow=forceAllSessionRowRefresh?null:root.querySelector('.srow:hover,.srow:focus-within');",
             "if(interactingLogRow)return;",
             "function mergeAllSessionInventory(inventory,liveSessions)",
-            "(liveSessions||[]).forEach(row=>rows.set(String(row.id),row))",
+            "(liveSessions||[]).forEach(row=>rows.set(compareKeyFor(row),row))",
             "const liveSessionIds=new Set((xs.current_sessions||[]).map(session=>String(session.id||'')));",
             "const live=liveSessionIds.has(id)",
             "const hasChildren=childAgentsFor(s).length>0;",
-            "const className=`srow${active?' active':''}${live?' live':''}${hasChildren?' hasChildren':''}`",
+            "const compareIndex=compareIds.indexOf(rowKey);",
+            "className=`srow${active?' active':''}${live?' live':''}${hasChildren?' hasChildren':''}${compareIndex>=0?' compareSelected':''}`",
             ".srow.active,.srow.live{border-color:rgba(0,188,235,.62)",
             "const existing=new Map([...root.children]",
             "if(row.className!==className)row.className=className",
@@ -10703,7 +10775,7 @@ console.log(JSON.stringify({
         self.assertNotIn("data-current-panel=sessions", self.page)
         self.assertNotIn('id=current-tabs', self.page)
         self.assertRegex(self.page, r"id=tab-session[^>]*>.*?<span class=tabLabel>Sessions</span>")
-        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='current-sessions')", self.page)
+        self.assertIn("if(h==='sessions'||h==='sessions-all'||h==='sessions-compare'||h==='current-sessions')", self.page)
         self.assertIn("history.replaceState(null,'','/#sessions')", self.page)
         self.assertIn("function currentSessionModelName", self.page)
         self.assertIn("row.session_name||row.project||'Untitled session'", self.page)
@@ -15444,6 +15516,75 @@ class CapabilityConfigTests(unittest.TestCase):
 
 
 class DailySummaryTests(unittest.TestCase):
+    def test_compare_sessions_state_projects_selected_sessions_without_content(self):
+        from token_meter.domain.compare import trace_key
+        pool = [
+            {"id": "one", "path": "/private/traces/ws/one/messages.jsonl", "provider": "kiro"},
+            {"id": "two", "path": "/private/traces/ws/two/messages.jsonl", "provider": "kiro"},
+            {"id": "root", "path": "/private/traces/rollout-9-root.jsonl", "provider": "codex"},
+        ]
+        key = {source["id"]: trace_key(source) for source in pool}
+
+        def summary(source):
+            return {
+                "id": source["id"], "path": source["path"], "title": "Same prompt",
+                "label": "Kiro", "provider": source["provider"], "models": ["m"],
+                "usage_basis": "reported", "availability": {"cost": True},
+            }
+
+        def state(source):
+            cost = 1.0 if source["id"] == "one" else 2.5
+            return {
+                "availability": {"cost": True, "tokens": True},
+                "total_cost": cost, "turns": 4, "total_tokens": 1000,
+                "timing": {"duration_s": 60, "duration_available": True},
+                "series": [{"i": 1, "cost": cost, "in": 10, "out": 5,
+                            "user_message": "PRIVATE PROMPT TEXT"}],
+                "source": {"path": source["path"]},
+            }
+
+        saved_cache = dict(meter._xsess)
+        try:
+            meter._xsess["sessions"] = [
+                {"id": "one", "title": "Same prompt", "path": pool[0]["path"]},
+                {"id": "root", "title": "same prompt", "mtime": 5, "cost": 0.4, "path": pool[2]["path"]},
+                {"id": "four", "title": "Different", "path": "/private/traces/four.jsonl"},
+            ]
+            with mock.patch.object(meter, "cached_session_sources", return_value=(pool, True)), \
+                    mock.patch.object(meter, "session_summary", side_effect=summary), \
+                    mock.patch.object(meter, "cached_session_state", side_effect=state):
+                payload, status = meter.compare_sessions_state(f"{key['one']},{key['two']},tgone")
+                single, single_status = meter.compare_sessions_state(key["one"])
+                empty, empty_status = meter.compare_sessions_state("")
+                missing, missing_status = meter.compare_sessions_state("tgone,talsogone")
+        finally:
+            meter._xsess.clear()
+            meter._xsess.update(saved_cache)
+
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual([row["letter"] for row in payload["sessions"]], ["A", "B"])
+        self.assertEqual([row["id"] for row in payload["sessions"]], ["one", "two"])
+        # Repeated file names fall back to the session id; unique stems open the exact trace.
+        self.assertEqual([row["open_id"] for row in payload["sessions"]], ["one", "two"])
+        self.assertEqual(payload["missing"], ["tgone"])
+        self.assertTrue(payload["same_title"])
+        self.assertEqual(payload["best"]["cost"], key["one"])
+        self.assertEqual([row["key"] for row in payload["matches"]], [key["root"]])
+        self.assertEqual(payload["matches"][0]["open_id"], "rollout-9-root")
+        encoded = json.dumps(payload)
+        self.assertNotIn("PRIVATE PROMPT TEXT", encoded)
+        self.assertNotIn("/private/traces", encoded)
+        self.assertEqual(single_status, 200)
+        self.assertEqual(single["insights"], [])
+        self.assertEqual((empty_status, empty["ok"]), (400, False))
+        self.assertEqual((missing_status, missing["ok"]), (404, False))
+        self.assertIn(
+            'elif req_path == "/session/compare":',
+            Path(meter.IMPLEMENTATION_FILE).read_text(),
+        )
+        self.assertFalse(meter.is_dashboard_page_path("/session/compare"))
+
     def test_spend_logs_state_validates_and_returns_full_range(self):
         sessions = (
             {

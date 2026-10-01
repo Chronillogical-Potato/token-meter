@@ -225,6 +225,16 @@ anonymous child-agent cohorts and `/session` exposes only the selected
 allowlisted group; neither native nor MCP projections receive these browser
 fields.
 
+`/session/compare?ids=` projects one to four selected traces through
+`token_meter/domain/compare.py`: an allowlisted, content-free record per trace
+(no paths, prompts, or per-execution text), best-per-metric markers, rule-based
+insights, and other sessions whose public title matches. Selection uses an
+opaque per-trace key (a hash of the trace path, mirrored in `page.html`,
+falling back to the session id) because forked and spawned threads can share a
+session id and some runtimes reuse one file name per session directory; All
+sessions rows use the same key for DOM identity. Each compared trace also
+carries an `open_id` that resolves to exactly that trace when possible.
+
 Filesystem modification time is a revision signal, not automatically user/model
 activity. Adapters derive semantic activity from trace events or authoritative
 metadata so merely opening a historical session does not promote it into

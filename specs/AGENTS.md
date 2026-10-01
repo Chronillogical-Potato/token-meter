@@ -20,6 +20,7 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
 | `token_meter/runtimes/` | Registered runtime discovery, parsing, revisions, and safe projections |
 | `token_meter/platforms/` | Host paths, process/update policy, and trash behavior |
 | `token_meter/domain/` | Runtime-neutral usage, timing, tools, insights, and aggregates |
+| `token_meter/domain/compare.py` | Content-free session comparison, insights, and same-title matching |
 | `token_meter/projections.py` | Explicit allowlisted public compatibility projections |
 | `page.html` | Entire browser dashboard: markup, styles, routing, and JavaScript |
 | `menubar/TokenMeterMenuBar.swift` | Native AppKit companion, preferences, notifications |
@@ -74,7 +75,7 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
 - Persist machine-wide settings through the existing atomic JSON-write path and action-token-protected HTTP endpoints.
 - New settings require validation, idempotent writes, migration behavior, and tests.
 - Preserve legacy hash routes and stored preferences when changing navigation or native settings.
-- Keep the top-level dashboard order `Sessions → Spend → Models → Subagents → Efficiency → Git → Learn → Tools → Settings`. The top-level Subagents page owns only role economics. Sessions contains `Current sessions`, `All sessions`, and `Subagents`; the latter owns child-run `Sessions` and `Issues` investigation. Preserve both `#subagents` and `#sessions-subagents` routes.
+- Keep the top-level dashboard order `Sessions → Spend → Models → Subagents → Efficiency → Git → Learn → Tools → Settings`. The top-level Subagents page owns only role economics. Sessions contains `Current sessions`, `All sessions`, `Compare`, and `Subagents`; Compare (`#sessions-compare`) owns side-by-side comparison of up to four selected sessions, and Subagents owns child-run `Sessions` and `Issues` investigation. Preserve both `#subagents` and `#sessions-subagents` routes.
 - Global is not a dashboard surface. Keep cross-session aggregation as shared backend data for Sessions All, Daily, Models, Tools, Efficiency, MCP, and the menu bar.
 - Keep the complete machine-wide monthly budget dashboard and controls inside Settings. The native companion may deep-link to `#settings-budgets`; preserve `#budgets` as a compatibility redirect.
 - Use macOS labels such as `⌥`, never `Alt`, in user-facing copy.
