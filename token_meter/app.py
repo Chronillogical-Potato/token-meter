@@ -83,6 +83,7 @@ from token_meter.domain.aggregates import (
 )
 from token_meter.domain.agents import (
     aggregate_agent_usage as _domain_aggregate_agent_usage,
+    build_agent_graph as _domain_build_agent_graph,
     build_agent_groups as _domain_build_agent_groups,
     find_agent_group as _domain_find_agent_group,
 )
@@ -5742,6 +5743,71 @@ def current_session_summaries(rows, now=None, max_age_s=CURRENT_SESSION_MAX_AGE_
     )
 
 
+def folded_child_root_id(source):
+    """Return the root session id an additive child source folds into, if any.
+
+    Only OpenCode child sessions with a resolved root carry `agent_root_id`;
+    every other source returns an empty string and keeps its own identity.
+    """
+    if not isinstance(source, dict) or source.get("provider") != "opencode":
+        return ""
+    return str(source.get("agent_root_id") or "")
+
+
+def fold_child_source(selected, sources):
+    """Map a folded child source to its discovered root source, else keep it."""
+    root_id = folded_child_root_id(selected)
+    if not root_id:
+        return selected
+    for source in sources or ():
+        if (
+            source.get("provider") == selected.get("provider")
+            and str(source.get("id") or "") == root_id
+        ):
+            return source
+    return selected
+
+
+def newest_current_source(sources):
+    """Pick the live source, keeping a child run under its root session."""
+    rows = list(sources or ())
+    if not rows:
+        return None
+    newest = max(rows, key=lambda source: source.get("mtime") or 0)
+    return fold_child_source(newest, rows)
+
+
+def session_budget_family(session_id, rows=None, root_id=None):
+    """Return the budget owner id, root row, and child rows for one session.
+
+    An OpenCode child run has no separate session cap: it spends against its
+    root session's cap, which in turn includes every child's spend.
+    """
+    sid = str(session_id or "")
+    rows = list(rows if rows is not None else (_xsess.get("sessions") or ()))
+    owner = str(root_id or "")
+    if not owner:
+        own = next((
+            row for row in rows
+            if str(row.get("id") or "") == sid and row.get("provider") == "opencode"
+        ), None)
+        owner = (
+            str(own.get("root_session_id") or "")
+            if own and own.get("is_child_session") else ""
+        ) or sid
+    root_row = next((
+        row for row in rows
+        if str(row.get("id") or "") == owner and row.get("provider") == "opencode"
+        and not row.get("is_child_session")
+    ), None)
+    children = [
+        row for row in rows
+        if row.get("provider") == "opencode" and row.get("is_child_session")
+        and str(row.get("root_session_id") or "") == owner
+    ] if owner else []
+    return owner, root_row, children
+
+
 def global_tool_waste(session_rows):
     return _domain_global_tool_waste(
         session_rows, runtime_resolver=source_runtime_label,
@@ -7712,9 +7778,16 @@ def canonical_agent_sources(sources):
 
     groups = defaultdict(list)
     for index, source in enumerate(source_rows):
-        if source.get("provider") != "codex":
+        provider = source.get("provider")
+        if provider not in ("codex", "opencode"):
             continue
-        physical_id = str(source.get("physical_trace_id") or "")
+        if provider == "opencode":
+            # One OpenCode session id is one physical agent. Select it once so a
+            # child is never summarized twice, and never collapse a child into
+            # its parent or another child.
+            physical_id = str(source.get("id") or "")
+        else:
+            physical_id = str(source.get("physical_trace_id") or "")
         key = physical_id or "path:" + str(source.get("path") or index)
         groups[key].append((index, source))
 
@@ -7735,12 +7808,12 @@ def canonical_agent_sources(sources):
             str(source.get("path") or ""),
         )
 
-    codex_selected = {
+    selected_agents = {
         min(candidates, key=rank)[0] for candidates in groups.values()
     }
     selected.extend(
         source for index, source in enumerate(source_rows)
-        if index in codex_selected
+        if index in selected_agents
     )
     return selected
 
@@ -7793,9 +7866,13 @@ def cross_session(sources=None):
         if row.get("_agent_records"):
             agent_rows.append(row)
 
-    agent_groups = _domain_build_agent_groups(agent_rows, now=now)
+    agent_groups, unresolved_agents = _domain_build_agent_graph(
+        agent_rows, now=now,
+    )
     agent_usage = _agent_usage_projection(
-        _domain_aggregate_agent_usage(agent_groups, now=now)
+        _domain_aggregate_agent_usage(
+            agent_groups, unresolved=unresolved_agents, now=now,
+        )
     )
 
     aggregate = _domain_aggregate_cross_session_rows(
@@ -8392,6 +8469,8 @@ def resolve_agent_source(session_id=None, caller=None, sources=None):
         return None, "No matching {} run was found.".format(supported_runtime_phrase())
     selected = max(candidates, key=lambda row: float(row.get("mtime") or 0))
     mtime = float(selected.get("mtime") or 0)
+    # A child run's live activity belongs to its root session's current run.
+    selected = fold_child_source(selected, candidates)
     if not mtime or time.time() - mtime > AGENT_CURRENT_MAX_AGE_S:
         runtime = runtime_display_label(provider) if provider else "agent"
         return None, f"No recent {runtime} run matched the caller's current project."
@@ -8476,10 +8555,30 @@ def session_budget_snapshot(source, state, settings=None):
     """Build the bounded budget state shared by dashboard and MCP surfaces."""
     source = source or {}
     state = state or {}
-    session_id = str(source.get("id") or "").strip()
+    own_id = str(source.get("id") or "").strip()
+    session_id, root_row, children = session_budget_family(
+        own_id, root_id=folded_child_root_id(source) or None,
+    )
     budget_usd, source_kind = effective_session_budget(session_id, settings)
-    cost_available = metric_available(state, "cost")
-    spend_usd = round(float(state.get("total_cost") or 0), 4) if cost_available else None
+    own_cost_available = metric_available(state, "cost")
+    spend = float(state.get("total_cost") or 0) if own_cost_available else None
+    cost_partial = False
+    if children:
+        # One cap covers the root and every child run: add the cached spend of
+        # each other family member to this session's live spend. Measured
+        # members count even when this session's own cost is unavailable, and
+        # any unavailable member makes the spend a lower bound.
+        others = [row for row in children if str(row.get("id") or "") != own_id]
+        if own_id != session_id and root_row is not None:
+            others.append(root_row)
+        measured = [row for row in others if metric_available(row, "cost")]
+        if measured:
+            spend = (spend or 0.0) + sum(float(row.get("cost") or 0) for row in measured)
+        cost_partial = spend is not None and (
+            not own_cost_available or len(measured) < len(others)
+        )
+    cost_available = spend is not None
+    spend_usd = round(spend, 4) if spend is not None else None
     percent_used = round((100 * spend_usd / budget_usd), 2) if spend_usd is not None else None
     remaining_usd = round(budget_usd - spend_usd, 4) if spend_usd is not None else None
     thresholds = list((normalize_budget_settings(
@@ -8500,6 +8599,7 @@ def session_budget_snapshot(source, state, settings=None):
         ),
         "reached_thresholds": reached,
         "cost_available": cost_available,
+        **({"cost_partial": cost_partial} if children else {}),
     }
 
 
@@ -8516,7 +8616,10 @@ def agent_budget(session_id=None, caller=None):
         "answer": "Session budget is available for this run.",
         "evidence": [],
         "recommended_action": "Use the remaining session budget when deciding whether to continue or narrow scope.",
-        "caveat": "Spend is an estimate when this runtime uses public API rates.",
+        "caveat": "Spend is an estimate when this runtime uses public API rates." + (
+            " Spend is a lower bound: some runs in this session family have no cost evidence."
+            if session.get("cost_partial") else ""
+        ),
         "dashboard_url": agent_dashboard_url(source.get("id"), "summary"),
         "as_of": agent_as_of(),
         "data_scope": "session_budget",
@@ -8535,8 +8638,11 @@ def agent_set_session_budget(session_id=None, budget_usd=None,
     source, resolution = resolve_agent_source(session_id=session_id, caller=caller)
     if not source:
         return agent_no_session(resolution)
+    budget_id = session_budget_family(
+        source.get("id"), root_id=folded_child_root_id(source) or None,
+    )[0]
     result = set_session_budget_override(
-        source.get("id"), budget_usd,
+        budget_id, budget_usd,
         expected_current_budget_usd=expected_current_budget_usd,
     )
     if not result.get("ok"):
@@ -9500,8 +9606,33 @@ def menubar_recent_sessions(sources, selected_id=None, limit=5, summaries=None):
         if key[1] and name and key not in summary_names:
             summary_names[key] = name
 
+    # A child run is listed through its root session, which inherits the
+    # child's newer activity, so the menu never offers a child as its own run.
+    source_list = list(sources or [])
+    root_keys = {
+        (str(row.get("provider") or ""), str(row.get("id") or ""))
+        for row in source_list
+    }
+    child_activity = {}
+    for row in source_list:
+        root_id = folded_child_root_id(row)
+        key = (str(row.get("provider") or ""), root_id)
+        if root_id and key in root_keys:
+            child_activity[key] = max(
+                child_activity.get(key, 0), float(row.get("mtime") or 0),
+            )
+    listed = []
+    for row in source_list:
+        key = (str(row.get("provider") or ""), folded_child_root_id(row))
+        if key[1] and key in root_keys:
+            continue
+        own_key = (str(row.get("provider") or ""), str(row.get("id") or ""))
+        if own_key in child_activity and child_activity[own_key] > float(row.get("mtime") or 0):
+            row = dict(row, mtime=child_activity[own_key])
+        listed.append(row)
+
     ordered, seen = [], set()
-    for source in sorted(sources or [], key=lambda row: -(row.get("mtime") or 0)):
+    for source in sorted(listed, key=lambda row: -(row.get("mtime") or 0)):
         sid = str(source.get("id") or "")
         if not sid or sid in seen:
             continue
@@ -9807,7 +9938,7 @@ def watcher():
         if inventory_refreshed:
             publish_source_inventory(sources)
         nf = (
-            max(sources, key=lambda source: source["mtime"])
+            newest_current_source(sources)
             if inventory_refreshed and sources else cur
         )
         sources_sig = (
@@ -10194,8 +10325,11 @@ class H(BaseHTTPRequestHandler):
             if source is None:
                 result = {"ok": False, "error": "The requested Token Meter session was not found."}
             else:
+                budget_id = session_budget_family(
+                    session_id, root_id=folded_child_root_id(source) or None,
+                )[0]
                 result = set_session_budget_override(
-                    session_id, payload.get("budget_usd"),
+                    budget_id, payload.get("budget_usd"),
                     expected_current_budget_usd=payload.get("expected_current_budget_usd"),
                 )
                 if result.get("ok"):
@@ -10298,7 +10432,10 @@ class H(BaseHTTPRequestHandler):
                     str(row.get("id") or "")
                     for row in (cross.get("current_sessions") or [])
                 }
-                st["ended"] = not live or str((st.get("source") or {}).get("id") or "") not in current_ids
+                live_id = folded_child_root_id(source) or str(
+                    (st.get("source") or {}).get("id") or ""
+                )
+                st["ended"] = not live or live_id not in current_ids
                 st["selected_live"] = live
                 if st.get("timing"):
                     st["timing"]["end_label"] = "Last activity"

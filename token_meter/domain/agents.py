@@ -257,8 +257,12 @@ def _public_agent(record, totals, now, attention_ids):
     return projected
 
 
-def build_agent_groups(session_rows, *, now=None, max_agents=100):
-    """Build bounded, cycle-free groups from adapter-supplied agent records."""
+def build_agent_graph(session_rows, *, now=None, max_agents=100):
+    """Build groups plus the records whose parent could not be resolved.
+
+    A child whose parent session was never discovered is reported here instead
+    of being silently dropped, so callers can disclose the coverage gap.
+    """
     now = float(time.time() if now is None else now)
     max_agents = max(1, min(100, int(max_agents or 100)))
     candidates = defaultdict(list)
@@ -384,7 +388,14 @@ def build_agent_groups(session_rows, *, now=None, max_agents=100):
             "_session_ids": session_ids,
         })
     groups.sort(key=lambda group: group["root_session_id"])
-    return groups
+    return groups, unresolved
+
+
+def build_agent_groups(session_rows, *, now=None, max_agents=100):
+    """Build bounded, cycle-free groups from adapter-supplied agent records."""
+    return build_agent_graph(
+        session_rows, now=now, max_agents=max_agents,
+    )[0]
 
 
 def find_agent_group(groups, session_id):
@@ -630,7 +641,7 @@ def _inventory_row(record, group, attention, now):
 
 
 def aggregate_agent_usage(
-    groups, *, now=None, max_inventory=MAX_AGENT_USAGE_INVENTORY,
+    groups, *, unresolved=(), now=None, max_inventory=MAX_AGENT_USAGE_INVENTORY,
     max_role_days=MAX_AGENT_ROLE_DAYS,
 ):
     """Aggregate child-agent usage without folding root-session work into it."""
@@ -645,6 +656,17 @@ def aggregate_agent_usage(
             entries.append((record, group))
 
     result = _usage_body(entries)
+    # Records whose parent could not be resolved are counted in totals but have
+    # no group, so the rollup must disclose them rather than look complete.
+    unresolved_records = [
+        record for record in (unresolved or ()) if isinstance(record, dict)
+    ]
+    result["totals"]["unresolved_agents"] = len(unresolved_records)
+    result["totals"]["unresolved_known_cost"] = round(sum(
+        float(record.get("cost") or 0)
+        for record in unresolved_records
+        if record.get("cost_available") is True
+    ), 6)
     max_inventory = max(
         1, min(MAX_AGENT_USAGE_INVENTORY, int(max_inventory or 1)),
     )

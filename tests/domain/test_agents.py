@@ -3,6 +3,7 @@ import unittest
 
 from token_meter.domain.agents import (
     aggregate_agent_usage,
+    build_agent_graph,
     build_agent_groups,
     find_agent_group,
 )
@@ -50,6 +51,58 @@ def session(session_id, *records, project=None):
 
 
 class AgentGroupDomainTests(unittest.TestCase):
+    def test_unresolved_children_are_reported_instead_of_silently_dropped(self):
+        """A child whose parent was never discovered must be disclosed."""
+        rows = [session(
+            "root-session",
+            agent("root", session_id="root-session", kind="root", depth=0),
+            agent("child", parent_id="root", session_id="child-session",
+                  cost=0.6),
+            agent("orphan", parent_id="archived-parent",
+                  session_id="orphan-session", cost=0.4),
+        )]
+        groups, unresolved = build_agent_graph(rows, now=30)
+        usage = aggregate_agent_usage(groups, unresolved=unresolved, now=30)
+
+        # The orphan is unresolved and reported by identity.
+        self.assertEqual([record["id"] for record in unresolved], ["orphan"])
+        # It is not a grouped child agent, so the rollup must say so.
+        self.assertEqual(usage["totals"]["agents"], 1)
+        self.assertEqual(usage["totals"]["unresolved_agents"], 1)
+        self.assertAlmostEqual(usage["totals"]["unresolved_known_cost"], 0.4)
+        self.assertEqual(
+            [row["id"] for row in usage["inventory"]], ["child"],
+        )
+        # The existing single-source wrapper still returns groups only.
+        self.assertEqual(build_agent_groups(rows, now=30), groups)
+
+    def test_unresolved_cost_stays_unavailable_when_its_price_is(self):
+        rows = [session(
+            "root-session",
+            agent("root", session_id="root-session", kind="root", depth=0),
+            agent("child", parent_id="root", session_id="child-session"),
+            agent("orphan", parent_id="gone", session_id="orphan-session",
+                  cost=None, cost_available=False),
+        )]
+        groups, unresolved = build_agent_graph(rows, now=30)
+        usage = aggregate_agent_usage(groups, unresolved=unresolved, now=30)
+
+        self.assertEqual(usage["totals"]["unresolved_agents"], 1)
+        # A missing price must not become a measured zero.
+        self.assertEqual(usage["totals"]["unresolved_known_cost"], 0)
+
+    def test_no_unresolved_children_reports_zero(self):
+        rows = [session(
+            "root-session",
+            agent("root", session_id="root-session", kind="root", depth=0),
+            agent("child", parent_id="root", session_id="child-session"),
+        )]
+        groups = build_agent_groups(rows, now=30)
+        usage = aggregate_agent_usage(groups, now=30)
+
+        self.assertEqual(usage["totals"]["unresolved_agents"], 0)
+        self.assertEqual(usage["totals"]["unresolved_known_cost"], 0)
+
     def test_builds_tree_and_selects_group_from_a_child_session(self):
         rows = [
             session("root-session", agent(

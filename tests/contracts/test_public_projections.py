@@ -172,6 +172,22 @@ class PublicProjectionTests(unittest.TestCase):
         self.assertNotIn("/private/trace", json.dumps(projected))
         self.assertNotIn("/scope/private", json.dumps(projected))
 
+    def test_agent_usage_projection_reports_unresolved_children(self):
+        projected = agent_usage_projection({
+            "totals": {
+                "agents": 2, "unresolved_agents": 3,
+                "unresolved_known_cost": 1.1804,
+                "unresolved_private": "/private/path",
+            },
+        })
+
+        self.assertEqual(projected["totals"]["unresolved_agents"], 3)
+        self.assertAlmostEqual(
+            projected["totals"]["unresolved_known_cost"], 1.1804,
+        )
+        self.assertNotIn("unresolved_private", projected["totals"])
+        self.assertNotIn("/private/path", json.dumps(projected))
+
     def test_agent_usage_projection_allowlists_bounded_project_scopes(self):
         scopes = [{
             "window": "7d",

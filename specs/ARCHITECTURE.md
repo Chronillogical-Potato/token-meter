@@ -117,6 +117,30 @@ within a response but excludes inter-prompt gaps, open responses, and idle time
 after completion. Missing component-level timing evidence remains unavailable;
 the relationship layer never substitutes timestamp lifespan.
 
+OpenCode is additive rather than grouped. A parent session's reported cost
+excludes its child sessions, and child message sets do not overlap the parent, so
+Token Meter never subtracts child cost from a parent (a test pins this
+assumption), and child sessions are discovered and counted as independent sessions instead of
+being folded into a parent headline the way Claude and Codex require. Each
+session's root ancestor and depth are resolved with a bounded, cycle-safe walk;
+an archived session excludes its whole family from discovery, and a child whose
+parent record is missing produces no agent edge while remaining a counted
+session. Only the resolved root session id is published on a child row. Parent linkage comes only from `session.parent_id`;
+`message.parentID` is a message-level reference and never a session relationship.
+The provider-reported `session.agent` value is the bounded child role, and a
+child's project resolves from its parent root's directory rather than its own
+agent column. A reported child cost of zero is a measured free-tier price and
+stays available evidence; it is never treated as missing pricing.
+A child whose parent record is missing is counted in totals but has no group.
+The loader reports the count and covered cost of those unattributed records, the
+browser discloses them on the Subagents page, and the All sessions row-count line
+separates runs shown under a parent card from runs with no parent session, so a
+coverage gap is stated rather than left looking complete. For current sessions,
+menu-bar recents, and session caps, child runs fold into their root session:
+the root's live row and cap include every child's measured spend, and a child
+has no separate current row or cap. A folded figure is available when any member
+is measured and is marked partial (a lower bound) when any member is not.
+
 The Pi adapter reads only Pi-owned JSONL session files and accepts a source only
 when it has the expected Pi session header. It projects recorded usage, local
 cost, structural tool evidence (including per-call error status), and inferred

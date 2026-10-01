@@ -82,20 +82,50 @@ class OpenCodeRuntimeAdapterTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def test_discovers_only_top_level_active_sessions_with_stable_revision(self):
+    def _source(self, session_id="session-1", *, legacy=False):
+        """Select one discovered session by id.
+
+        Discovery now includes child sessions, so tests must name the session
+        they mean rather than relying on the most recently updated row.
+        """
+        discover = self.adapter.discover_legacy if legacy else self.adapter.discover
+        context = DiscoveryContext(home=str(self.root))
+        rows = discover(context)
+        for row in rows:
+            identifier = (
+                row.get("id") if legacy else row.session_id
+            )
+            if identifier == session_id:
+                return row
+        raise AssertionError(
+            "session {!r} was not discovered; got {!r}".format(
+                session_id,
+                [row.get("id") if legacy else row.session_id for row in rows],
+            )
+        )
+
+    def test_discovers_roots_and_children_with_stable_revision(self):
         sources = tuple(self.adapter.discover(DiscoveryContext(home=str(self.root))))
 
-        self.assertEqual(len(sources), 1)
-        source = sources[0]
+        self.assertEqual(
+            sorted(source.session_id for source in sources),
+            ["child", "session-1"],
+        )
+        source = self._source("session-1")
         self.assertEqual(source.runtime_id, "opencode")
-        self.assertEqual(source.session_id, "session-1")
         self.assertEqual(source.model_ref.model_id, "model-1")
         self.assertEqual(source.model_ref.provider_id, "models")
         self.assertEqual(source.project, "/work/project")
         self.assertNotIn("private", repr(source))
 
+    def test_child_project_is_scoped_to_the_parent_root_directory(self):
+        source = self._source("child")
+
+        self.assertEqual(source.project, "/work/project")
+        self.assertNotIn("build", repr(source))
+
     def test_revision_changes_when_message_or_part_changes(self):
-        source = tuple(self.adapter.discover(DiscoveryContext(home=str(self.root))))[0]
+        source = self._source("session-1")
         before = self.adapter.current_revision(source)
         with contextlib.closing(sqlite3.connect(self.db_path)) as conn, conn:
             conn.execute("UPDATE part SET time_updated=9000 WHERE id='part-1'")
@@ -104,7 +134,7 @@ class OpenCodeRuntimeAdapterTests(unittest.TestCase):
         self.assertNotEqual(before, after)
 
     def test_normalized_load_preserves_measured_zero_and_never_loads_content(self):
-        source = tuple(self.adapter.discover(DiscoveryContext(home=str(self.root))))[0]
+        source = self._source("session-1")
         result = self.adapter.load(source, DetailLevel.FULL)
 
         self.assertEqual(result.usage.input_tokens.value, 10)
@@ -121,9 +151,7 @@ class OpenCodeRuntimeAdapterTests(unittest.TestCase):
 
     def test_mcp_trace_views_are_structural_and_content_free(self):
         self.adapter.compatibility = meter._opencode_compatibility()
-        source = self.adapter.discover_legacy(
-            DiscoveryContext(home=str(self.root)),
-        )[0]
+        source = self._source("session-1", legacy=True)
         state = self.adapter.load(source, DetailLevel.FULL)
 
         assert_runtime_trace_privacy(
@@ -140,7 +168,7 @@ class OpenCodeRuntimeAdapterTests(unittest.TestCase):
             conn.execute(
                 "UPDATE session SET tokens_cache_write=NULL, cost=NULL WHERE id='session-1'"
             )
-        source = tuple(self.adapter.discover(DiscoveryContext(home=str(self.root))))[0]
+        source = self._source("session-1")
 
         result = self.adapter.load(source, DetailLevel.SUMMARY)
 
@@ -179,13 +207,33 @@ class OpenCodeRuntimeAdapterTests(unittest.TestCase):
     def test_legacy_discovery_projection_matches_current_shape(self):
         rows = self.adapter.discover_legacy(DiscoveryContext(home=str(self.root)))
 
-        self.assertEqual(rows, ({
+        self.assertEqual(len(rows), 2)
+        self.assertEqual({row["id"] for row in rows}, {"session-1", "child"})
+        root = self._source("session-1", legacy=True)
+        self.assertEqual(root, {
             "provider": "opencode", "client": "opencode", "label": "OpenCode",
             "runtime": "OpenCode", "id": "session-1", "session": "session-1",
             "path": "opencode:session-1", "project": "/work/project", "mtime": 4.0,
             "signature_mtime": 4.0, "title": "A safe title", "model": "model-1",
             "model_provider": "models", "agent": "build", "tools_loaded": 0,
-        },))
+            "agent_parent_id": "", "agent_root_id": "", "agent_role": "build",
+            "agent_depth": 0, "agent_has_children": True,
+        })
+        child = self._source("child", legacy=True)
+        self.assertEqual(child["id"], "child")
+        self.assertEqual(child["agent_parent_id"], "session-1")
+        self.assertEqual(child["agent_root_id"], "session-1")
+        self.assertEqual(child["agent_depth"], 1)
+        self.assertEqual(child["project"], "/work/project")
+        self.assertFalse(child["agent_has_children"])
+        self.assertTrue(root["agent_has_children"])
+
+    def test_archived_ancestor_excludes_descendants_from_discovery(self):
+        with contextlib.closing(sqlite3.connect(self.db_path)) as conn, conn:
+            conn.execute("UPDATE session SET time_archived=9000 WHERE id='session-1'")
+        rows = self.adapter.discover_legacy(DiscoveryContext(home=str(self.root)))
+
+        self.assertEqual(rows, ())
 
 
 if __name__ == "__main__":

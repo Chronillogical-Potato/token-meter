@@ -1,9 +1,11 @@
 """Native read-only adapter for OpenCode's SQLite evidence store."""
 
 import contextlib
+import hashlib
 import json
 import math
 import os
+import re
 import sqlite3
 import time
 from collections import defaultdict
@@ -36,6 +38,9 @@ from token_meter.domain.usage import (
 
 DETAIL_MESSAGE_LIMIT = 200
 SUMMARY_MESSAGE_LIMIT = 500
+# Bound for walking session.parent_id chains. Real nesting is shallow; the bound
+# keeps a malformed or cyclic chain from costing more than a few lookups.
+MAX_SESSION_ANCESTRY = 32
 
 
 def _compact_text(value, limit=90):
@@ -168,6 +173,80 @@ def display_cost(breakdown):
     }
 
 
+def safe_agent_role(value, limit=64):
+    """Keep a short provider-reported agent name, never arbitrary prose."""
+    if not isinstance(value, str):
+        return ""
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return ""
+    text = " ".join(value.split())
+    lowered = text.lower()
+    if not text or len(text) > limit:
+        return ""
+    if (
+        text.startswith(("/", "\\", "~", "./", "../"))
+        or re.match(r"^[A-Za-z]:[\\/]", text)
+        or "://" in text
+        or lowered.startswith(("bearer ", "sk-", "-----begin "))
+        or any(marker in lowered for marker in (
+            "api_key=", "api-key=", "secret=", "token=",
+        ))
+    ):
+        return ""
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", text):
+        return text
+    return ""
+
+
+def opaque_agent_id(session_id):
+    """Return a stable public agent ID without exposing the private session id."""
+    physical = str(session_id or "")
+    if not physical:
+        return ""
+    digest = hashlib.sha256(
+        b"token-meter:opencode-agent:v1\0" + physical.encode("utf-8", "replace")
+    ).hexdigest()
+    return "opencode-agent-" + digest
+
+
+def session_lineage(session_id, ancestry, max_depth=MAX_SESSION_ANCESTRY):
+    """Resolve one session's family from `{id: (parent_id, directory, archived)}`.
+
+    Returns the resolved root id (empty for a root session or when the chain
+    cannot reach a true root), the nesting depth, the root ancestor's directory,
+    and whether the session or any ancestor is archived. A missing parent, a
+    cycle, or a chain longer than `max_depth` leaves the family unresolved.
+    """
+    own = ancestry.get(session_id) or ("", "", False)
+    parent, directory, archived = own
+    depth = 0
+    seen = {session_id}
+    top_directory = directory
+    resolved = not parent
+    current = parent
+    while current:
+        depth += 1
+        if current in seen or depth > max_depth or current not in ancestry:
+            break
+        seen.add(current)
+        next_parent, next_directory, next_archived = ancestry[current]
+        if next_archived:
+            archived = True
+            break
+        top_directory = next_directory or top_directory
+        if not next_parent:
+            resolved = True
+            break
+        current = next_parent
+    root_id = current if parent and resolved and not archived else ""
+    return {
+        "root_id": root_id,
+        "depth": depth,
+        "directory": top_directory,
+        "archived": bool(archived),
+    }
+
+
 class OpenCodeRuntimeAdapter:
     """Own OpenCode discovery, revision, safe loading, and legacy projection."""
 
@@ -263,33 +342,68 @@ class OpenCodeRuntimeAdapter:
     def _query_source_records(self):
         try:
             with contextlib.closing(self.connection()) as connection:
+                # Lightweight ancestry for every session, archived or not, so a
+                # descendant of an archived session can be excluded with it.
+                ancestry_rows = connection.execute(
+                    "SELECT id, parent_id, COALESCE(directory,''), "
+                    "time_archived IS NOT NULL FROM session"
+                ).fetchall()
                 rows = connection.execute(
                     "SELECT s.id, s.directory, COALESCE(s.title,''), "
                     "COALESCE(s.agent,''), COALESCE(s.model,''), "
+                    "s.parent_id, "
                     "s.time_created, s.time_updated, "
                     "MAX(COALESCE(s.time_updated,0), "
                     "COALESCE((SELECT MAX(m.time_updated) FROM message m "
                     "WHERE m.session_id=s.id),0), "
                     "COALESCE((SELECT MAX(p.time_updated) FROM part p "
                     "WHERE p.session_id=s.id),0)) "
-                    "FROM session s WHERE s.parent_id IS NULL "
-                    "AND s.time_archived IS NULL ORDER BY s.time_updated DESC"
+                    "FROM session s "
+                    "WHERE s.time_archived IS NULL "
+                    "ORDER BY s.time_updated DESC"
                 ).fetchall()
         except (OSError, sqlite3.Error):
             return None
+        ancestry = {
+            str(sid): (str(parent or ""), str(directory or ""), bool(archived))
+            for sid, parent, directory, archived in ancestry_rows
+        }
+        lineages = {}
+        for row in rows:
+            lineages[str(row[0])] = session_lineage(str(row[0]), ancestry)
+        # A session archived as part of an archived family is excluded together
+        # with every descendant, matching OpenCode's own archive semantics.
+        kept = {sid for sid, lineage in lineages.items() if not lineage["archived"]}
+        parents_with_children = {
+            ancestry[sid][0] for sid in kept if ancestry.get(sid, ("",))[0]
+        }
         records = []
-        for sid, directory, title, agent, raw_model, created, updated, revision in rows:
+        for (
+            sid, directory, title, agent, raw_model, parent_id,
+            created, updated, revision,
+        ) in rows:
+            sid = str(sid)
+            if sid not in kept:
+                continue
+            lineage = lineages[sid]
             model = _json_object(raw_model, {}) or {}
             title = str(title or "")
             if title.startswith("New session") or not title.strip():
                 title = ""
+            parent = str(parent_id or "")
             records.append({
-                "id": str(sid),
+                "id": sid,
                 "directory": str(directory or ""),
                 "title": _compact_text(title) or None,
                 "agent": str(agent or ""),
                 "model": str(model.get("id") or "unknown"),
                 "model_provider": str(model.get("providerID") or ""),
+                "parent_id": parent,
+                "root_id": lineage["root_id"],
+                "depth": lineage["depth"],
+                "project_directory": lineage["directory"] or str(directory or ""),
+                "is_child": bool(parent),
+                "has_children": sid in parents_with_children,
                 "created": _seconds(created),
                 "updated": _seconds(updated),
                 "revision": _seconds(revision),
@@ -319,13 +433,22 @@ class OpenCodeRuntimeAdapter:
                 client_id=self.descriptor.runtime_id,
                 session_id=record["id"],
                 display_label=self.descriptor.label,
-                project=self._project_resolver(record["directory"]) or record["agent"] or "No project",
+                project=self._project_for_record(record),
                 locator=SourceLocator("sqlite-session", record["id"]),
                 activity_mtime=record["updated"],
                 revision=SourceRevision((str(record["revision"]), str(record["title"] or ""))),
                 model_ref=model_ref,
             ))
         return tuple(sources)
+
+    def _project_for_record(self, record):
+        """Resolve a session's project, scoping children to their root ancestor."""
+        directory = record.get("project_directory") or record.get("directory")
+        return (
+            self._project_resolver(directory)
+            or ("" if record.get("is_child") else record.get("agent"))
+            or "No project"
+        )
 
     def discover_legacy(self, context):
         return tuple({
@@ -336,13 +459,18 @@ class OpenCodeRuntimeAdapter:
             "id": record["id"],
             "session": record["id"],
             "path": "{}:{}".format(self.descriptor.runtime_id, record["id"]),
-            "project": self._project_resolver(record["directory"]) or record["agent"] or "No project",
+            "project": self._project_for_record(record),
             "mtime": record["updated"],
             "signature_mtime": record["revision"],
             "title": record["title"],
             "model": record["model"],
             "model_provider": record["model_provider"],
             "agent": record["agent"],
+            "agent_parent_id": record["parent_id"],
+            "agent_root_id": record["root_id"],
+            "agent_role": safe_agent_role(record["agent"]),
+            "agent_depth": int(record["depth"]),
+            "agent_has_children": bool(record["has_children"]),
             "tools_loaded": 0,
         } for record in self._records())
 
@@ -1183,9 +1311,100 @@ class OpenCodeRuntimeAdapter:
         row["_context_samples"] = context_samples[-self.context_sample_limit:]
         row["terminal"] = False
         row["_tool_evidence"] = summarize_tool_evidence(tool_evidence)
+        # Mark a child session so the browser can keep it out of the default
+        # session list while still counting its spend. Only the resolved root
+        # session id is published: it is itself a discovered, listed session, so
+        # the raw (possibly unlisted) parent reference never leaves the server.
+        if source.get("agent_parent_id"):
+            row["is_child_session"] = True
+            root_id = str(source.get("agent_root_id") or "")
+            if root_id:
+                row["root_session_id"] = root_id
+            row["child_depth"] = max(1, int(source.get("agent_depth") or 1))
+            row["child_agent_role"] = safe_agent_role(
+                source.get("agent_role")
+            ) or None
         signal_rollups, signal_events = analyze_language_signal_turns(signal_turns)
         attach_language_signals(row, signal_rollups, signal_events)
+        agent_records = self._agent_record_for(
+            source, row,
+            cost_value=s_cost_val, cost_available=session_cost_available,
+            tokens_available=session_token_evidence,
+            input_tokens=inp, output_tokens=out, reasoning=reasoning,
+            cache_read=cre, cache_write=cw, total_tokens=tokens,
+            first_ts=first_ts, last_ts=last_ts, work_time_s=active_s,
+        )
+        if agent_records:
+            row["_agent_records"] = agent_records
         return row
+
+    def _agent_record_for(
+        self, source, row, *, cost_value, cost_available, tokens_available,
+        input_tokens, output_tokens, reasoning, cache_read, cache_write,
+        total_tokens, first_ts, last_ts, work_time_s,
+    ):
+        """Describe a child session as one spawned agent record.
+
+        A root session contributes no record. A child contributes a single
+        `spawned` record whose parent is the opaque digest of the parent
+        session id, so no private session identity is projected. A reported cost
+        of zero is a measured free-tier price, not missing evidence, so
+        availability is decided by column validity rather than by magnitude.
+        """
+        parent_id = str(source.get("agent_parent_id") or "")
+        is_child = bool(parent_id)
+        # A group needs its root member. A parent session emits a `root` record
+        # when it actually has children; a child emits one `spawned` record.
+        if not is_child and not source.get("agent_has_children"):
+            return []
+        agent_id = opaque_agent_id(source.get("id"))
+        if not agent_id:
+            return []
+        parent_agent_id = opaque_agent_id(parent_id) if is_child else ""
+        if is_child and not parent_agent_id:
+            return []
+        model = str(row.get("primary_model") or source.get("model") or "unknown")
+        last_activity = last_ts or (float(source.get("mtime") or 0) or None)
+        now = time.time()
+        # OpenCode summaries never report a terminal state, so a child that is
+        # not recently active is a stale nonterminal trace. Claiming "complete"
+        # would assert a finish we have no evidence for.
+        activity_state = (
+            "working" if last_activity and now - last_activity <= 90
+            else "incomplete"
+        )
+        session_id = str(source.get("id") or "")
+        role = source.get("agent_role") if is_child else None
+        return [{
+            "id": agent_id,
+            "parent_id": parent_agent_id or None,
+            # The public session id is the established OpenCode session route,
+            # so it stays navigable. The private parent session id is not, and
+            # the group layer falls back to the owning session id for it.
+            "session_id": session_id or None,
+            "runtime": "opencode",
+            "client": "OpenCode",
+            "kind": "spawned" if is_child else "root",
+            "depth": max(1, int(source.get("agent_depth") or 1)) if is_child else 0,
+            "label": "",
+            "role": role or None,
+            "model": model,
+            "activity_state": activity_state,
+            "started_at": first_ts,
+            "ended_at": last_ts,
+            "last_activity_at": last_activity,
+            "input_tokens": int(input_tokens or 0),
+            "output_tokens": int(output_tokens or 0),
+            "cache_read_tokens": int(cache_read or 0),
+            "cache_write_tokens": int(cache_write or 0),
+            "reasoning_tokens": int(reasoning or 0),
+            "tokens": int(total_tokens or 0),
+            "tokens_available": bool(tokens_available),
+            "cost": round(float(cost_value or 0.0), 6) if cost_available else None,
+            "cost_available": bool(cost_available),
+            "executions": int(row.get("turns") or 0),
+            "work_time_s": round(float(work_time_s), 3) if work_time_s else None,
+        }]
 
 
     def deletion_plan(self, source):

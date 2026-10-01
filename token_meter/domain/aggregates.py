@@ -242,6 +242,94 @@ def _session_output_per_dollar(row):
     return max(0, int(row.get("output_tokens") or 0)) / cost
 
 
+def _child_root_key(row):
+    """Return the (provider, root id) a folded child session belongs to."""
+    if not row.get("is_child_session"):
+        return None
+    root_id = str(row.get("root_session_id") or "")
+    if not root_id:
+        return None
+    return (str(row.get("provider") or ""), root_id)
+
+
+def fold_child_session_rows(rows):
+    """Fold additive child sessions into their root parent's live row.
+
+    A runtime whose child sessions are counted individually (OpenCode) marks
+    each child with `is_child_session` and a resolved `root_session_id`. For the
+    current-session surface a child run is part of its root's live work, not a
+    separate session: its cost, tokens, and executions roll into the root row,
+    and its activity keeps the root current. A child whose root row is absent
+    (an unresolved family) stays its own row so its spend is never hidden.
+    """
+    rows = [row for row in (rows or []) if isinstance(row, dict)]
+    roots = {}
+    for row in rows:
+        if row.get("is_child_session"):
+            continue
+        key = (str(row.get("provider") or ""), str(row.get("id") or ""))
+        if key[1]:
+            roots.setdefault(key, row)
+    children = defaultdict(list)
+    kept = []
+    for row in rows:
+        key = _child_root_key(row)
+        if key is not None and key in roots:
+            children[key].append(row)
+            continue
+        kept.append(row)
+    if not children:
+        return kept
+    result = []
+    for row in kept:
+        key = (str(row.get("provider") or ""), str(row.get("id") or ""))
+        members = children.get(key) if not row.get("is_child_session") else None
+        if not members:
+            result.append(row)
+            continue
+        merged = dict(row)
+        family = [row, *members]
+        availability = dict(row.get("availability") or {}) if isinstance(
+            row.get("availability"), dict) else {}
+        # Sum only members whose metric is measured: the folded figure is
+        # available when any member's is, and partial when any member's is not,
+        # so unavailable evidence never becomes a measured zero or looks complete.
+        for field, metric in (
+            ("cost", "cost"), ("tokens", "tokens"),
+            ("input_tokens", "input_tokens"), ("output_tokens", "output_tokens"),
+        ):
+            covered = [member for member in family if metric_available(member, metric)]
+            merged[field] = sum(member.get(field) or 0 for member in covered)
+            availability[metric] = bool(covered)
+            if metric == "cost":
+                merged["cost_partial"] = bool(covered) and len(covered) < len(family)
+        merged["availability"] = availability
+        merged["turns"] = int(row.get("turns") or 0) + sum(
+            int(member.get("turns") or 0) for member in members
+        )
+        merged["cost_approx"] = bool(row.get("cost_approx")) or any(
+            member.get("cost_approx") for member in members
+        )
+        newest = max(members, key=lambda member: float(member.get("mtime") or 0))
+        if float(newest.get("mtime") or 0) > float(row.get("mtime") or 0):
+            merged["mtime"] = float(newest.get("mtime") or 0)
+            merged["terminal"] = bool(newest.get("terminal"))
+        models = list(row.get("models") or [])
+        for member in members:
+            for model in member.get("models") or []:
+                if model not in models:
+                    models.append(model)
+        merged["models"] = models
+        # Output per dollar is derived from model-level coverage; combine it so
+        # the folded figure stays paired with the folded cost.
+        merged["model_stats"] = [
+            *(row.get("model_stats") or []),
+            *(stats for member in members for stats in (member.get("model_stats") or [])),
+        ]
+        result.append(merged)
+    return result
+
+
 def current_session_summaries(rows, now=None, max_age_s=30 * 60, limit=8,
                               working_age_s=90, context_sample_limit=32):
     """Return bounded card-safe recent sessions from normalized rows."""
@@ -249,7 +337,7 @@ def current_session_summaries(rows, now=None, max_age_s=30 * 60, limit=8,
     activity_rank = {"recent": 0, "waiting": 1, "working": 2}
     selected_by_id = {}
     selected_without_id = []
-    for row in rows or []:
+    for row in fold_child_session_rows(rows):
         mtime = float(row.get("mtime") or 0)
         idle_s = max(0, int(now - mtime))
         if not mtime or idle_s > max_age_s:
@@ -331,6 +419,9 @@ def current_session_summaries(rows, now=None, max_age_s=30 * 60, limit=8,
             "cost": float(row.get("cost") or 0),
             "output_per_dollar": output_per_dollar,
             "cost_approx": bool(row.get("cost_approx")),
+            # Only rows that folded child runs carry a lower-bound flag.
+            **({"cost_partial": bool(row.get("cost_partial"))}
+               if "cost_partial" in row else {}),
             "availability": {
                 "cost": availability.get("cost") is not False,
                 "context": availability.get("context") is not False,

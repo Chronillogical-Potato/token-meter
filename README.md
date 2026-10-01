@@ -128,7 +128,12 @@ named roles over time. **Sessions → Subagents** filters child-agent runs by
 project, application, model, completion state, evidence signal, and time. Provider-reported roles such as
 `token_meter_reviewer` are shown as the primary identity when available;
 provider nicknames remain a fallback. A stale nonterminal trace is labeled
-**Incomplete**, independently of any attention signal. The default **Roles**
+**Incomplete**, independently of any attention signal. OpenCode child runs are
+counted in totals from the start, because an OpenCode parent's cost excludes its
+children; they are not listed as own rows by default and instead appear in a
+**Subagents** subsection inside each parent session card, with a **Subagents**
+filter to list them instead. A live child run counts toward its parent's current
+session and session cap rather than appearing as a separate session. The default **Roles**
 view gives every named role its own spend, cost-per-run, or run-volume trend,
 compares equal periods when coverage permits, and links each role cohort to its
 runs under Sessions, with a matching-run model breakdown. Covered spend and cost per covered run remain visible when some runs lack

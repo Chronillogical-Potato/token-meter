@@ -4,6 +4,7 @@ from token_meter.domain.aggregates import (
     aggregate_model_stats,
     aggregate_cross_session_rows,
     current_session_summaries,
+    fold_child_session_rows,
     metric_coverage,
     rollup_language_signal_events,
     spend_log_summaries,
@@ -219,6 +220,54 @@ class AggregateDomainTests(unittest.TestCase):
         self.assertEqual([row["id"] for row in result["models"]], [
             "m::runtime-a", "m::runtime-b",
         ])
+
+
+class FoldedChildAvailabilityTests(unittest.TestCase):
+    @staticmethod
+    def family(root_cost_available, child_cost_available):
+        root = session("root", "OpenCode", "model-a", 1.0, 10,
+                       available=root_cost_available, mtime=90)
+        child = session("child", "OpenCode", "model-a", 2.5, 20,
+                        available=child_cost_available, mtime=95)
+        root["provider"] = child["provider"] = "opencode"
+        child.update(is_child_session=True, root_session_id="root")
+        return [root, child]
+
+    def test_measured_child_cost_survives_an_unavailable_root(self):
+        folded = fold_child_session_rows(self.family(False, True))
+        self.assertEqual([row["id"] for row in folded], ["root"])
+        self.assertEqual(folded[0]["cost"], 2.5)
+        self.assertEqual(folded[0]["tokens"], 20)
+        self.assertTrue(folded[0]["availability"]["cost"])
+        self.assertTrue(folded[0]["cost_partial"])
+        summary = current_session_summaries(self.family(False, True), now=100)[0]
+        self.assertTrue(summary["availability"]["cost"])
+        self.assertEqual(summary["cost"], 2.5)
+        self.assertTrue(summary["cost_partial"])
+
+    def test_unavailable_child_cost_is_not_presented_as_complete(self):
+        folded = fold_child_session_rows(self.family(True, False))[0]
+        self.assertEqual(folded["cost"], 1.0)
+        self.assertTrue(folded["availability"]["cost"])
+        self.assertTrue(folded["cost_partial"])
+
+    def test_fully_measured_family_is_complete_and_unmeasured_stays_unavailable(self):
+        complete = fold_child_session_rows(self.family(True, True))[0]
+        self.assertEqual(complete["cost"], 3.5)
+        self.assertFalse(complete["cost_partial"])
+        self.assertNotIn("subagent_runs", complete)
+        unmeasured = fold_child_session_rows(self.family(False, False))[0]
+        self.assertFalse(unmeasured["availability"]["cost"])
+        self.assertEqual(unmeasured["cost"], 0)
+        self.assertFalse(unmeasured["cost_partial"])
+
+    def test_current_row_without_folded_children_has_no_partial_flag(self):
+        claude = {**session("solo", "Claude", "model-a", 1.0, 10, mtime=95),
+                  "provider": "claude"}
+        summary = current_session_summaries([claude], now=100)[0]
+        self.assertNotIn("cost_partial", summary)
+        folded = current_session_summaries(self.family(True, True), now=100)[0]
+        self.assertFalse(folded["cost_partial"])
 
 
 if __name__ == "__main__":

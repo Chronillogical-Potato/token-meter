@@ -134,7 +134,12 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .learnHead{max-width:760px;margin-bottom:22px}.learnSection{padding:18px 0;border-top:1px solid var(--line2)}.learnSection h2{font-size:16px;margin:0}.learnSteps{margin-top:10px}.learnStep{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 0;border-top:1px solid var(--line)}.learnStep:first-child{border-top:0}.learnStep .num{width:30px;height:30px;border:1px solid var(--line2);border-radius:50%;display:grid;place-items:center;color:var(--accent);font-weight:820}.learnStep h3{font-size:14px;margin:0}.learnStep p{font-size:12.5px;color:var(--dim);margin:3px 0 0;max-width:800px}.glossaryToolbar{display:grid;grid-template-columns:minmax(220px,420px) auto;gap:12px;align-items:center;margin-top:12px}.glossaryList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;margin-top:8px}.termRow{padding:13px 0;border-top:1px solid var(--line)}.termRow dt{font-weight:800}.termRow dd{margin:3px 0 0;color:var(--dim);font-size:12.5px}.bulkControls{max-height:220px;white-space:pre-wrap}
 .agentDiscovery{display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:12px 14px;border:1px solid rgba(0,188,235,.32);border-left:3px solid var(--accent);border-radius:8px;background:linear-gradient(90deg,rgba(0,188,235,.11),rgba(17,24,32,.88) 58%,rgba(17,24,32,.94));box-shadow:var(--shadow-soft)}.agentDiscovery[hidden]{display:none}.agentDiscoveryMain{flex:1;min-width:0}.agentDiscoveryTitle{font-weight:810}.agentDiscoveryText{color:var(--dim);font-size:12.5px;margin-top:2px}.agentDiscoveryClose{border:0;background:transparent;color:var(--faint);font:700 18px/1 inherit;cursor:pointer;padding:6px}.agentDiscoveryClose:hover{color:var(--fg)}
 .settingsPageHead{margin-bottom:14px}.settingsPageHead p{max-width:680px}.settingsGrid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);gap:12px;align-items:start}.agentAccess{overflow:hidden}.agentAccessHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.agentAccessHead h1,.agentAccessHead h2{font-size:22px;line-height:1.15;margin:4px 0 0}.agentAccessHead p{color:var(--dim);font-size:12.5px;margin:5px 0 0;max-width:650px}.agentAccessBadge{border:1px solid var(--line2);border-radius:999px;padding:4px 9px;color:var(--dim);font-size:11px;white-space:nowrap;background:rgba(255,255,255,.035)}.agentClients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}.agentClient{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.035);padding:10px 11px}.agentClientName{display:flex;align-items:center;gap:7px;font-weight:800}.agentClientState{font-size:11.5px;color:var(--faint);margin-top:2px}.agentClientState.connected{color:var(--good)}.agentClientState.warn{color:var(--warn)}.agentCommand{white-space:pre-wrap;overflow-wrap:anywhere}
-.slist{display:flex;flex-direction:column;gap:8px}.srow{display:grid;grid-template-columns:132px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(20,28,37,.94),rgba(13,18,24,.94));border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:border-color .16s,background .16s,transform .16s;min-width:0}.srow:hover{border-color:var(--line2);background:linear-gradient(180deg,rgba(24,34,44,.96),rgba(14,20,27,.96));transform:translateY(-1px)}.srow.active,.srow.live{border-color:rgba(0,188,235,.62);box-shadow:0 0 0 1px rgba(0,188,235,.12),var(--shadow-soft)}.srow .t{font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srow .meta{font-size:11.5px;color:var(--faint);margin-top:2px}.srow .c{font-weight:820;font-size:15px;text-align:right}.sMain{min-width:0}.sbar{height:4px;border-radius:4px;background:rgba(255,255,255,.045);overflow:hidden;margin-top:8px}.sbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:4px}.smetrics{text-align:right;min-width:88px}.smetrics .meta{font-size:11px}.badge{font-size:10.5px;color:var(--dim);background:rgba(255,255,255,.045);border:1px solid var(--line);padding:3px 7px;border-radius:6px;box-shadow:var(--inset)}.badge.codex{color:var(--orange3);border-color:rgba(0,188,235,.42);background:rgba(0,188,235,.12)}.badge.claude{color:#d4c0ff;border-color:rgba(183,140,255,.42);background:rgba(183,140,255,.12)}.badge.cursor{color:#80e6ae;border-color:rgba(102,217,144,.44);background:rgba(102,217,144,.12)}.badge.opencode{color:#f08cae;border-color:rgba(240,140,174,.42);background:rgba(240,140,174,.12)}
+.slist{display:flex;flex-direction:column;gap:8px}.srow{display:grid;grid-template-columns:132px minmax(0,1fr) auto auto auto;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(20,28,37,.94),rgba(13,18,24,.94));border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:border-color .16s,background .16s,transform .16s;min-width:0}.srow.hasChildren{align-items:start}.srow:hover{border-color:var(--line2);background:linear-gradient(180deg,rgba(24,34,44,.96),rgba(14,20,27,.96));transform:translateY(-1px)}.srow.active,.srow.live{border-color:rgba(0,188,235,.62);box-shadow:0 0 0 1px rgba(0,188,235,.12),var(--shadow-soft)}.srow .t{font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srow .meta{font-size:11.5px;color:var(--faint);margin-top:2px}.srow .c{font-weight:820;font-size:15px;text-align:right}.sMain{min-width:0}.sbar{height:4px;border-radius:4px;background:rgba(255,255,255,.045);overflow:hidden;margin-top:8px}.sbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:4px}.smetrics{text-align:right;min-width:88px}.smetrics .meta{font-size:11px}.badge{font-size:10.5px;color:var(--dim);background:rgba(255,255,255,.045);border:1px solid var(--line);padding:3px 7px;border-radius:6px;box-shadow:var(--inset)}.badge.codex{color:var(--orange3);border-color:rgba(0,188,235,.42);background:rgba(0,188,235,.12)}.badge.claude{color:#d4c0ff;border-color:rgba(183,140,255,.42);background:rgba(183,140,255,.12)}.badge.cursor{color:#80e6ae;border-color:rgba(102,217,144,.44);background:rgba(102,217,144,.12)}.badge.opencode{color:#f08cae;border-color:rgba(240,140,174,.42);background:rgba(240,140,174,.12)}
+/* Child-agent subsection inside a parent session card. The parent row stays a
+   single button; children are their own buttons nested in a non-interactive
+   container so a child click never double-fires the parent navigation. */
+.subagents{margin-top:10px;padding:10px 12px 9px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.022);display:grid;gap:7px;min-width:0}.subagentsHead{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}.subagentsTitle{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:760;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);min-width:0}.subagentsTitle b{color:var(--dim);font-weight:760;letter-spacing:0}.subagentsStats{font-size:11.5px;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}.subagentsStats b{color:var(--fg);font-weight:780}.subagentList{display:grid;gap:5px;min-width:0}.subagentRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;background:rgba(255,255,255,.028);border:1px solid transparent;border-radius:6px;padding:6px 9px;cursor:pointer;min-width:0;transition:border-color .16s,background .16s}.subagentRow:hover,.subagentRow:focus-visible{border-color:rgba(0,188,235,.34);background:rgba(0,188,235,.07);outline:none}.subagentMain{min-width:0;overflow:hidden}.subagentMain .t{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentMain .meta{font-size:11px;color:var(--faint);margin-top:2px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.subagentRole{display:inline-flex;align-items:center;border:1px solid rgba(240,140,174,.34);background:rgba(240,140,174,.11);color:#f08cae;border-radius:5px;padding:1px 6px;font-size:10px;font-weight:720;margin-right:6px;white-space:nowrap;vertical-align:1px}.subagentTokens{font-size:11.5px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}.subagentCost{font-size:12.5px;font-weight:780;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.subagentZero{font-weight:600;color:var(--faint)}.subagentMore{font-size:11px;color:var(--faint);padding:1px 2px}
+@media(max-width:1100px){.subagentRow{grid-template-columns:minmax(0,1fr) auto}.subagentTokens{display:none}}
 .dailyGrid{align-items:start}
 .frustrationSection{margin-top:36px;padding-top:28px;border-top:1px solid var(--line2)}.frustrationNotice{margin:0 0 12px;padding:9px 12px;border:1px solid rgba(255,180,87,.24);border-left:3px solid var(--warn);border-radius:8px;background:linear-gradient(90deg,rgba(255,180,87,.07),rgba(255,180,87,.018));color:var(--dim);font-size:12px}.frustrationNotice b{color:var(--fg)}
 .frustrationHero .modelKpi{min-height:100px;background:linear-gradient(155deg,rgba(24,33,43,.98),rgba(12,17,23,.98));overflow:hidden}.frustrationHero .modelKpi:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--warn),rgba(255,111,111,.55),transparent 78%)}.frustrationHero .modelKpi:nth-child(2):before{background:linear-gradient(90deg,var(--bad),var(--warn),transparent 78%)}.frustrationHero .modelKpi:nth-child(3):before{background:linear-gradient(90deg,var(--accent),var(--orange3),transparent 78%)}.frustrationHero .modelKpi:nth-child(4):before{background:linear-gradient(90deg,#c7a7ff,var(--warn),transparent 78%)}
@@ -507,7 +512,7 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .agentActivityHead,.subagentUsageHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.agentActivityHead h2,.subagentUsageHead h2{margin:1px 0 0;font-size:16px}.agentActivityHead p,.subagentUsageHead p{margin:3px 0 0;color:var(--dim);font-size:11.5px;line-height:1.45}.agentActivityEyebrow{color:var(--accent);font-size:9px;font-weight:820;letter-spacing:.1em;text-transform:uppercase}.agentCoverage{max-width:380px;color:var(--faint);font-size:10px;text-align:right}.agentActivityMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:13px}.agentActivityMetric{padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.025)}.agentActivityMetric span{display:block;color:var(--faint);font-size:8.5px;font-weight:780;text-transform:uppercase}.agentActivityMetric strong{display:block;margin-top:3px;color:var(--fg);font:780 16px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.agentActivityMetric small{display:block;margin-top:2px;color:var(--dim);font-size:9.5px}
 .agentActivityTree{margin-top:12px;overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:rgba(5,9,13,.24);scrollbar-width:thin}.agentTreeHeader,.agentRow{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(105px,.8fr) 82px repeat(4,minmax(70px,.5fr));align-items:center;gap:9px;min-width:820px}.agentTreeHeader{padding:7px 10px;color:var(--faint);font-size:8px;font-weight:800;text-transform:uppercase}.agentTreeHeader span:not(:first-child){text-align:right}.agentTreeHeader .fieldtip{justify-content:flex-end}.agentRow{width:100%;min-height:58px;padding:8px 10px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.agentRow:hover,.agentRow:focus-visible{background:rgba(0,188,235,.045);outline:none}.agentRow.selected{background:rgba(0,188,235,.07);box-shadow:inset 2px 0 var(--accent)}.agentRow.attention{box-shadow:inset 2px 0 var(--warn)}.agentRow.selected.attention{box-shadow:inset 2px 0 var(--warn),inset 5px 0 rgba(0,188,235,.38)}.agentIdentity{min-width:0;padding-left:calc(var(--agent-depth)*18px)}.agentIdentity strong{display:flex;align-items:center;gap:7px;min-width:0;color:var(--fg);font-size:11.5px}.agentIdentity strong span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.agentIdentity small{display:block;margin-top:2px;color:var(--faint);font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.agentMetric{text-align:right;font:680 10.5px/1.3 ui-monospace,"SF Mono",Menlo,monospace}.agentState{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end;color:var(--dim);font-size:9.5px;text-transform:capitalize}.agentState:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint)}.agentState.working:before{background:var(--good);box-shadow:0 0 0 3px rgba(102,217,144,.1)}.agentState.waiting:before{background:var(--warn)}.agentAttentionBadge{flex:none;border:1px solid rgba(255,180,87,.42);border-radius:999px;background:rgba(255,180,87,.09);padding:2px 6px;color:var(--warn);font-size:8px;font-weight:820;text-transform:uppercase}.agentAttentionDetail{margin-top:9px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.018);color:var(--dim);font-size:10.5px;line-height:1.45}.agentAttentionDetail b{color:var(--fg)}.agentAttentionDetail ul{margin:5px 0 0;padding-left:17px}.agentActivityFoot,.subagentUsageFoot{margin-top:9px;color:var(--faint);font-size:9.5px}
 .subagentUsageControls{display:grid;gap:5px;justify-items:end}.subagentUsageHead .seg{flex-wrap:wrap}.subagentUsageSummary{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:13px}.subagentUsageStat{padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.022);min-width:0}.subagentUsageStat span{display:block;color:var(--faint);font-size:8px;font-weight:780;text-transform:uppercase}.subagentUsageStat strong{display:block;margin-top:3px;color:var(--fg);font:790 15px/1.2 ui-monospace,"SF Mono",Menlo,monospace;overflow:hidden;text-overflow:ellipsis}.subagentUsageStat small{display:block;margin-top:2px;color:var(--dim);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentUsageRows{display:grid;margin-top:10px;border-top:1px solid var(--line)}.subagentUsageRow{display:grid;grid-template-columns:minmax(170px,1.15fr) minmax(120px,.8fr) repeat(4,minmax(72px,.45fr));align-items:center;gap:10px;min-height:58px;border-bottom:1px solid var(--line);padding:8px 0}.subagentUsageIdentity strong{display:block;color:var(--fg);font-size:11.5px}.subagentUsageIdentity small{display:block;margin-top:2px;color:var(--faint);font-size:9.5px}.subagentUsageBar{height:5px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.055)}.subagentUsageBar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--orange3))}.subagentUsageValue{text-align:right}.subagentUsageValue span{display:block;color:var(--faint);font-size:8px;text-transform:uppercase}.subagentUsageValue b{display:block;margin-top:2px;color:var(--dim);font:700 10.5px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentUsageEmpty{padding:24px;color:var(--dim);font-size:11.5px;text-align:center}
-.subagentExplorerHead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 10px;padding:2px 2px 0}.subagentExplorerHead h2{margin:0;font-family:"Tektur Local","Avenir Next",-apple-system,BlinkMacSystemFont,sans-serif;font-size:22px;font-weight:610;letter-spacing:-.025em}.subagentExplorerHead p{margin:3px 0 0;color:var(--faint);font-size:12px}.subagentExplorerMeta{color:var(--faint);font-size:11px;white-space:nowrap}.subagentToolbar{display:grid;grid-template-columns:minmax(190px,1.35fr) repeat(5,minmax(120px,.72fr));gap:9px;padding:12px}.subagentToolbar .filterControl{min-width:0}.subagentToolbar .filterControl select,.subagentToolbar .filterControl input{width:100%}.subagentToolbarFoot{display:flex;align-items:flex-end;gap:9px;margin-top:8px;padding:12px}.subagentToolbarFoot .filterControl{min-width:170px}.subagentToolbarFoot .filterClear{margin-left:auto}.subagentExplorerSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:10px;overflow:hidden;border:1px solid rgba(0,188,235,.18);border-radius:8px;background:linear-gradient(90deg,rgba(0,188,235,.055),rgba(127,219,242,.025) 62%,rgba(199,167,255,.035));box-shadow:var(--shadow-soft)}.subagentExplorerStat{min-width:0;padding:13px 14px;border-left:1px solid var(--line)}.subagentExplorerStat:first-child{border-left:0}.subagentExplorerStat span{display:block;color:var(--faint);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.035em}.subagentExplorerStat strong{display:block;margin-top:3px;color:var(--fg);font:790 20px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentExplorerStat small{display:block;margin-top:3px;color:var(--dim);font-size:10px;line-height:1.35}.subagentInsights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.subagentInsight{padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02)}.subagentInsight strong{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--fg);font-size:11.5px}.subagentInsight strong b{color:var(--warn);font:790 14px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentInsight p{margin:5px 0 0;color:var(--faint);font-size:9.5px;line-height:1.4}.subagentInventoryCard{margin-top:12px;overflow:hidden}.subagentInventoryHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}.subagentInventoryHead h3{margin:0;font-size:13px}.subagentInventoryCount{color:var(--faint);font-size:10.5px}.subagentInventory{overflow-x:auto}.subagentInventoryHeader,.subagentInventoryRow{display:grid;grid-template-columns:minmax(230px,1.35fr) minmax(170px,1fr) minmax(125px,.75fr) 95px 105px 105px 90px;gap:10px;align-items:center;min-width:960px}.subagentInventoryHeader{padding:8px 14px;color:var(--faint);font-size:8px;font-weight:800;text-transform:uppercase}.subagentInventoryHeader span:not(:first-child){text-align:right}.subagentInventoryRow{width:100%;min-height:64px;padding:9px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentInventoryRow:hover,.subagentInventoryRow:focus-visible{background:rgba(0,188,235,.045);outline:none}.subagentInventoryIdentity{min-width:0}.subagentInventoryIdentity strong{display:flex;align-items:center;gap:7px;min-width:0;color:var(--fg);font-size:11.5px}.subagentInventoryIdentity strong>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryIdentity small{display:block;margin-top:2px;overflow:hidden;color:var(--faint);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryProject{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryMetric{text-align:right;font:680 10.5px/1.3 ui-monospace,"SF Mono",Menlo,monospace}.subagentInventoryEmpty{padding:32px 16px;color:var(--dim);font-size:11.5px;text-align:center}.subagentInventoryWarning{margin-top:10px;border:1px solid rgba(255,180,87,.3);border-radius:8px;background:rgba(255,180,87,.065);padding:10px 12px;color:var(--warn);font-size:10.5px}.subagentInventoryWarning[hidden]{display:none}
+.subagentExplorerHead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 10px;padding:2px 2px 0}.subagentExplorerHead h2{margin:0;font-family:"Tektur Local","Avenir Next",-apple-system,BlinkMacSystemFont,sans-serif;font-size:22px;font-weight:610;letter-spacing:-.025em}.subagentExplorerHead p{margin:3px 0 0;color:var(--faint);font-size:12px}.subagentExplorerMeta{color:var(--faint);font-size:11px;white-space:nowrap}.subagentToolbar{display:grid;grid-template-columns:minmax(190px,1.35fr) repeat(5,minmax(120px,.72fr));gap:9px;padding:12px}.subagentToolbar .filterControl{min-width:0}.subagentToolbar .filterControl select,.subagentToolbar .filterControl input{width:100%}.subagentToolbarFoot{display:flex;align-items:flex-end;gap:9px;margin-top:8px;padding:12px}.subagentToolbarFoot .filterControl{min-width:170px}.subagentToolbarFoot .filterClear{margin-left:auto}.subagentExplorerSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:10px;overflow:hidden;border:1px solid rgba(0,188,235,.18);border-radius:8px;background:linear-gradient(90deg,rgba(0,188,235,.055),rgba(127,219,242,.025) 62%,rgba(199,167,255,.035));box-shadow:var(--shadow-soft)}.subagentExplorerStat{min-width:0;padding:13px 14px;border-left:1px solid var(--line)}.subagentExplorerStat:first-child{border-left:0}.subagentExplorerStat span{display:block;color:var(--faint);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.035em}.subagentExplorerStat strong{display:block;margin-top:3px;color:var(--fg);font:790 20px/1.2 ui-monospace,"SF Mono",Menlo,monospace}.subagentExplorerStat small{display:block;margin-top:3px;color:var(--dim);font-size:10px;line-height:1.35}.subagentInsights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.subagentInsight{padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02)}.subagentInsight strong{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--fg);font-size:11.5px}.subagentInsight strong b{color:var(--warn);font:790 14px/1 ui-monospace,"SF Mono",Menlo,monospace}.subagentInsight p{margin:5px 0 0;color:var(--faint);font-size:9.5px;line-height:1.4}.subagentInventoryCard{margin-top:12px;overflow:hidden}.subagentInventoryHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}.subagentInventoryHead h3{margin:0;font-size:13px}.subagentInventoryCount{color:var(--faint);font-size:10.5px}.subagentInventory{overflow-x:auto}.subagentInventoryHeader,.subagentInventoryRow{display:grid;grid-template-columns:minmax(230px,1.35fr) minmax(170px,1fr) minmax(125px,.75fr) 95px 105px 105px 90px;gap:10px;align-items:center;min-width:960px}.subagentInventoryHeader{padding:8px 14px;color:var(--faint);font-size:8px;font-weight:800;text-transform:uppercase}.subagentInventoryHeader span:not(:first-child){text-align:right}.subagentInventoryRow{width:100%;min-height:64px;padding:9px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;text-align:left;cursor:pointer}.subagentInventoryRow:hover,.subagentInventoryRow:focus-visible{background:rgba(0,188,235,.045);outline:none}.subagentInventoryIdentity{min-width:0}.subagentInventoryIdentity strong{display:flex;align-items:center;gap:7px;min-width:0;color:var(--fg);font-size:11.5px}.subagentInventoryIdentity strong>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryIdentity small{display:block;margin-top:2px;overflow:hidden;color:var(--faint);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryProject{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subagentInventoryMetric{text-align:right;font:680 10.5px/1.3 ui-monospace,"SF Mono",Menlo,monospace}.subagentInventoryEmpty{padding:32px 16px;color:var(--dim);font-size:11.5px;text-align:center}.subagentInventoryWarning{margin-top:10px;border:1px solid rgba(255,180,87,.3);border-radius:8px;background:rgba(255,180,87,.065);padding:10px 12px;color:var(--warn);font-size:10.5px}.subagentInventoryWarning[hidden]{display:none}.subagentCoverageNote{margin-top:10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02);padding:9px 12px;color:var(--dim);font-size:10.5px;line-height:1.45}.subagentCoverageNote b{color:var(--fg)}.subagentCoverageNote[hidden]{display:none}
 @media(max-width:1100px){.agentActivityMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.agentActivityHead,.subagentUsageHead{align-items:flex-start;flex-direction:column}.agentCoverage{text-align:left}.subagentUsageControls{justify-items:start}.subagentUsageSummary{grid-template-columns:repeat(3,minmax(0,1fr))}.subagentUsageRow{grid-template-columns:minmax(150px,1fr) minmax(105px,.7fr) repeat(4,minmax(68px,.4fr))}}
 @media(max-width:1100px){.subagentToolbar{grid-template-columns:repeat(3,minmax(0,1fr))}.subagentExplorerSummary{grid-template-columns:repeat(2,minmax(0,1fr))}.subagentExplorerStat:nth-child(3){border-left:0;border-top:1px solid var(--line)}.subagentExplorerStat:nth-child(4){border-top:1px solid var(--line)}.subagentInsights{grid-template-columns:1fr}}
 /* subagent-investigation-v2 */
@@ -796,6 +801,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
      <label class=filterControl><span>App</span><select class=filterSelect id=g-app aria-label="App filter"><option value="">All apps</option></select></label>
      <label class=filterControl><span>Projects</span><select class=filterSelect id=g-project aria-label="Projects filter"><option value="">All projects</option></select></label>
      <label class=filterControl><span>Time range</span><select class=filterSelect id=g-time aria-label="Time range filter"><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option></select></label>
+     <div class="filterControl filterSort"><span>Subagents</span><div class="seg sortseg" id=g-children aria-label="Subagent run visibility">
+      <button type=button aria-pressed=true data-gchildren=hide class=on title="Hide subagent runs as rows. Their spend is still counted in totals and shown under each parent session.">Hidden</button>
+      <button type=button aria-pressed=false data-gchildren=show title="Also list subagent runs as their own rows.">Listed</button>
+     </div></div>
      <div class=filterClear><button class="tbtn clearFilters" id=g-clear type=button title="Clear search, app, project, and time filters.">Clear filters</button></div>
      <div class="filterControl filterSort"><span>Sort</span><div class="seg sortseg" id=g-sort>
       <button data-gsort=recent title="Newest activity first.">Recent</button>
@@ -848,6 +857,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     </div>
     <div class=subagentCompactSummary id=subagent-compact-summary aria-live=polite></div>
     <div class=subagentInventoryWarning id=subagent-inventory-warning hidden></div>
+    <div class=subagentCoverageNote id=subagent-coverage-note hidden></div>
     <section class="card subagentModelDistribution" id=subagent-model-distribution aria-label="Model distribution of matching child runs" hidden></section>
     <div class=subagentWorkspace id=subagent-workspace>
      <section class="card subagentResultsCard" id=subagent-results-panel role=tabpanel aria-labelledby=subagent-tab-roles tabindex=0>
@@ -2906,7 +2916,8 @@ let legacySessionBudgets={};
 const sessionBudgetWrites=new Map();
 try{legacySessionBudgets=JSON.parse(localStorage.getItem('tm_session_budgets')||'{}')||{};}catch(e){legacySessionBudgets={};}
 localStorage.removeItem('tm_budget');
-function budgetSessionKey(s){return String(s?.source?.id||s?.session||'unknown');}
+// A subagent run spends against its root session's cap, which the server names.
+function budgetSessionKey(s){return String(s?.session_budget?.id||s?.source?.id||s?.session||'unknown');}
 function saveLegacySessionBudgets(){try{localStorage.setItem('tm_session_budgets',JSON.stringify(legacySessionBudgets));}catch(e){}}
 function sessionBudgetForSession(s){
  const saved=parseFloat(s?.session_budget?.budget_usd);
@@ -2916,6 +2927,16 @@ function sessionBudgetForSession(s){
  return defaultSessionBudget;
 }
 function sessionBudgetSource(s){return s?.session_budget?.source||'legacy';}
+// A session family (root plus child runs) shares one cap; the server reports
+// its combined spend, which is a lower bound when any member lacks evidence.
+function sessionCapSpend(s){
+ const b=s?.session_budget;
+ if(b&&Object.prototype.hasOwnProperty.call(b,'cost_partial')){
+  const spend=Number(b.spend_usd),available=b.cost_available!==false&&b.spend_usd!=null&&Number.isFinite(spend);
+  return {available,spend:available?spend:0,partial:available&&!!b.cost_partial};
+ }
+ return {available:metricAvailable(s||{},'cost'),spend:Number(s?.total_cost)||0,partial:false};
+}
 async function persistSessionBudget(s,value,{migrating=false}={}){
  const sessionId=budgetSessionKey(s),response=await fetch('/settings/session-budget',{method:'POST',headers:{'Content-Type':'application/json','X-Token-Meter-Action':agentActionToken()},body:JSON.stringify({session_id:sessionId,budget_usd:value})});
  const result=await response.json();
@@ -2950,7 +2971,7 @@ function migrateLegacySessionBudget(s){
  queueSessionBudget(s,legacy,{migrating:true}).then(()=>{if(s===CURRENT)syncSessionBudgetControls(sessionBudgetForSession(s),s);}).catch(()=>{});
 }
 function sessionBudgetSliderMax(s,value){
- const reference=Math.max(defaultSessionBudget,Number(value)||0,Number(s?.total_cost)||0);
+ const reference=Math.max(defaultSessionBudget,Number(value)||0,sessionCapSpend(s).spend);
  return Math.max(SESSION_BUDGET_SLIDER_BASE_MAX,Math.ceil(reference*1.5/10)*10);
 }
 function syncSessionBudgetControls(value,s=CURRENT){
@@ -2963,7 +2984,8 @@ function syncSessionBudgetControls(value,s=CURRENT){
  slider.style.setProperty('--budget-fill',`${Math.max(0,Math.min(100,100*(Number(slider.value)-min)/(max-min||1)))}%`);
   $('budget-slider-min').textContent=`$${min.toFixed(2)}`;
  $('budget-slider-max').textContent=money(max);
- $('session-budget-spend').textContent=metricAvailable(s||{},'cost')?`Session spend ${money(s?.total_cost||0)}${s?.cost_approx?' est':''}`:'Session spend unavailable';
+ const capSpend=sessionCapSpend(s);
+ $('session-budget-spend').textContent=capSpend.available?`Session spend ${capSpend.partial?'at least ':''}${money(capSpend.spend)}${s?.cost_approx?' est':''}`:'Session spend unavailable';
 }
 function loadBudgetForSession(s){
  syncSessionBudgetControls(sessionBudgetForSession(s),s);
@@ -2998,7 +3020,7 @@ function extendBudget(){
  if(!CURRENT) return;
  const add=parseFloat($('budget-add').value);
  if(!Number.isFinite(add)||add<=0){ setNotifyState('Enter a positive budget amount.'); return; }
- const currentCost=+(CURRENT.total_cost||0);
+ const currentCost=sessionCapSpend(CURRENT).spend;
  const currentCap=dollarInputValue('budget',0);
  const next=setBudgetCap(Math.max(currentCap,currentCost)+add);
  setNotifyState('Budget raised to '+money(next)+'.');
@@ -3050,7 +3072,9 @@ if(['claude_code','claude_desktop'].includes(globalApp)){
 }
 let globalProject=localStorage.getItem('tm_global_project')||'';
 let globalTime=localStorage.getItem('tm_global_time')||'all';
+let globalShowChildren=localStorage.getItem('tm_global_children')==='show';
 let allSessionInventory=null,allSessionInventoryAt=0,allSessionsRequest=null,renderedAllSessions=new Map(),renderedAllSessionActions={},forceAllSessionRowRefresh=false;
+let childSessionMap=new Map();
 let subagentUsageDimension=localStorage.getItem('tm_subagent_usage_dimension')||'runtimes';
 if(!['runtimes','models','depths','kinds','roles'].includes(subagentUsageDimension))subagentUsageDimension='runtimes';
 let subagentUsageSort=localStorage.getItem('tm_subagent_usage_sort')||'cost';
@@ -3282,8 +3306,24 @@ function paintGlobalSort(){
  const label={recent:'recent activity',cost:'highest cost',tokens:'most tokens',executions:'most executions'}[globalSort]||'recent activity';
  $('g-hint').textContent=label;
 }
+function paintGlobalChildren(){
+ [...$('g-children').querySelectorAll('button')].forEach(b=>{
+  const on=(b.dataset.gchildren==='show')===globalShowChildren;
+  b.classList.toggle('on',on);
+  b.setAttribute('aria-pressed',on?'true':'false');
+ });
+}
+$('g-children').onclick=event=>{
+ const button=event.target.closest('[data-gchildren]');
+ if(!button)return;
+ globalShowChildren=button.dataset.gchildren==='show';
+ localStorage.setItem('tm_global_children',globalShowChildren?'show':'hide');
+ paintGlobalChildren();
+ if(LATEST)renderAllSessions(LATEST.xsession);
+};
 $('g-search').value=globalSearch;
 $('g-time').value=globalTime;
+paintGlobalChildren();
 function paintGlobalFilters(){
  const disabled=!(globalSearch.trim()||globalApp||globalProject||globalTime!=='all');
  if($('g-clear').disabled!==disabled)$('g-clear').disabled=disabled;
@@ -3720,11 +3760,11 @@ function renderCurrentOptimization(s){
   : 'no unused user-installed packs in this run';
 }
 function sessionAlert(s){
- const source=s.source||{};
- if(!metricAvailable(s,'cost'))return {type:'',msg:'',key:''};
+ const source=s.source||{},capSpend=sessionCapSpend(s);
+ if(!capSpend.available)return {type:'',msg:'',key:''};
  if(s.provider==='cursor')return {type:'',msg:'',key:''};
  const budget=dollarInputValue('budget',10);
- if(s.total_cost>budget) return {type:'budget',msg:`This session passed your ${money(budget)} cap - now ${money(s.total_cost)}`,key:`${source.id||s.session}:budget:${budget}`,budget,current:s.total_cost};
+ if(capSpend.spend>budget) return {type:'budget',msg:`This session passed your ${money(budget)} cap - now ${capSpend.partial?'at least ':''}${money(capSpend.spend)}`,key:`${source.id||s.session}:budget:${budget}`,budget,current:capSpend.spend};
  return {type:'',msg:'',key:''};
 }
 function notifyAlertForSession(s,opts={}){
@@ -3883,7 +3923,7 @@ function renderCurrentRun(s){
 	 const source=s.source||{},throughput=sessionDisplayThroughput(s),wait=s.wait_time||{},context=s.context||{},tools=s.tools||{},cache=s.cache||{},timing=s.timing||{};
  const costAvailable=metricAvailable(s,'cost'),cacheAvailable=metricAvailable(s,'cache'),throughputAvailable=metricAvailable(s,'throughput'),cacheSavingsAvailable=costAvailable&&cacheAvailable&&cache.savings_available!==false;
  const contextPct=Math.max(0,Math.min(1,Number(context.latest_pct)||0)),toolResultTokens=tools.total_output_tokens||0;
- const alert=sessionAlert(s),frozen=!!s.ended,cursorEstimate=s.provider==='cursor',cap=dollarInputValue('budget',Infinity),costPerTask=s.analyses?.cost_per_task||{};
+ const alert=sessionAlert(s),capSpend=sessionCapSpend(s),frozen=!!s.ended,cursorEstimate=s.provider==='cursor',cap=dollarInputValue('budget',Infinity),costPerTask=s.analyses?.cost_per_task||{};
  $('preview-provider').innerHTML=runtimeBadgeContent(s,source.label||s.provider||'source');
  $('preview-provider').className='badge app '+appBadgeClass(s);
  $('preview-project').textContent=s.project||source.project||'';
@@ -3892,7 +3932,7 @@ function renderCurrentRun(s){
  $('preview-state').textContent=pinned?'Pinned':(frozen?'Complete':'Live');
  $('preview-idle').textContent=frozen?'frozen':idleLabel(s.idle_s);
  setCostValue('preview-cost',money(s.total_cost)+(s.cost_approx?' est':''),costAvailable);
- $('preview-cost-note').textContent=alert.msg?alert.msg:(costAvailable&&Number.isFinite(cap)?`${money(Math.max(0,cap-(s.total_cost||0)))} before the ${money(cap)} session cap`:source.pricing_note||'Cost evidence unavailable.');
+ $('preview-cost-note').textContent=alert.msg?alert.msg:(capSpend.available&&Number.isFinite(cap)?`${capSpend.partial?'At most ':''}${money(Math.max(0,cap-capSpend.spend))} before the ${money(cap)} session cap`:source.pricing_note||'Cost evidence unavailable.');
  $('preview-status-card').classList.toggle('warn',!!alert.msg);
  $('preview-context-pct').textContent=context.window?pct(contextPct):'--';
  $('preview-context-bar').setAttribute('aria-valuenow',String(Math.round(contextPct*100)));
@@ -6151,7 +6191,9 @@ function renderFrustration(signals,sessions){
 }
 
 function logRowRenderKey(s,active){
- return JSON.stringify([active,sessionDeleteAvailable(s,renderedAllSessionActions),s.client,s.provider,s.label,s.title,s.project,s.last,s.start,s.wait_time,s.turns,s.cost,s.availability,s.models,s.model_identity,s.tokens,s.provenance,s.usage_basis,s.token_estimate,s.throughput,s.cost_approx]);
+ // Child subagent rows are part of this row's content, so a change in the
+ // children must invalidate the cached innerHTML.
+ return JSON.stringify([active,sessionDeleteAvailable(s,renderedAllSessionActions),s.client,s.provider,s.label,s.title,s.project,s.last,s.start,s.wait_time,s.turns,s.cost,s.availability,s.models,s.model_identity,s.tokens,s.provenance,s.usage_basis,s.token_estimate,s.throughput,s.cost_approx,childAgentsFor(s).map(c=>[c.id,c.cost,c.tokens,c.title,c.last,c.child_agent_role,c.child_depth,c.availability,c.models])]);
 }
 function logRowContent(s){
  const rowCost=metricAvailable(s,'cost'),rowTokens=metricAvailable(s,'tokens'),localEstimate=hasLocalEstimate(s),avg=rowCost&&s.turns?money((s.cost||0)/s.turns)+estimateSuffix(s):'--';
@@ -6162,10 +6204,63 @@ function logRowContent(s){
  const modelText=unresolvedIdentity?unresolvedModelText:`${(s.models||[]).join(', ')||'--'}${identityLabel}`,throughput=s.throughput||{},speed=throughput.available?` · ${speedFmt(throughput.output_tps)} ${localEstimate?'visible out tok/s est':'out tok/s'}`:'';
  const identityAction=identity.assignable&&identity.key?`<button class=sessionModelAssign data-session-model-identity="${esc(identity.key)}" type=button>${assignedIdentity?'Change model':(identity.kind==='missing_model'?'Add model':'Assign model')}</button>`:'';
  return `<div><span class="badge app ${appBadgeClass(s)}">${runtimeMarkSvg(s)}${esc(s.label||s.provider)}</span></div>
-  <div class=sMain><div class=t>${esc(s.title)}</div><div class=meta>${esc(s.project||'local')} · ${esc(s.last||s.start||'')} · ${waitText} · ${f(s.turns)} execs · ${avg}/exec${speed}</div><div class=sbar><i></i></div></div>
-  <div class="badge models">${esc(modelText)}</div>
-  <div class="badge tok">${rowTokens?f(s.tokens)+' tok'+(localEstimate?' est':''):'tokens --'}</div>
-  <div class=smetrics><div class="c mono">${costValueHtml(money(s.cost)+(s.cost_approx?' est':''),rowCost)}</div><div class=meta>${rowCost?(localEstimate?'local estimate':'cost'):(unresolvedIdentity?'model unconfirmed · billing unavailable':'billing unavailable')} · ${f(s.turns)} execs</div>${identityAction}${sessionDeleteAvailable(s,renderedAllSessionActions)?`<button class=sessionDelete data-delete-session="${esc(s.id)}" type=button>Delete</button>`:''}</div>`;
+ <div class=sMain><div class=t>${esc(s.title)}</div><div class=meta>${esc(s.project||'local')} · ${esc(s.last||s.start||'')} · ${waitText} · ${f(s.turns)} execs · ${avg}/exec${speed}</div><div class=sbar><i></i></div>${childAgentSubsection(s)}</div>
+ <div class="badge models">${esc(modelText)}</div>
+ <div class="badge tok">${rowTokens?f(s.tokens)+' tok'+(localEstimate?' est':''):'tokens --'}</div>
+ <div class=smetrics><div class="c mono">${costValueHtml(money(s.cost)+(s.cost_approx?' est':''),rowCost)}</div><div class=meta>${rowCost?(localEstimate?'local estimate':'cost'):(unresolvedIdentity?'model unconfirmed · billing unavailable':'billing unavailable')} · ${f(s.turns)} execs</div>${identityAction}${sessionDeleteAvailable(s,renderedAllSessionActions)?`<button class=sessionDelete data-delete-session="${esc(s.id)}" type=button>Delete</button>`:''}</div>`;
+}
+const CHILD_SECTION_LIMIT=6;
+function childAgentsFor(s){
+ const children=childSessionMap.get(String(s?.id||''));
+ return Array.isArray(children)?children:[];
+}
+function childRootId(row){return row?.is_child_session?String(row.root_session_id||''):'';}
+function indexChildSessions(rows){
+ // Every descendant is keyed by its root session, so a nested run still renders
+ // under the root card when its intermediate parent is itself a hidden child.
+ childSessionMap=new Map();
+ (rows||[]).forEach(row=>{
+  if(!row?.is_child_session)return;
+  const key=childRootId(row);
+  if(!key)return;
+  if(!childSessionMap.has(key))childSessionMap.set(key,[]);
+  childSessionMap.get(key).push(row);
+ });
+ childSessionMap.forEach(list=>list.sort((a,b)=>(b.cost||0)-(a.cost||0)||(b.mtime||0)-(a.mtime||0)));
+ return childSessionMap;
+}
+function childAgentSubsection(s){
+ const children=childAgentsFor(s);
+ if(!children.length)return '';
+ const shown=children.slice(0,CHILD_SECTION_LIMIT);
+ const hidden=children.length-shown.length;
+ const coveredCost=children.filter(row=>metricAvailable(row,'cost'));
+ const totalCost=coveredCost.reduce((a,b)=>a+(b.cost||0),0);
+ const coveredTokens=children.filter(row=>metricAvailable(row,'tokens'));
+ const totalTokens=coveredTokens.reduce((a,b)=>a+(b.tokens||0),0);
+ const stats=[
+  `<b>${f(children.length)}</b> ${countWord(children.length,'run')}`,
+  coveredCost.length?`<b>${money(totalCost)}</b> covered spend`:'spend unavailable',
+  totalTokens?`<b>${f(totalTokens)}</b> tok`:'',
+ ].filter(Boolean).join(' · ');
+ const rows=shown.map(child=>{
+  const childCost=metricAvailable(child,'cost');
+  const childTokens=metricAvailable(child,'tokens');
+  const role=child.child_agent_role?`<span class=subagentRole>${esc(child.child_agent_role)}</span>`:'';
+  const roleText=child.child_agent_role||'Unreported role';
+  const title=child.title||'Subagent run';
+  const depth=Number(child.child_depth)||1;
+  const detail=[roleText,depth>1?`nested depth ${f(depth)}`:'',(child.models||[]).join(', ')||child.primary_model||'--',child.last||''].filter(Boolean).join(' · ');
+  const costHtml=childCost
+   ?(child.cost>0?costValueHtml(money(child.cost)+(child.cost_approx?' est':''),true):`<span class=subagentZero title="Measured free-tier price">${money(0)}</span>`)
+   :'<span class=subagentZero>cost unavailable</span>';
+  return `<button class=subagentRow type=button data-open-session="${esc(child.id)}" aria-label="Open subagent run ${esc(title)}">
+ <span class=subagentMain><span class=t>${role}${esc(title)}</span><span class=meta>${esc(detail)}</span></span>
+ <span class=subagentTokens>${childTokens?f(child.tokens)+' tok':'tokens --'}</span>
+ <span class=subagentCost>${costHtml}</span></button>`;
+ }).join('');
+ const more=hidden>0?`<div class=subagentMore>${f(hidden)} more ${countWord(hidden,'run')} not shown</div>`:'';
+ return `<div class=subagents><div class=subagentsHead><span class=subagentsTitle>Subagents <b>${f(children.length)}</b></span><span class=subagentsStats>${stats}</span></div><div class=subagentList>${rows}</div>${more}</div>`;
 }
 function reconcileLogRows(sessions,maxCost,liveSessionIds=new Set()){
  const root=$('slist');
@@ -6191,7 +6286,8 @@ function reconcileLogRows(sessions,maxCost,liveSessionIds=new Set()){
    row.tabIndex=0;
   }
   const live=liveSessionIds.has(id),renderKey=logRowRenderKey(s,active),restoreDeleteFocus=document.activeElement?.dataset.deleteSession===id;
-  const className=`srow${active?' active':''}${live?' live':''}`,ariaLabel=`Open ${s.title}`;
+  const hasChildren=childAgentsFor(s).length>0;
+  const className=`srow${active?' active':''}${live?' live':''}${hasChildren?' hasChildren':''}`,ariaLabel=`Open ${s.title}`;
   if(row.className!==className)row.className=className;
   if(row.getAttribute('aria-label')!==ariaLabel)row.setAttribute('aria-label',ariaLabel);
   if(row._logRenderKey!==renderKey){
@@ -6574,8 +6670,13 @@ function renderSubagentExplorer(usage){
  const signalLabels={peer_cost_outlier:'cost outliers',active_cost_concentration:'active concentrations',retry_pressure:'retry pressure'};
  const signalPills=Object.entries(context.signalCounts).filter(([,count])=>count>0).map(([code,count])=>compact(signalLabels[code]||code.replaceAll('_',' '),f(count),'warn',code));
  const incompletePill=compact('Incomplete',context.summary.complete?f(context.summary.incomplete):'--',context.summary.incomplete?'warn':'dim','incomplete');
- $('subagent-compact-summary').innerHTML=(subagentView==='roles'?[incompletePill]:[incompletePill,compact('Matching child cost',exact&&summary.costCovered?money(summary.cost):'--'),compact('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--'),...signalPills]).join('');
- const warning=$('subagent-inventory-warning');warning.hidden=!result.truncated;warning.textContent=result.truncated?'The child-agent inventory reached its privacy-safe display limit. Visible rows remain filterable, but exact filtered totals are withheld.':'';
+  $('subagent-compact-summary').innerHTML=(subagentView==='roles'?[incompletePill]:[incompletePill,compact('Matching child cost',exact&&summary.costCovered?money(summary.cost):'--'),compact('Cost evidence',exact?`${f(summary.costCovered)} / ${f(summary.agents)}`:'--'),...signalPills]).join('');
+  const warning=$('subagent-inventory-warning');warning.hidden=!result.truncated;warning.textContent=result.truncated?'The child-agent inventory reached its privacy-safe display limit. Visible rows remain filterable, but exact filtered totals are withheld.':'';
+  const unresolved=Number(usage?.totals?.unresolved_agents)||0,unresolvedCost=Number(usage?.totals?.unresolved_known_cost)||0,coverageNote=$('subagent-coverage-note');
+  coverageNote.hidden=!unresolved;
+  coverageNote.innerHTML=unresolved
+   ?`<b>${f(unresolved)}</b> ${countWord(unresolved,'child run')} could not be attributed to a parent session${unresolvedCost?` (${money(unresolvedCost)} of covered spend)`:''} because the parent session record is missing from the local history. ${unresolved===1?'It is':'They are'} counted in global totals, but the hierarchy and spend-share rollups above leave ${unresolved===1?'it':'them'} out.`
+   :'';
  if(selectedSubagentId&&!result.rows.some(row=>String(row?.id||'')===selectedSubagentId))selectedSubagentId='';
  const copy={issues:['Issues','Incomplete runs and cost/retry signals.'],sessions:['Parent sessions','Child runs grouped by parent. Cost color is relative within each session.'],roles:['Roles','']}[subagentView];
  $('subagent-results-title').textContent=copy[0];$('subagent-results-description').textContent=copy[1];
@@ -6797,6 +6898,56 @@ $('subagent-inspector').onclick=event=>{
  if(root){selectSession(root,{returnScope:'subagents'});return;}
  if(event.target.closest('[data-subagent-close-detail]')){selectedSubagentId='';renderSubagentExplorer(LATEST?.xsession?.agent_usage);}
 };
+function allSessionsView(all,{showChildren=false,app='',project='',rangeStart=0,query=''}={}){
+ const baseMatch=s=>{
+  if(app&&appFilterGroup(s)!==app)return false;
+  if(project&&projectFilterValue(s.project)!==project)return false;
+  if(rangeStart&&(s.mtime||0)<rangeStart)return false;
+  return true;
+ };
+ const textMatch=s=>!query||[s.title,s.project,s.provider,s.label,s.child_agent_role,(s.models||[]).join(' ')].join(' ').toLowerCase().includes(query);
+ const matching=(all||[]).filter(s=>baseMatch(s)&&textMatch(s));
+ const children=matching.filter(s=>s.is_child_session);
+ let rows=matching;
+ if(!showChildren){
+  // A matching child run surfaces its root card, so search still finds it.
+  const childRoots=new Set(children.map(childRootId).filter(Boolean));
+  rows=(all||[]).filter(s=>!s.is_child_session&&((baseMatch(s)&&textMatch(s))||childRoots.has(String(s.id))));
+ }
+ // Header figures cover exactly the matching sessions and child runs in both
+ // modes; a root card surfaced only by a matching child adds no spend of its own.
+ const statsRows=matching;
+ const shownIds=new Set(rows.map(s=>String(s.id)));
+ const underParent=children.filter(s=>shownIds.has(childRootId(s))).length;
+ const matchedSessions=matching.length-children.length;
+ return {
+  rows,statsRows,showChildren,
+  matchedSessions,
+  total:(all||[]).filter(s=>!s.is_child_session).length,
+  surfacedParents:showChildren?0:Math.max(0,rows.length-matchedSessions),
+  children:children.length,
+  childCost:children.filter(s=>metricAvailable(s,'cost')).reduce((a,b)=>a+(b.cost||0),0),
+  underParent,
+  unparented:children.length-underParent,
+ };
+}
+function allSessionsCountText(view){
+ const statsRows=view.statsRows;
+ const cost=statsRows.reduce((a,b)=>a+(b.cost||0),0),localEstimates=statsRows.filter(row=>hasLocalEstimate(row)&&metricAvailable(row,'cost')).length,costCovered=statsRows.filter(row=>metricAvailable(row,'cost')).length;
+ // Hidden subagent runs are still counted in totals, so report how many of the
+ // matching runs sit under a shown parent card and how many have no parent.
+ const parentNote=view.unparented
+  ?`${f(view.underParent)} shown under parent cards · ${f(view.unparented)} with no parent session`
+  :'listed under parents';
+ const childNote=!view.showChildren&&view.children
+  ?` · includes ${f(view.children)} subagent ${countWord(view.children,'run')} (${money(view.childCost)}) counted, ${parentNote}`
+  :'';
+ // Sessions and child runs are counted separately; spend and cost coverage
+ // share one denominator: the matching sessions plus matching child runs.
+ const runNote=view.showChildren&&view.children?` + ${f(view.children)} subagent ${countWord(view.children,'run')}`:'';
+ const surfacedNote=view.surfacedParents?` · ${f(view.surfacedParents)} parent ${countWord(view.surfacedParents,'card')} shown for matching runs`:'';
+ return `${f(view.matchedSessions)} of ${f(view.total)} sessions${runNote} · ${money(cost)} covered spend · ${f(costCovered)} of ${f(statsRows.length)} cost-covered${localEstimates?` · includes ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}${childNote}${surfacedNote}`;
+}
 function renderAllSessions(xs){
  if(!xs)return;
  const generatedAt=Number(xs.generated_at||0);
@@ -6804,6 +6955,9 @@ function renderAllSessions(xs){
  setLogText($('g-hint'),generatedAt?`live · updated ${new Date(generatedAt*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:'recent activity');
  const all=$('view-session').classList.contains('on')&&sessionScope==='all'&&allSessionInventory?mergeAllSessionInventory(allSessionInventory,xs.sessions):xs.sessions||[];
  renderedAllSessions=new Map(all.map(row=>[String(row.id),row]));
+ // Index every discovered child run, including the ones kept out of the list,
+ // so each parent card can render its own children inline.
+ indexChildSessions(allSessionInventory&&allSessionInventory.length?allSessionInventory:all);
  renderedAllSessionActions=xs.session_actions||{};
  const apps=[...new Map(all.map(session=>[
   appFilterGroup(session),
@@ -6837,27 +6991,33 @@ function renderAllSessions(xs){
  const q=globalSearch.trim().toLowerCase();
  const rangeSeconds={all:0,'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[globalTime]||0;
  const rangeStart=rangeSeconds?Date.now()/1000-rangeSeconds:0;
- let sessions=all.filter(s=>{
-  if(globalApp&&appFilterGroup(s)!==globalApp)return false;
-  if(globalProject&&projectFilterValue(s.project)!==globalProject)return false;
-  if(rangeStart&&(s.mtime||0)<rangeStart)return false;
-  return !q||[s.title,s.project,s.provider,s.label,(s.models||[]).join(' ')].join(' ').toLowerCase().includes(q);
- });
- renderAllSessionStats(sessions);
+ const view=allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,query:q});
+ let sessions=view.rows;
+ // Header stats count every matching run, so hiding subagent rows never removes
+ // their spend from the figures that the Hidden control says are still counted.
+ renderAllSessionStats(view.statsRows);
  const sorters={
-  recent:(a,b)=>(b.mtime||0)-(a.mtime||0),
-  cost:(a,b)=>(b.cost||0)-(a.cost||0)||(b.mtime||0)-(a.mtime||0),
-  tokens:(a,b)=>(b.tokens||0)-(a.tokens||0)||(b.mtime||0)-(a.mtime||0),
+   recent:(a,b)=>(b.mtime||0)-(a.mtime||0),
+   cost:(a,b)=>(b.cost||0)-(a.cost||0)||(b.mtime||0)-(a.mtime||0),
+   tokens:(a,b)=>(b.tokens||0)-(a.tokens||0)||(b.mtime||0)-(a.mtime||0),
 	  executions:(a,b)=>(b.turns||0)-(a.turns||0)||(b.mtime||0)-(a.mtime||0),
 	  wait:(a,b)=>Number(b.wait_time?.total_s||0)-Number(a.wait_time?.total_s||0)||(b.mtime||0)-(a.mtime||0),
  };
  sessions=sessions.slice().sort(sorters[globalSort]||sorters.recent);
- const shownCost=sessions.reduce((a,b)=>a+(b.cost||0),0),localEstimates=sessions.filter(row=>hasLocalEstimate(row)&&metricAvailable(row,'cost')).length,costCovered=sessions.filter(row=>metricAvailable(row,'cost')).length;
-	 setLogText($('g-count'),`${f(sessions.length)} of ${f(all.length)} sessions · ${money(shownCost)} covered spend · ${f(costCovered)} of ${f(sessions.length)} cost-covered${localEstimates?` · includes ${f(localEstimates)} Cursor local ${countWord(localEstimates,'estimate')}`:''}`);
+ setLogText($('g-count'),allSessionsCountText(view));
  const maxCost=Math.max(.001,...sessions.map(s=>s.cost||0));
  reconcileLogRows(sessions,maxCost,liveSessionIds);
 }
 $('slist').onclick=event=>{
+ const childButton=event.target.closest('[data-open-session]');
+ if(childButton){
+  event.stopPropagation();
+  event.preventDefault();
+ const childId=childButton.dataset.openSession;
+ const childRow=renderedAllSessions.get(childId);
+ if(childRow)selectSession(childRow.id);
+ return;
+ }
  const identityButton=event.target.closest('[data-session-model-identity]');
  if(identityButton){
   event.stopPropagation();
@@ -7362,7 +7522,9 @@ function renderCurrentSessions(state=LATEST){
   const {state:activity,label:activityLabel}=currentSessionActivity(row);
   const costAvailable=row.availability?.cost!==false;
   const estimate=row.cost_approx||['local_estimate','mixed'].includes(row.usage_basis);
-  const cost=costValueHtml(money(row.cost)+(estimate?' est':''),costAvailable,false);
+  // A folded family with an unmeasured member reports a lower bound.
+  const costPartial=costAvailable&&!!row.cost_partial;
+  const cost=costValueHtml(money(row.cost)+(estimate?' est':''),costAvailable,false),costLabel=costPartial?'Cost, at least':'Cost';
   const costTipAttrs=costAvailable?'':costUnavailableAttrs();
   const outputPerDollar=row.output_per_dollar==null?'--':compactNumber(row.output_per_dollar);
   const context=currentSessionContext(row);
@@ -7374,9 +7536,9 @@ function renderCurrentSessions(state=LATEST){
   const speed=speedAvailable?`${speedFmt(throughput.output_tps)} tok/s${row.token_estimate?' est':''}`:'--';
   const contextSpark=currentSessionContextSparkline(row);
   const outputDollarDescription=row.output_per_dollar==null?'Output per dollar unavailable.':`${compactNumber(row.output_per_dollar)} output tokens per covered dollar.`;
-  const cardDescription=`${contextSpark.summary} ${outputDollarDescription} Drag to reorder. Press ⌥ and an arrow key to move.`;
+  const cardDescription=`${contextSpark.summary} ${outputDollarDescription}${costPartial?' Cost is a lower bound: some runs in this session family have no cost evidence.':''} Drag to reorder. Press ⌥ and an arrow key to move.`;
   const arriving=arrivingIds.has(String(row.id))?' is-arriving':'';
-  return `<button class="card currentSessionCard provider-${esc(provider)} activity-${activity}${arriving}${costAvailable?'':' fieldtip'}" style="--harness:${esc(runtimeHarness(row))}" type=button draggable=true data-current-session-id="${esc(row.id)}" aria-label="${esc(`Open ${sessionName}`)}" aria-description="${esc(cardDescription)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown" ${costTipAttrs}><div class=currentSessionTop><div class=currentSessionRuntime>${runtimeMarkSvg(row)}<span>${esc(runtimeLine)}</span></div><div class="currentSessionStatus ${activity}">${activityLabel}</div></div><div class=currentSessionIdentity><h3>${esc(sessionName)}</h3><p>${esc(row.project||'No project')}</p></div><div class=currentSessionMetrics><div class=currentSessionMetric><span>Cost</span><b class=mono>${cost}</b></div><div class=currentSessionMetric><span>Output / $</span><b class=mono>${esc(outputPerDollar)}</b></div><div class=currentSessionMetric><span>Context in use</span><div class=currentSessionContextValue><b class=mono>${esc(context)}</b>${contextSpark.html}</div></div><div class=currentSessionMetric><span>Speed</span><b class=mono>${esc(speed)}</b></div></div><div class=currentSessionFoot><span class=currentSessionMove><svg class=currentSessionGrip viewBox="0 0 12 16" aria-hidden=true><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="8" r="1.2"/><circle cx="9" cy="8" r="1.2"/><circle cx="3" cy="13" r="1.2"/><circle cx="9" cy="13" r="1.2"/></svg>${currentSessionAge(row)}</span></div></button>`;
+  return `<button class="card currentSessionCard provider-${esc(provider)} activity-${activity}${arriving}${costAvailable?'':' fieldtip'}" style="--harness:${esc(runtimeHarness(row))}" type=button draggable=true data-current-session-id="${esc(row.id)}" aria-label="${esc(`Open ${sessionName}`)}" aria-description="${esc(cardDescription)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown" ${costTipAttrs}><div class=currentSessionTop><div class=currentSessionRuntime>${runtimeMarkSvg(row)}<span>${esc(runtimeLine)}</span></div><div class="currentSessionStatus ${activity}">${activityLabel}</div></div><div class=currentSessionIdentity><h3>${esc(sessionName)}</h3><p>${esc(row.project||'No project')}</p></div><div class=currentSessionMetrics><div class=currentSessionMetric><span>${costLabel}</span><b class=mono>${cost}</b></div><div class=currentSessionMetric><span>Output / $</span><b class=mono>${esc(outputPerDollar)}</b></div><div class=currentSessionMetric><span>Context in use</span><div class=currentSessionContextValue><b class=mono>${esc(context)}</b>${contextSpark.html}</div></div><div class=currentSessionMetric><span>Speed</span><b class=mono>${esc(speed)}</b></div></div><div class=currentSessionFoot><span class=currentSessionMove><svg class=currentSessionGrip viewBox="0 0 12 16" aria-hidden=true><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="8" r="1.2"/><circle cx="9" cy="8" r="1.2"/><circle cx="3" cy="13" r="1.2"/><circle cx="9" cy="13" r="1.2"/></svg>${currentSessionAge(row)}</span></div></button>`;
  }).join(''):(filterView.activitySelection==='all'?currentSessionsEmptyHtml(state?.xsession):currentSessionsFilteredEmptyHtml(filterView.activitySelection));
  if(focusedId)requestAnimationFrame(()=>focusCurrentSessionCard(focusedId));
 }

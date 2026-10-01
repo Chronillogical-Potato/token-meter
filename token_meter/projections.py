@@ -28,6 +28,7 @@ AGENT_TOTAL_FIELDS = (
     "covered_group_cost", "covered_child_cost",
     "group_cost_covered_sessions", "agent_spend_share",
     "group_cost_coverage", "attention_agents",
+    "unresolved_agents", "unresolved_known_cost",
 )
 AGENT_ROLE_ACTIVITY_FIELDS = (
     "complete_agents", "incomplete_agents", "working_agents",

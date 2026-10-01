@@ -81,6 +81,17 @@ def _timestamp(value, field):
         )
 
 
+def _folded_root_id(source):
+    """Return the root an additive OpenCode child run folds into, if any."""
+    if not isinstance(source, dict) or source.get("provider") != "opencode":
+        return ""
+    return str(source.get("agent_root_id") or "")
+
+
+def _family_key(source, session_id):
+    return (str((source or {}).get("provider") or ""), str(session_id or ""))
+
+
 def _project_matches(project_key, candidate, requested):
     candidate = project_key(candidate)
     requested = project_key(requested)
@@ -393,6 +404,24 @@ class MCPQueryService:
         self._runtime_descriptors = runtime_descriptors
         self._now = now or time.time
 
+    def _live_family_roots(self, source_rows):
+        """Return root keys with a current child run that folds into them.
+
+        Only an additive child source (OpenCode) names a resolved root. The
+        child keeps its own state; the root is reported current while any of
+        its child runs is current.
+        """
+        now = self._now()
+        roots = set()
+        for source in source_rows:
+            root_id = _folded_root_id(source)
+            if not root_id:
+                continue
+            row = session_projection(source, self._summary(source) or {}, now)
+            if row.get("state") == "current":
+                roots.add(_family_key(source, root_id))
+        return roots
+
     def sessions(self, scope="current_project", runtime=None, client=None,
                  model=None, state=None, start=None, end=None, cursor=None,
                  limit=None, caller=None):
@@ -425,6 +454,7 @@ class MCPQueryService:
                 "invalid_argument", "current project context is unavailable",
             )
         source_rows = list(self._sources() or ())
+        live_roots = self._live_family_roots(source_rows)
         projected = []
         matched_sources = []
         for source in source_rows:
@@ -440,6 +470,10 @@ class MCPQueryService:
                 continue
             summary = self._summary(source) or {}
             row = session_projection(source, summary, self._now())
+            if _family_key(source, source.get("id")) in live_roots:
+                # A root whose child run is live is current, matching the
+                # dashboard's folded current-session row for that family.
+                row["state"] = "current"
             if filters["model"] and row.get("model") != filters["model"]:
                 continue
             if filters["state"] and row.get("state") != filters["state"]:
@@ -546,7 +580,9 @@ class MCPQueryService:
         limit = normalize_limit(limit, 20, 100)
         records = []
         matched_sources = []
-        for source in list(self._sources() or ()):
+        source_rows = list(self._sources() or ())
+        live_roots = self._live_family_roots(source_rows) if filters["state"] else set()
+        for source in source_rows:
             if filters["runtime"] and source.get("provider") != filters["runtime"]:
                 continue
             if filters["client"] and (
@@ -557,6 +593,8 @@ class MCPQueryService:
                 continue
             summary = self._summary(source) or {}
             listed = session_projection(source, summary, self._now())
+            if _family_key(source, source.get("id")) in live_roots:
+                listed["state"] = "current"
             if filters["state"] and listed.get("state") != filters["state"]:
                 continue
             detailed = self._state(source)

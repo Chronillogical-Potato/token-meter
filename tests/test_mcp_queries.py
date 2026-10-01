@@ -336,6 +336,50 @@ class MCPTraceProjectionTests(unittest.TestCase):
 
 
 class MCPQueryServiceTests(unittest.TestCase):
+    def test_root_with_live_child_run_is_current_like_the_dashboard(self):
+        from token_meter.mcp.service import MCPQueryService
+
+        now = 1_787_254_200.0
+        sources = [
+            {"id": "ses_root", "provider": "opencode", "client": "opencode",
+             "project": "/repo", "mtime": now - 40 * 60},
+            {"id": "ses_child", "provider": "opencode", "client": "opencode",
+             "project": "/repo", "mtime": now - 30,
+             "agent_parent_id": "ses_root", "agent_root_id": "ses_root"},
+            {"id": "ses_idle", "provider": "opencode", "client": "opencode",
+             "project": "/repo", "mtime": now - 40 * 60},
+            {"id": "ses_old_child", "provider": "opencode", "client": "opencode",
+             "project": "/repo", "mtime": now - 30 * 60,
+             "agent_parent_id": "ses_idle", "agent_root_id": "ses_idle"},
+        ]
+        service = MCPQueryService(
+            sources=lambda: list(sources),
+            find_session=lambda session_id, rows: next(
+                (row for row in rows if row["id"] == session_id), None,
+            ),
+            summary=lambda source: {"terminal": False, "cost": 1.0,
+                                    "availability": {"cost": True}},
+            state=lambda source: None,
+            revision=lambda source: (source["id"],),
+            project_key=lambda value: str(value or "").lower(),
+            runtime_descriptors=lambda: (),
+            now=lambda: now,
+        )
+
+        result = service.sessions(scope="all")
+        states = {row["id"]: row["state"] for row in result["sessions"]}
+        # The child keeps its own activity state; its root is current too.
+        self.assertEqual(states, {
+            "ses_root": "current", "ses_child": "current",
+            "ses_idle": "historical", "ses_old_child": "historical",
+        })
+        current = service.sessions(scope="all", state="current")
+        self.assertEqual(
+            sorted(row["id"] for row in current["sessions"]),
+            ["ses_child", "ses_root"],
+        )
+        self.assertNotIn("agent_root_id", json.dumps(result))
+
     def test_sessions_returns_paginated_content_free_inventory(self):
         service = synthetic_query_service()
 
