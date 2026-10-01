@@ -7897,7 +7897,139 @@ console.log(JSON.stringify({
         self.assertLess(self.page.index("id=tab-session"), self.page.index("id=tab-models"))
         self.assertNotIn("Timing evidence", self.page)
         self.assertIn("Observed output pace is a secondary diagnostic.", self.page)
-        self.assertIn("colspan=8", self.page)
+        self.assertIn("<tr><td colspan=8><div class=modelEmpty>No model activity in this window</div>", self.page)
+
+    def test_models_page_is_a_ranked_spend_leaderboard(self):
+        models = self.page.split("id=view-models", 1)[1].split("id=model-frustration", 1)[0]
+        order = [models.index(marker) for marker in (
+            "id=m-spend", "id=m-mix", "id=m-table", "id=m-diagnostics",
+        )]
+        self.assertEqual(order, sorted(order))
+        for marker in (
+            "Where your spend goes", "Model mix over time", "data-model-mix=cost",
+            "data-model-mix=output", "data-model-mix=executions",
+            "Speed &amp; timing diagnostics", "Observed output pace is a secondary diagnostic.",
+        ):
+            self.assertIn(marker, models)
+        diagnostics = models.split("id=m-diagnostics", 1)[1]
+        for marker in ("id=m-speed", "id=m-change", "id=m-wait", "id=m-chart", "id=m-metric"):
+            self.assertIn(marker, diagnostics)
+        self.assertNotIn("id=m-input", models)
+        self.assertNotIn("Logs (all)", models)
+        table_head = models.split("id=m-table><thead>", 1)[1].split("</thead>", 1)[0]
+        self.assertEqual(table_head.count("<th"), 8)
+        self.assertEqual(
+            [key for key in ("model", "cost", "cost_per_exec", "cache", "executions", "output", "wait")
+             if f"data-model-sort={key} data-tip=" in table_head],
+            ["model", "cost", "cost_per_exec", "cache", "executions", "output", "wait"],
+        )
+        self.assertIn("does not change with the History filter", table_head)
+        self.assertNotIn("<span class=\"fieldtip modelHelp\" tabindex=0", table_head)
+        self.assertEqual(table_head.count('<button class="modelSortBtn fieldtip modelHelp" type=button'), 7)
+        for marker in (
+            "const MODEL_SORT_KEYS=['model','cost','cost_per_exec','cache','executions','output','wait'];",
+            "localStorage.setItem('tm_model_sort',JSON.stringify(modelSort))",
+            "localStorage.setItem('tm_model_mix_metric',metric)",
+            "localStorage.setItem('tm_model_diagnostics_open'",
+            "without cost data ${uncosted===1?'is':'are'} excluded, not counted as $0.",
+            "th.setAttribute('aria-sort'",
+            "aria-expanded=${expanded}",
+            "data-model-clear",
+            "setLogHtml($('m-table').querySelector('tbody'),",
+            "const focus=modelFocusKey();", "restoreModelFocus(focus);",
+            "perExecPartial?'*':''",
+            '<div class=modelSpendBar id=m-spend-bar role=group',
+        ):
+            self.assertIn(marker, self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_models_leaderboard_groups_variants_and_never_counts_missing_cost_as_zero(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+function constLine(name){{const start=page.indexOf(`const ${{name}}=`);if(start<0)throw Error(`missing ${{name}}`);return page.slice(start,page.indexOf('\\n',start));}}
+['MODEL_COUNTER_KEYS','MODEL_ARRAY_KEYS','metricAvailable','metricPartial','usageProvenance','usageBasis','hasLocalEstimate'].forEach(name=>eval(constLine(name).replace(/^const /,'globalThis.')));
+['modelWaitDistribution','modelMedian','modelDayInRange','aggregateModelDays','efficiencyMetrics','modelGroupKey','modelGroupRows','modelBoardValue','sortModelBoard','modelSpendRanking'].forEach(name=>eval(`globalThis.${{name}}=${{extract(name)}}`));
+globalThis.modelSort={{key:'cost',direction:'desc'}};
+const day=(d,extra)=>({{day:d,availability:{{tokens:true,cost:true,cache:true}},executions:10,output_tokens:100,input_tokens:1000,cache_read_tokens:800,cache_covered_input_tokens:1000,wait_samples:1,wait_seconds:5,wait_durations_s:[5],...extra}});
+const models=[
+ {{id:'sol::Codex::high',model:'sol',runtime:'Codex',reasoning_effort:'high',logs:3,daily:[day('2026-09-30',{{cost:6}}),day('2026-01-01',{{cost:100}})]}},
+ {{id:'sol::Codex::xhigh',model:'sol',runtime:'Codex',reasoning_effort:'xhigh',logs:2,daily:[day('2026-09-30',{{cost:4}})]}},
+ {{id:'sol::Cursor',model:'sol',runtime:'Cursor',logs:1,daily:[day('2026-09-30',{{cost:0,availability:{{tokens:true,cost:false}}}})]}},
+ {{id:'opus::Claude-3P',model:'opus',runtime:'Claude-3P',logs:5,daily:[day('2026-09-30',{{cost:7,executions:2}})]}},
+ {{id:'part::Codex',model:'part',runtime:'Codex',logs:1,daily:[day('2026-09-30',{{cost:6,executions:10,cost_covered_executions:6,cost_covered_cost:6}})]}},
+ {{id:'big::Cursor',model:'big',runtime:'Cursor',logs:1,daily:[day('2026-09-30',{{output_tokens:999999,availability:{{tokens:true,cost:false}}}})]}},
+];
+const window={{days:['2026-09-30'],daySet:new Set(['2026-09-30'])}};
+const groups=modelGroupRows(models,window),byKey=Object.fromEntries(groups.map(g=>[g.key,g]));
+const ranking=modelSpendRanking(groups);
+process.stdout.write(JSON.stringify({{
+ keys:groups.map(g=>g.key).sort(),
+ solVariants:byKey['sol::Codex'].variants.length,
+ solCost:modelBoardValue(byKey['sol::Codex'],'cost'),
+ cursorCost:modelBoardValue(byKey['sol::Cursor'],'cost'),
+ opusPerExec:modelBoardValue(byKey['opus::Claude-3P'],'cost_per_exec'),
+ partialPerExec:modelBoardValue(byKey['part::Codex'],'cost_per_exec'),
+ solCache:modelBoardValue(byKey['sol::Codex'],'cache'),
+ ranking:ranking.map(g=>g.key),
+ byExecAsc:sortModelBoard(groups,{{key:'executions',direction:'asc'}}).map(g=>g.key),
+ byCostAsc:sortModelBoard(groups,{{key:'cost',direction:'asc'}}).map(g=>g.key),
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload["keys"], ["big::Cursor", "opus::Claude-3P", "part::Codex", "sol::Codex", "sol::Cursor"])
+        self.assertEqual(payload["solVariants"], 2)
+        self.assertEqual(payload["solCost"], 10)
+        self.assertIsNone(payload["cursorCost"])
+        self.assertEqual(payload["opusPerExec"], 3.5)
+        self.assertAlmostEqual(payload["solCache"], 0.8)
+        self.assertEqual(payload["partialPerExec"], 1.0)
+        self.assertEqual(payload["ranking"], ["sol::Codex", "opus::Claude-3P", "part::Codex", "big::Cursor", "sol::Cursor"])
+        self.assertEqual(payload["byExecAsc"][0], "opus::Claude-3P")
+        self.assertEqual(set(payload["byCostAsc"][-2:]), {"sol::Cursor", "big::Cursor"})
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_models_focus_restore_keeps_the_focused_control_and_scopes_to_its_container(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const start=page.indexOf('const MODEL_FOCUS_KEYS=');eval('globalThis.MODEL_FOCUS_KEYS='+page.slice(start+'const MODEL_FOCUS_KEYS='.length,page.indexOf(';',start)));
+eval('globalThis.modelFocusKey='+extract('modelFocusKey'));eval('globalThis.restoreModelFocus='+extract('restoreModelFocus'));
+function node(id,dataset,parent){{const el={{id,dataset:dataset||{{}},parent,children:[],isConnected:true,label:id,
+ contains(other){{for(let cur=other;cur;cur=cur.parent)if(cur===this)return true;return false;}},
+ closest(sel){{const ids=sel.split(',').map(x=>x.trim().slice(1));for(let cur=this;cur;cur=cur.parent)if(ids.includes(cur.id))return cur;return null;}},
+ querySelectorAll(sel){{const attr=sel.slice(1,-1),key=attr.slice(5).replace(/-([a-z])/g,(_,c)=>c.toUpperCase());const out=[];const walk=n=>{{n.children.forEach(c=>{{if(key in c.dataset)out.push(c);walk(c);}});}};walk(this);return out;}},
+ focus(){{document.activeElement=this;}}}};if(parent)parent.children.push(el);byId[id]=el;return el;}}
+const byId={{}};globalThis.document={{activeElement:null}};globalThis.$=id=>byId[id]||null;
+const view=node('view-models');const bar=node('m-spend-bar',{{}},view),legend=node('m-spend-legend',{{}},view),table=node('m-table',{{}},view);
+const seg=node('seg',{{modelIds:'a::Codex::high\\na::Codex::xhigh'}},bar),chip=node('chip',{{modelIds:'a::Codex::high\\na::Codex::xhigh'}},legend);
+const expand=node('expand-old',{{modelExpand:'a::Codex'}},table);
+const results={{}};
+chip.focus();let focus=modelFocusKey();restoreModelFocus(focus);results.chipUnchanged=document.activeElement.label;
+focus=modelFocusKey();chip.isConnected=false;legend.children=[];const chip2=node('chip-new',{{modelIds:chip.dataset.modelIds}},legend);restoreModelFocus(focus);results.chipRebuilt=document.activeElement.label;
+expand.focus();focus=modelFocusKey();expand.isConnected=false;table.children=[];node('expand-new',{{modelExpand:'a::Codex'}},table);restoreModelFocus(focus);results.expandRebuilt=document.activeElement.label;
+const outside=node('outside',{{modelIds:'x'}},null);outside.focus();results.outsideKey=modelFocusKey();
+process.stdout.write(JSON.stringify(results));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload["chipUnchanged"], "chip")
+        self.assertEqual(payload["chipRebuilt"], "chip-new")
+        self.assertEqual(payload["expandRebuilt"], "expand-new")
+        self.assertIsNone(payload["outsideKey"])
+
+    def test_language_signals_section_is_collapsible(self):
+        self.assertIn("id=f-collapse type=button aria-expanded=true aria-controls=model-frustration", self.page)
+        self.assertIn("tm_language_signals_collapsed", self.page)
+        self.assertIn("#model-frustration.collapsed>*:not(.signalHead)", self.page)
+        self.assertIn("if(h==='frustration'){setLanguageSignalsCollapsed(false,false);", self.page)
+        self.assertIn("setLanguageSignalsCollapsed(location.hash!=='#frustration'&&localStorage.getItem('tm_language_signals_collapsed')==='1',false);", self.page)
+        self.assertIn("user language signals`);", self.page)
 
     def test_selected_session_token_split_fills_the_chart_column_gap(self):
         run_grid = self.page.split('<div class=previewRunGrid>', 1)[1].split(
@@ -7975,9 +8107,10 @@ console.log(JSON.stringify({
 
     def test_models_table_labels_effort_qualified_runtime_rows(self):
         self.assertIn(
-            "querySelectorAll('.modelRuntime').forEach((cell,index)=>cell.append(document.createTextNode(` · ${modelEffortLabel(tableRows[index])}`)))",
+            "`${modelEffortLabel(only)} · ${f(only.logs)} ${countWord(only.logs,'log')}`",
             self.page,
         )
+        self.assertIn("<div class=modelVariantName>${esc(modelEffortLabel(variant))}<small>${f(variant.logs)} ${countWord(variant.logs,'log')}</small>", self.page)
 
     def test_selected_session_has_a_compact_two_metric_efficiency_module(self):
         summary = self.page.split('<div class="session-panel on" id=panel-summary>', 1)[1].split(
@@ -9062,7 +9195,7 @@ console.log(JSON.stringify({merged:rows[0],total:aggregateModelDays(rows),select
             "Typical wait", "median wait", "human pause excluded",
             "modelWaitDistribution", "wait_durations_s", "p95_wait_s",
             "Matched pace", "renderMatchedPace", "modelRuntimeLabel",
-            "migrateModelRuntimeFilters", "Typical workload", "median_peak_input_tokens",
+            "migrateModelRuntimeFilters", "Typical workload (approximate shape, not semantic difficulty)", "median_peak_input_tokens",
             "95% CI", "Select 2 models", "TTFT unavailable",
         ):
             self.assertIn(marker, self.page)
@@ -9283,7 +9416,7 @@ console.log(JSON.stringify({
             "function modelDayInRange(day,window)",
             "mergeModelDays(selected,rangeWindow)",
             "buildModelTrend(selected,rangeWindow,names)",
-            ".filter(row=>modelDayInRange(row.day,rangeWindow))",
+            ".filter(day=>modelDayInRange(day.day,rangeWindow))",
             "modelRangeLabel(modelRange)",
         ):
             self.assertIn(marker, self.page)
@@ -10068,19 +10201,12 @@ console.log(JSON.stringify({
     def test_models_and_git_keep_secondary_copy_in_accessible_help(self):
         models = self.page.split("id=view-models", 1)[1].split("id=view-daily", 1)[0]
         for marker in (
-            "id=m-change-label", "id=m-wait-label", "id=m-input-label",
-            "id=m-output-label", "function setModelKpiHelp(labelId,detail)",
+            "id=m-change-label", "id=m-wait-label",
+            "function setModelKpiHelp(labelId,detail)",
             "setModelKpiHelp('m-speed-label',speedDetail)",
             "setModelKpiHelp('m-wait-label',waitDetail)",
-            "setModelKpiHelp('m-input-label',inputDetail)",
-            "setModelKpiHelp('m-output-label',outputDetail)",
             ".modelCellTip.fieldtip{display:table-cell}",
-            ".modelCellTip>span{display:none}",
-            "querySelectorAll('.workloadCell,.speedCell,.waitCell')",
-            "cell.classList.add('fieldtip','modelCellTip')",
-            "cell.setAttribute('aria-description',detail)",
-            "cell.dataset.tip=detail",
-            "cell.removeAttribute('title')",
+            "class=\"fieldtip modelCellTip modelNameCell\" tabindex=0 data-tip=\"${esc(tip)}\" aria-description=\"${esc(tip)}\"",
         ):
             self.assertIn(marker, self.page)
 
@@ -10701,7 +10827,7 @@ console.log(JSON.stringify({
             "A ratio above 1 favors the named faster runtime",
             "The median is primary because the average can be pulled upward",
             "95% confidence interval", "Matched pace",
-            "model runtime", "Observed output pace", "Typical workload",
+            "model runtime", "Observed output pace", "Typical workload (approximate shape, not semantic difficulty)",
             "Typical wait", "semantic difficulty",
             "The 95% confidence interval crosses 1.00",
             "$('m-coverage').setAttribute('aria-valuenow'",
