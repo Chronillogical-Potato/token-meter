@@ -5045,6 +5045,138 @@ class SessionSummaryStatsTests(unittest.TestCase):
         self.assertEqual(row["title"], "release-triage")
         self.assertEqual(row["session_name"], "release-triage")
 
+    def test_claude_summary_counts_loaded_and_used_skills_and_mcp_servers(self):
+        usage = self.claude_usage_row()
+        usage["message"]["content"] = [
+            {"type": "tool_use", "id": "t1", "name": "Skill", "input": {"skill": "brainstorming"}},
+            {"type": "tool_use", "id": "t2", "name": "mcp__context7__query-docs", "input": {}},
+            {"type": "tool_use", "id": "t3", "name": "mcp__webex__webex_rooms", "input": {}},
+        ]
+        objs = [
+            {"type": "attachment", "attachment": {
+                "type": "skill_listing", "isInitial": True, "skillCount": 3,
+                "names": ["brainstorming", "pdf", "docx"],
+                "content": "PRIVATE SKILL LISTING TEXT"}},
+            {"type": "attachment", "attachment": {
+                "type": "deferred_tools_delta", "addedLines": ["PRIVATE LINE"],
+                "addedNames": ["CronCreate", "mcp__context7__query-docs",
+                               "mcp__context7__resolve-library-id", "mcp__outlook__outlook_send"],
+                "removedNames": []}},
+            {"type": "attachment", "attachment": {
+                "type": "mcp_instructions_delta", "addedNames": ["context7"],
+                "addedBlocks": ["PRIVATE INSTRUCTIONS"], "removedNames": []}},
+            usage,
+        ]
+        row = meter.claude_summary(self.claude_source_without_title(), objs)
+        self.assertEqual(row["capabilities"], {
+            "skills": {"loaded": 3, "used": 1},
+            "mcp_servers": {"loaded": 3, "used": 2},
+        })
+        self.assertNotIn("PRIVATE", json.dumps(row["capabilities"]))
+        self.assertNotIn("PRIVATE", json.dumps(
+            {k: v for k, v in row.items() if not k.startswith("_")}, default=str,
+        ))
+
+    def test_claude_session_state_counts_capabilities_from_main_trace(self):
+        usage = self.claude_usage_row()
+        usage["message"]["content"] = [
+            {"type": "tool_use", "id": "t1", "name": "mcp__docs__search", "input": {}},
+        ]
+        records = [
+            {"type": "attachment", "attachment": {
+                "type": "skill_listing", "names": ["pdf", "docx"], "content": "PRIVATE"}},
+            {"type": "attachment", "attachment": {
+                "type": "deferred_tools_delta", "addedNames": ["mcp__jira__get"]}},
+            usage,
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "claude-capabilities.jsonl"
+            path.write_text("".join(json.dumps(record) + "\n" for record in records))
+            state = meter.recompute_claude({
+                **self.source("claude"), "path": str(path), "session": path.name,
+            })
+        self.assertEqual(state["capabilities"], {
+            "skills": {"loaded": 2, "used": 0, "basis": "session"},
+            "mcp_servers": {"loaded": 2, "used": 1, "basis": "session"},
+        })
+        self.assertNotIn("PRIVATE", json.dumps(meter.dashboard_state_payload(state), default=str))
+
+    def test_codex_skill_listing_and_namespaced_mcp_calls_are_counted(self):
+        from token_meter.runtimes.codex import codex_mcp_tool_name, _loaded_skill_names
+        objs = [
+            {"type": "world_state", "payload": {"state": {"host_skills": {
+                "body": "- pdf: PRIVATE (file: /h/.codex/skills/pdf/SKILL.md)\n"
+                        "- docx: PRIVATE (file: /h/.codex/skills/docx/SKILL.md)"}}}},
+            {"type": "response_item", "payload": {"type": "message", "role": "developer", "content": [
+                {"type": "input_text", "text": "<skills_instructions>- xlsx (file: /p/skills/xlsx/SKILL.md)</skills_instructions>"},
+            ]}},
+        ]
+        self.assertEqual(_loaded_skill_names(objs, meter.skill_names_from_value), {"pdf", "docx", "xlsx"})
+        self.assertIsNone(_loaded_skill_names([], meter.skill_names_from_value))
+        self.assertEqual(codex_mcp_tool_name("js", "mcp__cua_repl"), "mcp__cua_repl__js")
+        self.assertEqual(codex_mcp_tool_name("exec", None), "exec")
+        calls = meter.codex_tool_call_evidence([{"timestamp": "2026-07-02T00:00:00Z", "payload": {
+            "type": "function_call", "name": "js", "namespace": "mcp__cua_repl", "call_id": "c1", "arguments": "{}",
+        }}])
+        self.assertEqual((calls[0]["kind"], calls[0]["namespace"]), ("mcp", "cua_repl"))
+
+    def test_configured_capabilities_fill_unrecorded_loads_with_label(self):
+        with mock.patch.object(meter, "configured_capabilities", return_value=({"a", "b", "c"}, set())):
+            result = meter.with_configured_capabilities({
+                "skills": {"loaded": None, "used": 1},
+                "mcp_servers": {"loaded": None, "used": 2},
+            }, "cursor", "/repo")
+        self.assertEqual(result, {
+            "skills": {"loaded": 3, "used": 1, "basis": "configured"},
+            "mcp_servers": {"loaded": 2, "used": 2, "basis": "configured"},
+        })
+        with mock.patch.object(meter, "configured_capabilities", return_value=(None, None)):
+            result = meter.with_configured_capabilities({
+                "skills": {"loaded": 9, "used": 1}, "mcp_servers": {"loaded": None, "used": 0},
+            }, "kiro", "")
+        self.assertEqual(result["skills"], {"loaded": 9, "used": 1, "basis": "session"})
+        self.assertEqual(result["mcp_servers"], {"loaded": None, "used": 0, "basis": "unavailable"})
+
+    def test_cursor_configured_capabilities_read_skill_dirs_and_mcp_json(self):
+        with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as project:
+            for root, name in (("skills", "pdf"), ("skills-cursor", "canvas")):
+                path = Path(home) / ".cursor" / root / name
+                path.mkdir(parents=True)
+                (path / "SKILL.md").write_text("x")
+            (Path(home) / ".cursor" / "mcp.json").write_text(json.dumps({"mcpServers": {"docs": {}, "jira": {}}}))
+            (Path(project) / ".cursor").mkdir()
+            (Path(project) / ".cursor" / "mcp.json").write_text(json.dumps({"mcpServers": {"local": {}}}))
+            with mock.patch.dict(os.environ, {"HOME": home}):
+                skills, servers = meter._scan_configured_capabilities("cursor", project)
+        self.assertEqual(skills, {"pdf", "canvas"})
+        self.assertEqual(servers, {"docs", "jira", "local"})
+
+    def test_claude_summary_without_load_records_keeps_loaded_unknown(self):
+        row = meter.claude_summary(self.claude_source_without_title(), [self.claude_usage_row()])
+        self.assertEqual(row["capabilities"], {
+            "skills": {"loaded": None, "used": 0},
+            "mcp_servers": {"loaded": None, "used": 0},
+        })
+
+    def test_session_capabilities_uses_codex_catalog_mcp_namespaces(self):
+        from token_meter.domain.tools import session_capabilities
+        evidence = {
+            "skills": [],
+            "tools": [{"name": "mcp__docs__search", "namespace": "docs", "kind": "mcp"}],
+            "catalog": [
+                {"name": "mcp__docs__search", "namespace": "docs", "kind": "mcp"},
+                {"name": "mcp__jira__get", "namespace": "jira", "kind": "mcp"},
+                {"name": "exec_command", "namespace": "shell", "kind": "tool"},
+            ],
+        }
+        self.assertEqual(session_capabilities(evidence), {
+            "skills": {"loaded": None, "used": 0},
+            "mcp_servers": {"loaded": 2, "used": 1},
+        })
+        self.assertEqual(session_capabilities({"catalog": [
+            {"name": "exec_command", "namespace": "shell", "kind": "tool"},
+        ]})["mcp_servers"], {"loaded": None, "used": 0})
+
     def test_claude_summary_uses_ai_title_when_no_custom_title(self):
         objs = [
             self.claude_usage_row(),
@@ -5698,6 +5830,23 @@ class CurrentSessionSummaryTests(unittest.TestCase):
         self.assertTrue(result["availability"]["output_per_dollar"])
         self.assertNotIn("model_stats", result)
         self.assertNotIn("priced-model", json.dumps(result))
+
+    def test_projects_bounded_capability_counts_with_unknown_loads(self):
+        known = self.row("known", 49_990)
+        known["capabilities"] = {
+            "skills": {"loaded": 75, "used": 2, "names": ["private"]},
+            "mcp_servers": {"loaded": 20, "used": 1},
+        }
+        unknown = self.row("unknown", 49_980)
+        results = {row["id"]: row for row in meter.current_session_summaries([known, unknown], now=50_000)}
+        self.assertEqual(results["known"]["capabilities"], {
+            "skills": {"loaded": 75, "used": 2, "basis": "unavailable"},
+            "mcp_servers": {"loaded": 20, "used": 1, "basis": "unavailable"},
+        })
+        self.assertEqual(results["unknown"]["capabilities"], {
+            "skills": {"loaded": None, "used": 0, "basis": "unavailable"},
+            "mcp_servers": {"loaded": None, "used": 0, "basis": "unavailable"},
+        })
 
     def test_output_per_dollar_requires_output_and_nonzero_cost_evidence(self):
         rows = [
@@ -7701,7 +7850,8 @@ console.log(JSON.stringify({
             "id=e-project", "id=e-model-picker", "id=e-model-options", "id=e-model-summary",
             "id=e-range", "id=e-output-dollar", "id=e-reasoning-ratio",
             "id=e-output-dollar-chart", "id=e-reasoning-chart",
-            "id=e-context-load", "id=e-output-execution", "id=e-model-table",
+            "id=e-context-load", "id=e-cache-hit", "id=e-model-table",
+            "data-efficiency-sort=cache_hit_ratio",
             "data-efficiency-sort=cost", "data-efficiency-sort=output_per_dollar",
             "function renderEfficiency", "function efficiencyMetrics",
             "function renderEfficiencyChart", "function sortEfficiencyRows",
@@ -7726,6 +7876,9 @@ console.log(JSON.stringify({
         )[0]
         self.assertIn("Output / $", efficiency)
         self.assertIn("Reasoning ratio", efficiency)
+        self.assertIn("Cache hit ratio", efficiency)
+        self.assertNotIn("Output / exec", efficiency)
+        self.assertNotIn("output_per_execution", self.page)
         self.assertIn("Mechanical efficiency", efficiency)
         self.assertIn("Spend", efficiency)
         self.assertNotIn("Cache leverage", efficiency)
@@ -7916,27 +8069,22 @@ console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroI
             "output_per_dollar": 100,
             "reasoning_ratio": 0.5,
             "context_load": 5,
-            "cache_leverage": 0.5,
+            "cache_hit_ratio": 0.5,
             "retry_waste": 0.25,
             "failure_rate": 0.25,
-            "output_per_execution": 100,
         })
         self.assertEqual(payload["missing"], {
             "output_per_dollar": None,
             "reasoning_ratio": None,
             "context_load": 5,
-            "cache_leverage": None,
+            "cache_hit_ratio": None,
             "retry_waste": None,
             "failure_rate": None,
-            "output_per_execution": None,
         })
         self.assertEqual(payload["partial"]["output_per_dollar"], 100)
-        self.assertEqual(payload["partial"]["output_per_execution"], 55)
         self.assertIsNone(payload["partial"]["context_load"])
         self.assertEqual(payload["coveredZero"]["output_per_dollar"], 0)
-        self.assertEqual(payload["coveredZero"]["output_per_execution"], 0)
         self.assertIsNone(payload["inputOnly"]["output_per_dollar"])
-        self.assertIsNone(payload["inputOnly"]["output_per_execution"])
         self.assertEqual(payload["zeroInput"]["context_load"], 0)
 
     def test_efficiency_uses_one_range_for_overall_and_per_model_statistics(self):
@@ -8287,7 +8435,7 @@ console.log(JSON.stringify({
         )
         for marker in (
             "id=e-context-load-change",
-            "id=e-output-execution-change",
+            "id=e-cache-hit-change",
             "efficiencySupportDelta",
         ):
             self.assertIn(marker, efficiency)
@@ -8310,7 +8458,7 @@ console.log(JSON.stringify({
   dollar:efficiencyChartMetricPresentation(5200,'output_per_dollar'),
   reasoning:efficiencyChartMetricPresentation(.34,'reasoning_ratio'),
   context:efficiencyChartMetricPresentation(256,'context_load'),
-  execution:efficiencyChartMetricPresentation(484,'output_per_execution'),
+  cache:efficiencyChartMetricPresentation(.87,'cache_hit_ratio'),
 }));
 """
         result = subprocess.run(
@@ -8320,7 +8468,7 @@ console.log(JSON.stringify({
             "dollar": {"axis": "5.2K", "detail": "5,200 output tokens / $"},
             "reasoning": {"axis": "34.0%", "detail": "34.0% reasoning"},
             "context": {"axis": "256x", "detail": "256x context / output"},
-            "execution": {"axis": "484", "detail": "484 output tokens / exec"},
+            "cache": {"axis": "87.0%", "detail": "87.0% input from cache"},
         })
 
     def test_efficiency_support_cards_include_compact_daily_charts(self):
@@ -8329,7 +8477,7 @@ console.log(JSON.stringify({
         )[0]
         for metric, label in (
             ("context-load", "Daily context load"),
-            ("output-execution", "Daily output per execution"),
+            ("cache-hit", "Daily cache hit ratio"),
         ):
             self.assertIn(
                 f'id=e-{metric}-chart viewBox="0 0 520 96" preserveAspectRatio=none role=img tabindex=0 aria-label="{label}"',
@@ -10325,6 +10473,20 @@ console.log(JSON.stringify({
         )
         self.assertIn('class="card currentSessionCard provider-${esc(provider)}', self.page)
         self.assertIn("Object.entries(RUNTIME_CATALOG).filter(([id])=>id!=='unknown-runtime')", self.page)
+
+    def test_sessions_show_skill_and_mcp_capability_counts(self):
+        self.assertIn("return `${f(counts.used)}/${counts.loaded==null?'—':f(counts.loaded)}${counts.basis==='configured'?'*':''}`;", self.page)
+        self.assertIn('</div>${identityAction}</div>\n  <div class=sactions>${sessionDeleteAvailable(s,renderedAllSessionActions)?', self.page)
+        self.assertNotIn('<div class="badge tok">', self.page)
+        self.assertIn('class="sessionDelete sessionDeleteIcon" data-delete-session="${esc(s.id)}" type=button aria-label="Delete session" title="Delete session"><svg', self.page)
+        self.assertIn('<span class="currentSessionCaps mono" title="${esc(CAPABILITY_SUMMARY_TIP)}">${esc(capabilitySummaryText(row.capabilities))}</span>', self.page)
+        self.assertIn('<div class=meta title="${esc(`${waitText} · ${avg}/exec${speed} · ${CAPABILITY_SUMMARY_TIP}`)}">${esc(s.project||\'local\')} · ${esc(s.last||s.start||\'\')} · ${esc(capabilitySummaryText(s.capabilities))}</div>', self.page)
+        self.assertIn("s.throughput,s.cost_approx,s.capabilities,childAgentsFor(s)", self.page)
+        self.assertIn("<div class=sbar><i></i></div>${childAgentSubsection(s)}</div>", self.page)
+        self.assertIn('id=ov-skills>--</div>', self.page)
+        self.assertIn('id=ov-mcp>--</div>', self.page)
+        self.assertIn("counts.loaded==null?'loaded list not recorded'", self.page)
+        self.assertIn("* means configured now, not recorded by this session.", self.page)
 
     def test_session_delete_actions_require_confirmation_and_use_trash_endpoint(self):
         for marker in ("id=session-delete", "data-delete-session", "id=session-delete-dialog",

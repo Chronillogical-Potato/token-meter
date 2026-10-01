@@ -28,6 +28,7 @@ from token_meter.contracts import (
     TurnSummary,
     UsageEvidence,
 )
+from token_meter.domain.tools import session_capabilities
 from token_meter.domain.usage import normalize_reported_token_count
 
 
@@ -265,6 +266,33 @@ def _without_zero_usage_synthetic_markers(rows):
 def _compact(value, limit=90):
     value = " ".join(str(value or "").split())
     return value[:limit - 1] + "…" if len(value) > limit else value
+
+
+def _loaded_capabilities(objs):
+    """Return ever-loaded skill and MCP-server names; None when unrecorded."""
+    skills = servers = None
+    for obj in objs or ():
+        attachment = obj.get("attachment") if obj.get("type") == "attachment" else None
+        if not isinstance(attachment, dict):
+            continue
+        kind = attachment.get("type")
+        if kind == "skill_listing":
+            skills = skills if skills is not None else set()
+            skills.update(
+                name for name in attachment.get("names") or () if isinstance(name, str)
+            )
+        elif kind == "deferred_tools_delta":
+            servers = servers if servers is not None else set()
+            for name in attachment.get("addedNames") or ():
+                parts = name.split("__") if isinstance(name, str) else ()
+                if len(parts) > 2 and parts[0] == "mcp" and parts[1]:
+                    servers.add(parts[1])
+        elif kind == "mcp_instructions_delta":
+            servers = servers if servers is not None else set()
+            servers.update(
+                name for name in attachment.get("addedNames") or () if isinstance(name, str)
+            )
+    return skills, servers
 
 
 class ClaudeRuntimeAdapter:
@@ -1293,10 +1321,16 @@ class ClaudeRuntimeAdapter:
         usage_tokens = compat["usage_tokens"]
         user_prompt_preview = compat["user_prompt_preview"]
         paths = source.get("_trace_paths") or (source["path"],)
-        objs, _corrupt, _available = self.load_rows(paths)
+        owned_rows, _corrupt, _available = self.load_owned_rows(paths)
+        objs = tuple(row for row, _owner in owned_rows)
         if not objs:
             return None
         objs = _without_zero_usage_synthetic_markers(objs)
+        main_path = str(source.get("path") or "")
+        source = dict(source)
+        source["_loaded_skills"], source["_loaded_mcp_servers"] = _loaded_capabilities(
+            row for row, owner in owned_rows if not main_path or owner == main_path
+        )
     
         msgs = self.logical_messages(objs, timestamp_parser=parse_iso)
         user_events = claude_user_events(objs)
@@ -1740,6 +1774,13 @@ class ClaudeRuntimeAdapter:
         )
         attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(claude_tool_call_evidence(objs, msgs))
+        main_path = str(source.get("path") or "")
+        loaded_skills, loaded_servers = _loaded_capabilities(
+            obj for obj, owner in owned_rows if not main_path or owner == main_path
+        )
+        row["capabilities"] = session_capabilities(
+            row["_tool_evidence"], loaded_skills, loaded_servers,
+        )
         agent_records = self._legacy_agent_records(
             source, owned_msgs, owned_rows, row, compat,
         )

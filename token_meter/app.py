@@ -110,6 +110,7 @@ from token_meter.domain.tools import (
     capability_control_groups as _domain_capability_control_groups,
     optional_capability_summary as _domain_optional_capability_summary,
     summarize_tool_evidence as _domain_summarize_tool_evidence,
+    session_capabilities as _domain_session_capabilities,
     tool_identity as _domain_tool_identity,
     tool_summary as _domain_tool_summary,
 )
@@ -175,6 +176,7 @@ from token_meter.runtimes.codex import (
     AUTO_REVIEW_MODEL,
     CodexRuntimeAdapter,
     CodexRuntimeAdapterProxy,
+    codex_mcp_tool_name,
 )
 from token_meter.runtimes.claude import (
     ClaudeRuntimeAdapter,
@@ -5110,6 +5112,7 @@ def recompute(source):
     return result.value
 
 
+
 def source_revision_signature(source):
     """Track trace activity plus display metadata stored outside the trace."""
     if not source:
@@ -5276,6 +5279,18 @@ def build_state(source, tot, cost, total_tokens, total_cost, series, executions,
     tool_data["catalog_coverage"] = catalog_coverage
     tool_data["loaded_namespaces"] = list(source.get("tool_namespaces") or [])
     tool_data["catalog"] = tool_catalog[:80]
+    capabilities = _domain_session_capabilities(
+        {
+            "skills": tool_data.get("skills"),
+            "tools": [tool for row in executions for tool in row.get("tools") or ()],
+            "catalog": tool_catalog,
+        },
+        source.get("_loaded_skills"),
+        source.get("_loaded_mcp_servers"),
+    )
+    capabilities = with_configured_capabilities(
+        capabilities, source.get("provider"), source.get("project") or "",
+    )
     availability = availability or metric_availability(
         source["provider"], context=bool(context_window),
         timing=bool(active_available or wait_samples),
@@ -5326,6 +5341,7 @@ def build_state(source, tot, cost, total_tokens, total_cost, series, executions,
         "primary_model": primary_model,
         "turns": len(series),
         "subagent_turns": side_turns,
+        "capabilities": capabilities,
         "cache_ratio": cache_ratio,
         "cache_saved": cache["saved"],
         "cache": cache,
@@ -5531,6 +5547,7 @@ def codex_tool_call_evidence(objs):
         ts = parse_iso(obj.get("timestamp", "")) or 0
         if ptype in ("function_call", "custom_tool_call", "web_search_call", "tool_search_call"):
             name = payload.get("name") or ("web.search" if ptype == "web_search_call" else ptype.replace("_call", ""))
+            name = codex_mcp_tool_name(name, payload.get("namespace"))
             call_id = payload.get("call_id") or payload.get("id") or f"call-{len(order) + 1}"
             if call_id not in calls:
                 arguments = payload.get("arguments") or payload.get("input")
@@ -5716,6 +5733,11 @@ def session_summary(source, opencode_conn=None):
     else:
         row = summary_row(source, source.get("title"), 0.0, 0, 0, set(), None, None,
                           {}, {}, {}, False, availability=metric_availability("unknown"))
+    if isinstance(row, dict):
+        row["capabilities"] = with_configured_capabilities(
+            row.get("capabilities") or _domain_session_capabilities(row.get("_tool_evidence")),
+            source.get("provider"), source.get("project") or row.get("project") or "",
+        )
     with _summary_cache_lock:
         _summary_cache[source["path"]] = {"signature": signature, "row": row}
     return row
@@ -5816,6 +5838,84 @@ def global_tool_waste(session_rows):
 
 def codex_mcp_states():
     return {name: bool(row.get("enabled")) for name, row in toml_named_sections(CODEX_CONFIG, "mcp_servers").items()}
+
+
+_CONFIGURED_CAPABILITY_TTL_S = 60.0
+_configured_capability_cache = {}
+_configured_capability_cache_lock = threading.Lock()
+
+
+def _skill_dir_names(*roots):
+    names = set()
+    for root in roots:
+        for path in glob.glob(os.path.join(root, "*", "SKILL.md")):
+            names.add(os.path.basename(os.path.dirname(path)))
+    return names
+
+
+def _json_mcp_server_names(*paths):
+    names = set()
+    for path in paths:
+        data = load_json(path, {})
+        servers = data.get("mcpServers") if isinstance(data, dict) else None
+        if isinstance(servers, dict):
+            names.update(str(name) for name in servers)
+    return names
+
+
+def _scan_configured_capabilities(provider, project):
+    if provider == "codex":
+        skills = {
+            row["name"] for row in discovered_skills()
+            if row.get("runtime") == "Codex" and row.get("enabled") is not False
+        }
+        return skills, {name for name, enabled in codex_mcp_states().items() if enabled}
+    if provider == "cursor":
+        cursor_root = os.path.expanduser("~/.cursor")
+        project_root = os.path.join(project, ".cursor") if project and os.path.isabs(project) else ""
+        skill_roots = [os.path.join(cursor_root, "skills"), os.path.join(cursor_root, "skills-cursor")]
+        mcp_paths = [os.path.join(cursor_root, "mcp.json")]
+        if project_root:
+            skill_roots.append(os.path.join(project_root, "skills"))
+            mcp_paths.append(os.path.join(project_root, "mcp.json"))
+        return _skill_dir_names(*skill_roots), _json_mcp_server_names(*mcp_paths)
+    return None, None
+
+
+def configured_capabilities(provider, project=""):
+    """Return currently configured skill and MCP names for runtimes whose traces omit them."""
+    key = (str(provider or ""), str(project or ""))
+    now = time.monotonic()
+    with _configured_capability_cache_lock:
+        cached = _configured_capability_cache.get(key)
+        if cached and now - cached[0] < _CONFIGURED_CAPABILITY_TTL_S:
+            return cached[1]
+    result = _scan_configured_capabilities(*key)
+    with _configured_capability_cache_lock:
+        if len(_configured_capability_cache) > 256:
+            _configured_capability_cache.clear()
+        _configured_capability_cache[key] = (now, result)
+    return result
+
+
+def with_configured_capabilities(capabilities, provider, project=""):
+    """Fill unrecorded loaded counts from current configuration and label each basis."""
+    capabilities = capabilities if isinstance(capabilities, dict) else {}
+    configured = None
+    result = {}
+    for index, key in enumerate(("skills", "mcp_servers")):
+        counts = dict(capabilities.get(key) or {})
+        used = int(counts.get("used") or 0)
+        loaded = counts.get("loaded")
+        basis = "session" if isinstance(loaded, int) else "unavailable"
+        if loaded is None:
+            if configured is None:
+                configured = configured_capabilities(provider, project)
+            names = configured[index]
+            if names is not None:
+                loaded, basis = max(len(names), used), "configured"
+        result[key] = {"loaded": loaded, "used": used, "basis": basis}
+    return result
 
 
 def claude_mcp_states():

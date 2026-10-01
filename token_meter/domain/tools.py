@@ -293,6 +293,40 @@ def summarize_tool_evidence(calls, catalog=None):
     return totals
 
 
+def session_capabilities(evidence, loaded_skills=None, loaded_mcp_servers=None):
+    """Count loaded and used skills / MCP servers; unknown loads stay None."""
+    evidence = evidence or {}
+    used_skills = {row.get("name") for row in evidence.get("skills") or [] if row.get("name")}
+    catalog_servers = {
+        row.get("namespace") for row in evidence.get("catalog") or []
+        if row.get("kind") == "mcp" and row.get("namespace")
+    }
+    catalog_names = {
+        row.get("name"): row.get("namespace") for row in evidence.get("catalog") or []
+        if row.get("kind") == "mcp" and row.get("name") and row.get("namespace")
+    }
+    used_servers = set()
+    for row in evidence.get("tools") or []:
+        if row.get("kind") == "mcp" and row.get("namespace"):
+            used_servers.add(row["namespace"])
+        elif row.get("name") in catalog_names:
+            used_servers.add(catalog_names[row["name"]])
+    if loaded_mcp_servers is None and catalog_servers:
+        loaded_mcp_servers = catalog_servers
+    elif loaded_mcp_servers is not None:
+        loaded_mcp_servers = set(loaded_mcp_servers) | catalog_servers
+
+    def loaded(names, used):
+        return None if names is None else len(set(names) | used)
+
+    return {
+        "skills": {"loaded": loaded(loaded_skills, used_skills), "used": len(used_skills)},
+        "mcp_servers": {
+            "loaded": loaded(loaded_mcp_servers, used_servers), "used": len(used_servers),
+        },
+    }
+
+
 def capability_control_groups(_mcp_items, skill_items):
     groups = []
     packs = {}

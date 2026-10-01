@@ -330,6 +330,21 @@ def fold_child_session_rows(rows):
     return result
 
 
+def capabilities_projection(value):
+    value = value if isinstance(value, dict) else {}
+    result = {}
+    for key in ("skills", "mcp_servers"):
+        counts = value.get(key) if isinstance(value.get(key), dict) else {}
+        loaded = counts.get("loaded")
+        basis = counts.get("basis")
+        result[key] = {
+            "loaded": max(0, int(loaded)) if isinstance(loaded, int) else None,
+            "used": max(0, int(counts.get("used") or 0)),
+            "basis": basis if basis in ("session", "configured") else "unavailable",
+        }
+    return result
+
+
 def current_session_summaries(rows, now=None, max_age_s=30 * 60, limit=8,
                               working_age_s=90, context_sample_limit=32):
     """Return bounded card-safe recent sessions from normalized rows."""
@@ -454,6 +469,7 @@ def current_session_summaries(rows, now=None, max_age_s=30 * 60, limit=8,
             },
             "token_estimate": bool(row.get("token_estimate")),
             "turns": int(row.get("turns") or 0),
+            "capabilities": capabilities_projection(row.get("capabilities")),
             "mtime": candidate["mtime"],
             "idle_s": candidate["idle_s"],
             "activity_state": candidate["activity_state"],

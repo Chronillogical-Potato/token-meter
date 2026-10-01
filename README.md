@@ -178,14 +178,14 @@ Use **Efficiency** to compare four signals over comparable, covered work:
   more reasoning.
 - **Context load**: processed input tokens per output token. Lower is better
   because less context is carried into each response.
-- **Output / execution**: output tokens per covered run. Higher generally means
-  a less fragmented workflow.
+- **Cache hit ratio**: cache-read tokens as a share of cache-covered input.
+  Higher is usually better because more context is served from the prompt cache.
 
 Each headline includes a daily trend, and partial coverage or unavailable
 evidence stays labelled beside the numbers.
 
 <p align="center">
-  <img src="images/efficiency.png" alt="Token Meter Efficiency page with output per dollar, reasoning ratio, context load, and output per execution" width="900">
+  <img src="images/efficiency.png" alt="Token Meter Efficiency page with output per dollar, reasoning ratio, context load, and cache hit ratio" width="900">
 </p>
 
 ### Git

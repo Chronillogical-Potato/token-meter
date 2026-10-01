@@ -195,7 +195,7 @@ class MarketingSiteContractTests(unittest.TestCase):
         self.assertIn("Efficiency, with the evidence beside it.", efficiency)
         for signal in (
             "Output / covered $", "Reasoning ratio", "Context load",
-            "Output / execution",
+            "Cache hit ratio",
         ):
             self.assertIn(signal, efficiency)
         for qualifier in (

@@ -29,6 +29,7 @@ from token_meter.contracts import (
     TurnSummary,
     UsageEvidence,
 )
+from token_meter.domain.tools import session_capabilities
 from token_meter.domain.usage import normalize_reported_token_count
 
 
@@ -317,6 +318,37 @@ def _catalog_counts(catalog):
     advertised = len(catalog or ())
     deferred = sum(1 for row in catalog or () if row.get("defer_loading"))
     return advertised, max(0, advertised - deferred), deferred
+
+
+def codex_mcp_tool_name(name, namespace):
+    namespace = str(namespace or "")
+    if namespace.startswith("mcp__") and not str(name or "").startswith("mcp__"):
+        server = namespace.split("__")[1] if len(namespace.split("__")) > 1 else ""
+        if server:
+            return "mcp__{}__{}".format(server, name)
+    return name
+
+
+def _loaded_skill_names(objs, skill_names_from_value):
+    """Return skill names Codex advertised to the session; None when unrecorded."""
+    names = None
+    for obj in objs or ():
+        payload = obj.get("payload") if isinstance(obj.get("payload"), dict) else {}
+        texts = []
+        if obj.get("type") == "world_state":
+            state = payload.get("state") if isinstance(payload.get("state"), dict) else {}
+            host = state.get("host_skills") if isinstance(state.get("host_skills"), dict) else {}
+            if isinstance(host.get("body"), str):
+                texts.append(host["body"])
+        elif payload.get("type") == "message" and payload.get("role") == "developer":
+            for block in payload.get("content") or ():
+                text = block.get("text") if isinstance(block, dict) else None
+                if isinstance(text, str) and "<skills_instructions>" in text:
+                    texts.append(text.split("<skills_instructions>", 1)[1].split("</skills_instructions>", 1)[0])
+        for text in texts:
+            names = names if names is not None else set()
+            names.update(skill_names_from_value(text))
+    return names
 
 
 class CodexRuntimeAdapter:
@@ -1291,6 +1323,7 @@ class CodexRuntimeAdapter:
     
             if ptype in ("function_call", "custom_tool_call", "web_search_call", "tool_search_call"):
                 name = payload.get("name") or ("web.search" if ptype == "web_search_call" else ptype.replace("_call", ""))
+                name = codex_mcp_tool_name(name, payload.get("namespace"))
                 call_id = payload.get("call_id") or payload.get("id") or f"call-{len(call_map) + 1}"
                 ident = tool_identity(name)
                 arguments = payload.get("arguments") or payload.get("input")
@@ -1516,6 +1549,7 @@ class CodexRuntimeAdapter:
         source["tools_deferred"] = tools_deferred
         source["tool_catalog"] = tool_catalog
         source["tool_namespaces"] = tool_namespaces
+        source["_loaded_skills"] = _loaded_skill_names(objs, skill_names_from_value)
         wait_samples = codex_wait_samples(objs, source.get("model"))
         state = build_state(source, tot, cost, total_tokens, total_cost, series, executions, trace, semantic,
                             analyses, insights, first_ts, last_ts, idle, biggest, len(coord_execs), True,
@@ -1678,6 +1712,10 @@ class CodexRuntimeAdapter:
         )
         attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(codex_tool_call_evidence(objs), source.get("tool_catalog") or [])
+        row["capabilities"] = session_capabilities(
+            row["_tool_evidence"],
+            _loaded_skill_names(objs, compat["skill_names_from_value"]),
+        )
         model_rows = row.get("model_stats") or []
         cache_read_tokens = sum(
             int(item.get("cache_read_tokens") or 0) for item in model_rows
