@@ -7707,7 +7707,7 @@ def canonical_agent_sources(sources):
     selected = []
 
     for source in canonical_aggregation_sources(source_rows):
-        if source.get("provider") in ("claude", "cursor"):
+        if source.get("provider") in ("claude", "cursor", "pi"):
             selected.append(source)
 
     groups = defaultdict(list)

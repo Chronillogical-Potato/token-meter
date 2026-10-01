@@ -99,6 +99,11 @@ is inferred from user-to-assistant timestamps, not measured output speed.
 Context pressure, output speed, cache savings, and semantic token classification
 remain unavailable. Pi cost is the estimate persisted in its local session;
 Token Meter does not infer a model or price from provider resource identifiers.
+Pi `subagent` child runs are counted in the owning session's totals and listed
+with their provider-reported agent name, model, duration, and activity. Only the
+structural result fields are read; child prompts, tasks, messages, and error
+output stay unread, and an unreported child figure remains unavailable rather
+than zero.
 
 ## First Five Minutes
 

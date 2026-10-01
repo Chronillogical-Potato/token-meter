@@ -144,10 +144,13 @@ def _totals(records):
     known_tokens = sum(
         record["tokens"] for record in records if record["tokens"] is not None
     )
-    cost_available = bool(records) and all(
+    # A record whose owning session dropped child evidence (for example a
+    # runtime run cap) cannot make any total that includes it complete.
+    incomplete = any(record.get("_coverage_partial") for record in records)
+    cost_available = bool(records) and not incomplete and all(
         record["cost_available"] for record in records
     )
-    tokens_available = bool(records) and all(
+    tokens_available = bool(records) and not incomplete and all(
         record["tokens_available"] for record in records
     )
     return {
@@ -265,11 +268,14 @@ def build_agent_groups(session_rows, *, now=None, max_agents=100):
             continue
         owner_session_id = _opaque_id(session_row.get("id"))
         owner_project = _project_key(session_row.get("project"))
+        coverage_partial = session_row.get("_agent_records_partial") is True
         for raw in session_row.get("_agent_records") or []:
             record = _normalize_record(raw, owner_session_id, owner_project)
             if record is None:
                 invalid_owner_ids.add(owner_session_id)
                 continue
+            if coverage_partial:
+                record["_coverage_partial"] = True
             candidates[record["id"]].append(record)
 
     records = {}
@@ -328,6 +334,12 @@ def build_agent_groups(session_rows, *, now=None, max_agents=100):
         root_session_id = root.get("session_id") or root.get("_owner_session_id")
         if not root_session_id:
             continue
+        # A session that dropped child evidence has at least one upstream run
+        # this group cannot see; count it so coverage reads "partial".
+        missing_upstream_runs = 1 if any(
+            member.get("_coverage_partial") for member in members
+        ) else 0
+        coverage_total = len(members) + missing_upstream_runs
         members.sort(key=lambda item: (item["depth"], item["id"]))
         totals = _totals(members)
         attention = _attention(members, totals)
@@ -351,11 +363,11 @@ def build_agent_groups(session_rows, *, now=None, max_agents=100):
                 ),
                 "tokens": _coverage(
                     sum(1 for item in members if item["tokens_available"]),
-                    len(members), "complete",
+                    coverage_total, "complete",
                 ),
                 "cost": _coverage(
                     sum(1 for item in members if item["cost_available"]),
-                    len(members), "estimated",
+                    coverage_total, "estimated",
                 ),
             },
             "totals": totals,

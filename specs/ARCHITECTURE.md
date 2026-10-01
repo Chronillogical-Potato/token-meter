@@ -129,6 +129,23 @@ establish a context window size, time to first token, semantic token split, or
 cache-savings price, so those projections remain unavailable rather than being
 derived or reported as zero.
 
+Pi child runs invoked through the `subagent` tool are read from the parent
+transcript's tool-result structure only: the adapter keeps the bounded agent
+name and nested usage, adds the child spend to the owning session's totals,
+model statistics, and daily cost, and emits one `root` record plus one
+`spawned` record per observable child run. Child prompts, tasks, messages,
+stderr, and outputs are never read. A top-level result `usage` is authoritative
+when Pi reports one and a per-child split is attributed only when it reconciles
+exactly; otherwise one aggregate run carries the total. A run without usage
+evidence reports unavailable tokens and cost and makes the session coverage
+partial rather than folding an unknown into a complete total; the same holds
+when the bounded child-run cap drops a call or child. A child whose
+model is unreported or fails sanitization is attributed to an explicit
+`unknown-model` key, never to the parent's model. A root agent record derives
+its own completion from the final assistant turn's recorded stop reason, while
+the session summary row keeps its pre-existing nonterminal behavior so sessions
+without subagent calls do not change.
+
 ## Domain and Model Flow
 
 `token_meter/domain/usage.py` and `token_meter/models/` resolve token counts,

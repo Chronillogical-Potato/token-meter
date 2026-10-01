@@ -1,6 +1,7 @@
 """Native read-only adapter for Pi coding agent JSONL session evidence."""
 
 import glob
+import hashlib
 import json
 import math
 import os
@@ -29,6 +30,7 @@ from token_meter.contracts import (
     UsageEvidence,
 )
 from token_meter.domain.timing import merge_execution_intervals, performance_summary
+from token_meter.domain.usage import distribute_reported_cost_counts
 
 
 MAX_JSON_BYTES = 32 * 1024 * 1024
@@ -36,6 +38,17 @@ MAX_ROWS = 10_000
 MAX_SOURCES = 2_000
 MAX_TURNS = 2_000
 MAX_TOOLS = 2_000
+MAX_SUBAGENT_RUNS = 500
+SUBAGENT_TOOL_NAME = "subagent"
+_MODEL_FILE_EXTENSIONS = (
+    ".gguf", ".safetensors", ".ckpt", ".onnx", ".pt", ".pth", ".bin",
+    ".rsa", ".pem", ".key", ".crt", ".cer", ".pub",
+)
+_MODEL_PATH_ROOT_SEGMENTS = frozenset((
+    "users", "home", "etc", "var", "tmp", "opt", "usr", "private",
+    "library", "applications", "documents", "desktop", "downloads",
+    "localhost",
+))
 
 
 def _file_signature(path):
@@ -103,6 +116,463 @@ def _cost_breakdown(value):
         "output": _number(value.get("output")),
     }
     return values if all(item is not None for item in values.values()) else None
+
+
+# Credential prefixes that are distinctive on their own. Matched at a token
+# boundary, case-insensitively, wherever they appear in the value.
+_SECRET_TOKEN_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(?:"
+    r"sk-|ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|xox[abposr]-|glpat-"
+    r"|(?:sk|pk|rk)_(?:live|test)_"
+    r")",
+    re.IGNORECASE,
+)
+# Short or word-like prefixes (Hugging Face, npm, xAI, Google API keys) count
+# only when followed by a long unbroken alphanumeric run. Real keys carry
+# 30+ characters there; a 16-character floor keeps ordinary names such as
+# ``xai-researcher`` or ``hf_transformers`` while rejecting key material.
+_SHORT_SECRET_PREFIX_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(?:hf_|npm_|xai-|aiza)[A-Za-z0-9]{16,}",
+    re.IGNORECASE,
+)
+_AWS_ACCESS_KEY_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(?:AKIA|ASIA)[0-9A-Z]{12,}", re.IGNORECASE,
+)
+_JWT_PATTERN = re.compile(
+    r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*"
+)
+_HOST_LABEL = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+_IPV4 = r"\d{1,3}(?:\.\d{1,3}){3}"
+_DOTTED_HOST = r"(?:%s\.)+[a-z]{2,63}" % _HOST_LABEL
+_COMMON_HOST_SUFFIXES = frozenset((
+    "com", "net", "org", "io", "dev", "app", "cloud", "local", "lan",
+    "internal", "corp", "intranet", "localdomain", "home", "test",
+    "example", "invalid", "localhost",
+))
+
+
+def _has_secret_token(text):
+    """Return whether text carries a credential-shaped token anywhere."""
+    return bool(
+        _SECRET_TOKEN_PATTERN.search(text)
+        or _SHORT_SECRET_PREFIX_PATTERN.search(text)
+        or _AWS_ACCESS_KEY_PATTERN.search(text)
+        or _JWT_PATTERN.search(text)
+    )
+
+
+def _is_host_like(text):
+    """Return whether the whole value is a hostname, IP, or host:port."""
+    lowered = text.lower()
+    if re.fullmatch(r"(?:%s|%s|localhost):\d{1,5}" % (_IPV4, _DOTTED_HOST), lowered):
+        return True
+    if lowered == "localhost" or re.fullmatch(_IPV4, lowered):
+        return True
+    if re.fullmatch(r"%s:\d{4,5}" % _HOST_LABEL, lowered):
+        # Single-label host with a port-shaped tag such as gateway:8080.
+        # Model tags (llama3.1:8b, model:latest, ...-v1:0) do not match.
+        return True
+    if re.fullmatch(_DOTTED_HOST, lowered):
+        # Bare names: require a common host suffix or three or more labels so
+        # dotted vendor ids keep working.
+        labels = lowered.split(".")
+        return labels[-1] in _COMMON_HOST_SUFFIXES or len(labels) >= 3
+    return False
+
+
+def _has_account_at(text):
+    """Reject user@host shapes while keeping @cf/ and model@version ids."""
+    for position, char in enumerate(text):
+        if char != "@":
+            continue
+        rest = text[position + 1:]
+        if position == 0:
+            # Leading namespace such as Cloudflare's @cf/ or @hf/.
+            if not re.match(r"[a-z0-9-]+/", rest, re.IGNORECASE):
+                return True
+            continue
+        # Vertex-style model@version: the suffix must be an 8-digit date, a
+        # semantic version with at most three numeric components, or a tag.
+        # Four dotted numbers (an IPv4 address) or any host shape is rejected.
+        if not re.fullmatch(
+            r"(?:\d{8}|v?\d+(?:\.\d+){0,2}|latest|default)", rest,
+            re.IGNORECASE,
+        ) or _is_host_like(rest):
+            return True
+    return False
+
+
+def _safe_agent_role(value, limit=64):
+    """Keep a short provider-reported agent name, never arbitrary prose."""
+    if not isinstance(value, str):
+        return ""
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return ""
+    text = " ".join(value.split())
+    lowered = text.lower()
+    if not text or len(text) > limit:
+        return ""
+    if (
+        text.startswith(("/", "\\", "~", "./", "../"))
+        or re.match(r"^[A-Za-z]:[\\/]", text)
+        or "://" in text
+        or lowered.startswith(("bearer ", "sk-", "-----begin "))
+        or any(marker in lowered for marker in (
+            "api_key=", "api-key=", "secret=", "token=",
+        ))
+        or _has_secret_token(text)
+    ):
+        return ""
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", text):
+        return text
+    return ""
+
+
+def _public_agent_id(*parts):
+    """Return a stable public agent ID without exposing session identity."""
+    material = "\0".join(str(part or "") for part in parts)
+    if not material.strip("\0"):
+        return ""
+    digest = hashlib.sha256(
+        b"token-meter:pi-agent:v1\0" + material.encode("utf-8", "replace")
+    ).hexdigest()
+    return "pi-agent-" + digest
+
+
+_PUBLIC_MODEL_REGISTRY_PREFIXES = frozenset(("hf.co", "huggingface.co"))
+
+
+def _model_id_is_path_like(text):
+    """Reject strings shaped like a filesystem or host path, not a model."""
+    segments = text.split("/")
+    # Only a leading public registry (hf.co/org/model) may be a host name.
+    registry_prefix = (
+        len(segments) > 1
+        and segments[0].lower() in _PUBLIC_MODEL_REGISTRY_PREFIXES
+    )
+    if len(segments) > 1 and not registry_prefix:
+        first = segments[0].lower()
+        if re.fullmatch(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?", first):
+            # Host-shaped namespace such as example.com/secret.
+            return True
+        if first.split(":", 1)[0] in _MODEL_PATH_ROOT_SEGMENTS:
+            return True
+    for position, segment in enumerate(segments):
+        if not segment or segment.startswith("."):
+            return True
+        if _is_host_like(segment) and not (registry_prefix and position == 0):
+            # A host, IP, or host:port in any segment, e.g.
+            # ollama/10.0.0.5:11434 or provider/host.example.com:8443/m.
+            return True
+        if segment.lower().endswith(_MODEL_FILE_EXTENSIONS):
+            return True
+    return False
+
+
+def _subagent_model_id(value):
+    if not isinstance(value, str):
+        return ""
+    text = value.strip()
+    lowered = text.lower()
+    if (
+        _model_id_is_path_like(text)
+        or not text or len(text) > 120
+        or any(char.isspace() for char in text)
+        or any(ord(char) < 32 or ord(char) == 127 for char in text)
+        or "://" in text
+        or text.startswith(("/", "\\", "~", "./", "../"))
+        or re.match(r"^[A-Za-z]:[\\/]", text)
+        or not re.fullmatch(r"[A-Za-z0-9@][A-Za-z0-9._/@:+-]*", text)
+        or lowered.startswith(("bearer ", "sk-", "-----begin "))
+        or any(marker in lowered for marker in (
+            "api_key=", "api-key=", "secret=", "token=",
+        ))
+        or _has_secret_token(text)
+        or _is_host_like(text)
+        or _has_account_at(text)
+    ):
+        return ""
+    return text
+
+
+def _subagent_stop_reason(value):
+    if not isinstance(value, str):
+        return ""
+    text = value.strip()
+    return text if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,31}", text) else ""
+
+
+def _subagent_arguments_role(arguments):
+    """Return the only structural argument a single child call can name."""
+    if not isinstance(arguments, dict):
+        return ""
+    return _safe_agent_role(arguments.get("agent"))
+
+
+def _subagent_usage(value):
+    """Normalize nested-model usage without treating a gap as a measured zero."""
+    if not isinstance(value, dict):
+        return None
+    input_tokens = _integer(value.get("input"))
+    output_tokens = _integer(value.get("output"))
+    cache_read = _integer(value.get("cacheRead"))
+    cache_write = _integer(value.get("cacheWrite"))
+    reasoning = _integer(value.get("reasoning")) or 0
+    reasoning = min(reasoning, output_tokens) if output_tokens is not None else 0
+    raw_cost = value.get("cost")
+    breakdown = _cost_breakdown(raw_cost)
+    scalar_cost = _number(raw_cost)
+    if scalar_cost is None and isinstance(raw_cost, dict):
+        scalar_cost = _number(raw_cost.get("total"))
+    if breakdown is not None:
+        total_cost = sum(breakdown.values())
+    elif scalar_cost is not None:
+        # The shipped subagent tool reports a scalar cost. Allocate it across
+        # the token buckets the way the provider-reported-cost helper does for
+        # other scalar-cost runtimes, so the breakdown still sums to the total.
+        distributed = distribute_reported_cost_counts(
+            scalar_cost,
+            input_tokens=input_tokens or 0,
+            output_tokens=output_tokens or 0,
+            cache_read_tokens=cache_read or 0,
+            cache_write_tokens=cache_write or 0,
+            reasoning_tokens=reasoning,
+        )
+        breakdown = {
+            "input": distributed["input"],
+            "cache_write": distributed["cache_write"],
+            "cache_read": distributed["cache_read"],
+            "output": distributed["output"] + distributed["reasoning"],
+        }
+        total_cost = scalar_cost
+    else:
+        total_cost = 0.0
+    input_available = input_tokens is not None
+    output_available = output_tokens is not None
+    cache_available = cache_read is not None and cache_write is not None
+    return {
+        "input_tokens": input_tokens or 0,
+        "output_tokens": output_tokens or 0,
+        "cache_read_tokens": cache_read or 0,
+        "cache_write_tokens": cache_write or 0,
+        "reasoning_tokens": reasoning,
+        "tokens": (
+            (input_tokens or 0) + (output_tokens or 0)
+            + (cache_read or 0) + (cache_write or 0)
+        ),
+        "input_available": input_available,
+        "output_available": output_available,
+        "cache_available": cache_available,
+        "cost_available": breakdown is not None,
+        "cost": breakdown,
+        "total_cost": total_cost,
+        "turns": _integer(value.get("turns")),
+    }
+
+
+def _subagent_result_runs(details):
+    """Read only the documented structural result fields; drop child content.
+
+    Returns the bounded runs, the number of reported result entries, and
+    whether any reported entry was dropped (malformed or over the cap).
+    """
+    if not isinstance(details, dict):
+        return (), 0, False
+    results = details.get("results")
+    if results is None:
+        return (), 0, False
+    if not isinstance(results, list):
+        # A malformed results value still reports that a child ran; with no
+        # top-level usage it becomes one unavailable run, not a skipped call.
+        return (), 1, True
+    runs = []
+    dropped = False
+    for index, result in enumerate(results):
+        if len(runs) >= MAX_SUBAGENT_RUNS or not isinstance(result, dict):
+            dropped = True
+            continue
+        runs.append({
+            "index": index,
+            "role": _safe_agent_role(result.get("agent")),
+            "model": _subagent_model_id(result.get("model")),
+            "usage": _subagent_usage(result.get("usage")),
+            "exit_code": _integer(result.get("exitCode")),
+            "stop_reason": _subagent_stop_reason(result.get("stopReason")),
+        })
+    return tuple(runs), len(results), dropped
+
+
+def _subagent_run(evidence, *, index=0, role="", model="", usage=None,
+                  activity_state="incomplete", failed=False):
+    call_ts = float(evidence.get("call_ts") or 0) or None
+    result_ts = float(evidence.get("result_ts") or 0) or None
+    last_activity = result_ts or call_ts
+    executions = 0
+    if usage is not None:
+        executions = usage["turns"] if usage["turns"] is not None else 1
+    return {
+        "call_id": evidence["call_id"],
+        "index": index,
+        "role": role,
+        "model": model,
+        "usage": usage,
+        "activity_state": activity_state,
+        "started_at": call_ts,
+        "ended_at": result_ts if activity_state == "complete" else None,
+        "last_activity_at": last_activity,
+        "executions": executions,
+        "failed_attempts": 1 if failed else 0,
+    }
+
+
+def _subagent_details_reconcile(top, runs):
+    """Trust a per-child split only when it matches the authoritative total."""
+    if not runs or not (
+        top["input_available"] and top["output_available"]
+        and top["cache_available"] and top["cost_available"]
+    ):
+        return False
+    totals = [0, 0, 0, 0]
+    cost = 0.0
+    for run in runs:
+        usage = run.get("usage")
+        if not usage or not (
+            usage["input_available"] and usage["output_available"]
+            and usage["cache_available"] and usage["cost_available"]
+        ):
+            return False
+        totals[0] += usage["input_tokens"]
+        totals[1] += usage["output_tokens"]
+        totals[2] += usage["cache_read_tokens"]
+        totals[3] += usage["cache_write_tokens"]
+        cost += usage["total_cost"]
+    return totals == [
+        top["input_tokens"], top["output_tokens"],
+        top["cache_read_tokens"], top["cache_write_tokens"],
+    ] and abs(cost - top["total_cost"]) < 1e-9
+
+
+def _child_activity(run, *, failed_overall=False):
+    if run["exit_code"] not in (None, 0):
+        return "incomplete"
+    if run["stop_reason"] in ("error", "aborted"):
+        return "incomplete"
+    if failed_overall and run["exit_code"] is None and not run["stop_reason"]:
+        # The tool reported failure but this child carries no own verdict.
+        return "incomplete"
+    return "complete"
+
+
+def _finalize_subagent_runs(calls):
+    """Resolve collected calls into bounded observable child runs.
+
+    Returns ``(runs, partial, truncated)``. ``partial`` is true when any call
+    or child evidence was dropped, so nested totals cannot be a complete
+    measurement. ``truncated`` is true when a run cap dropped observable
+    child runs, so cross-session agent totals are partial as well.
+    """
+    runs = []
+    partial = False
+    truncated = False
+    now = time.time()
+    for evidence in calls.values():
+        if len(runs) >= MAX_SUBAGENT_RUNS:
+            partial = truncated = True
+            break
+        if not evidence["finished"]:
+            call_ts = float(evidence["call_ts"] or 0)
+            state = (
+                "working" if call_ts and now - call_ts <= 90 else "incomplete"
+            )
+            runs.append(_subagent_run(
+                evidence, role=evidence["role"], activity_state=state,
+            ))
+            continue
+        details = evidence["details_runs"]
+        use_details = (
+            bool(details)
+            and (
+                evidence["usage"] is None
+                or _subagent_details_reconcile(evidence["usage"], details)
+            )
+        )
+        if use_details:
+            if evidence["details_dropped"] and evidence["usage"] is None:
+                # Without an authoritative total, a dropped child is missing
+                # spend rather than a measured zero.
+                partial = True
+            if (
+                len(details) >= MAX_SUBAGENT_RUNS
+                and evidence["details_result_count"] > len(details)
+            ):
+                # The per-call result cap dropped reported children.
+                truncated = True
+            for run in details:
+                if len(runs) >= MAX_SUBAGENT_RUNS:
+                    partial = truncated = True
+                    break
+                state = _child_activity(
+                    run, failed_overall=evidence["is_error"],
+                )
+                runs.append(_subagent_run(
+                    evidence, index=run["index"], role=run["role"],
+                    model=run["model"], usage=run["usage"],
+                    activity_state=state, failed=state == "incomplete",
+                ))
+            continue
+        if evidence["usage"] is not None:
+            role = evidence["role"]
+            model = ""
+            if len(details) == 1:
+                role = role or details[0]["role"]
+                model = details[0]["model"]
+            runs.append(_subagent_run(
+                evidence, role=role, model=model, usage=evidence["usage"],
+                activity_state=(
+                    "complete" if not evidence["is_error"] else "incomplete"
+                ),
+                failed=evidence["is_error"],
+            ))
+            continue
+        if evidence["details_present"] and not evidence["details_result_count"]:
+            # A result with no reported results and no usage ran no child.
+            continue
+        runs.append(_subagent_run(
+            evidence, role=evidence["role"], failed=evidence["is_error"],
+        ))
+    return tuple(runs), partial, truncated
+
+
+def _nested_usage_totals(runs, partial=False):
+    """Return additive nested spend and its explicit coverage flags."""
+    totals = {
+        "input_tokens": 0, "output_tokens": 0,
+        "cache_read_tokens": 0, "cache_write_tokens": 0,
+        "tokens": 0, "total_cost": 0.0,
+        "tokens_available": not partial, "cache_available": not partial,
+        "cost_available": not partial,
+    }
+    for run in runs or ():
+        usage = run.get("usage") if isinstance(run, dict) else None
+        if not usage:
+            totals["tokens_available"] = False
+            totals["cache_available"] = False
+            totals["cost_available"] = False
+            continue
+        totals["input_tokens"] += usage["input_tokens"]
+        totals["output_tokens"] += usage["output_tokens"]
+        totals["cache_read_tokens"] += usage["cache_read_tokens"]
+        totals["cache_write_tokens"] += usage["cache_write_tokens"]
+        totals["tokens"] += usage["tokens"]
+        if not (usage["input_available"] and usage["output_available"]):
+            totals["tokens_available"] = False
+        if not usage["cache_available"]:
+            totals["cache_available"] = False
+        if usage["cost_available"]:
+            totals["total_cost"] += usage["total_cost"]
+        else:
+            totals["cost_available"] = False
+    return totals
 
 
 def _read_jsonl(path):
@@ -312,17 +782,21 @@ class PiRuntimeAdapter:
 
     def _parsed(self, path):
         if not self._owned_path(path):
-            return {"turns": (), "corrupt": 0, "available": False, "truncated": False}
+            return {"turns": (), "corrupt": 0, "available": False,
+                    "truncated": False, "subagent_runs": (),
+                    "subagent_partial": False, "subagent_truncated": False}
         rows, corrupt, available, truncated = _read_jsonl(path)
         header = rows[0] if rows else {}
         if not isinstance(header, dict) or header.get("type") != "session":
             return {"turns": (), "corrupt": corrupt, "available": available,
-                    "truncated": truncated}
+                    "truncated": truncated, "subagent_runs": (),
+                    "subagent_partial": False, "subagent_truncated": False}
         turns = []
         pending_user_ts = 0.0
         previous_ts = 0.0
         provider = model = ""
         tools_by_call_id = {}
+        subagent_calls = {}
         for row in rows:
             kind = row.get("type")
             ts = _timestamp(row.get("timestamp"))
@@ -345,6 +819,21 @@ class PiRuntimeAdapter:
                     call["result_available"] = True
                     if message.get("isError") is True:
                         call["error"] = True
+                evidence = subagent_calls.get(
+                    str(message.get("toolCallId") or "")
+                )
+                if evidence is not None and not evidence["finished"]:
+                    details = message.get("details")
+                    evidence["finished"] = True
+                    evidence["result_ts"] = ts or previous_ts
+                    evidence["is_error"] = message.get("isError") is True
+                    evidence["usage"] = _subagent_usage(message.get("usage"))
+                    evidence["details_present"] = isinstance(details, dict)
+                    (
+                        evidence["details_runs"],
+                        evidence["details_result_count"],
+                        evidence["details_dropped"],
+                    ) = _subagent_result_runs(details)
             elif role == "assistant" and len(turns) < MAX_TURNS:
                 provider = str(message.get("provider") or provider)
                 model = str(message.get("model") or model)
@@ -386,11 +875,33 @@ class PiRuntimeAdapter:
                     tools.append(tool)
                     if tool["id"]:
                         tools_by_call_id[tool["id"]] = tool
+                    existing = subagent_calls.get(tool["id"])
+                    if (
+                        tool["name"] == SUBAGENT_TOOL_NAME and tool["id"]
+                        and not (existing and existing["finished"])
+                    ):
+                        # A repeated ID never replaces finished evidence.
+                        subagent_calls[tool["id"]] = {
+                            "call_id": tool["id"],
+                            "call_ts": ts or previous_ts,
+                            "role": _subagent_arguments_role(
+                                item.get("arguments")
+                            ),
+                            "result_ts": None,
+                            "usage": None,
+                            "details_present": False,
+                            "details_runs": (),
+                            "details_result_count": 0,
+                            "details_dropped": False,
+                            "finished": False,
+                            "is_error": False,
+                        }
                 start = pending_user_ts or previous_ts or ts
                 end = ts or start
                 turns.append({
                     "index": len(turns) + 1, "start": start, "end": max(start, end),
                     "model": model_ref_for(provider, model).model_id,
+                    "stop_reason": _subagent_stop_reason(message.get("stopReason")),
                     "input_tokens": input_tokens or 0,
                     "output_tokens": output_tokens or 0,
                     "reasoning_tokens": reasoning_tokens,
@@ -405,9 +916,15 @@ class PiRuntimeAdapter:
                 })
                 pending_user_ts = 0.0
             previous_ts = ts or previous_ts
+        subagent_runs, subagent_partial, subagent_truncated = (
+            _finalize_subagent_runs(subagent_calls)
+        )
         return {
             "turns": tuple(turns), "corrupt": corrupt,
             "available": available, "truncated": truncated,
+            "subagent_runs": subagent_runs,
+            "subagent_partial": subagent_partial,
+            "subagent_truncated": subagent_truncated,
         }
 
     @staticmethod
@@ -423,9 +940,21 @@ class PiRuntimeAdapter:
             raise ValueError("source belongs to another runtime")
         parsed = self._parsed(source.locator.value)
         turns = parsed["turns"]
-        tokens_available = bool(turns) and all(turn["token_available"] for turn in turns)
-        cache_available = bool(turns) and all(turn["cache_available"] for turn in turns)
-        cost_available = bool(turns) and all(turn["cost"] is not None for turn in turns)
+        nested = _nested_usage_totals(
+            parsed["subagent_runs"], parsed["subagent_partial"],
+        )
+        tokens_available = (
+            bool(turns) and all(turn["token_available"] for turn in turns)
+            and nested["tokens_available"]
+        )
+        cache_available = (
+            bool(turns) and all(turn["cache_available"] for turn in turns)
+            and nested["cache_available"]
+        )
+        cost_available = (
+            bool(turns) and all(turn["cost"] is not None for turn in turns)
+            and nested["cost_available"]
+        )
         intervals = [
             (turn["start"], turn["end"]) for turn in turns
             if turn["start"] and turn["end"] >= turn["start"]
@@ -436,7 +965,7 @@ class PiRuntimeAdapter:
             warning_codes.append("corrupt_rows")
         if not tokens_available:
             warning_codes.append("usage_unavailable")
-        if parsed["truncated"]:
+        if parsed["truncated"] or parsed["subagent_partial"]:
             warning_codes.append("history_truncated")
         messages = {
             "corrupt_rows": "Malformed Pi rows were ignored.",
@@ -448,12 +977,25 @@ class PiRuntimeAdapter:
             started_at=_date(min((turn["start"] for turn in turns if turn["start"]), default=0)),
             ended_at=_date(max((turn["end"] for turn in turns if turn["end"]), default=0)),
             usage=UsageEvidence(
-                self._available(sum(turn["input_tokens"] for turn in turns), tokens_available),
-                self._available(sum(turn["output_tokens"] for turn in turns), tokens_available),
-                self._available(sum(turn["cache_read_tokens"] for turn in turns), cache_available),
-                self._available(sum(turn["cache_write_tokens"] for turn in turns), cache_available),
                 self._available(
-                    sum(sum(turn["cost"].values()) for turn in turns if turn["cost"]),
+                    sum(turn["input_tokens"] for turn in turns)
+                    + nested["input_tokens"], tokens_available,
+                ),
+                self._available(
+                    sum(turn["output_tokens"] for turn in turns)
+                    + nested["output_tokens"], tokens_available,
+                ),
+                self._available(
+                    sum(turn["cache_read_tokens"] for turn in turns)
+                    + nested["cache_read_tokens"], cache_available,
+                ),
+                self._available(
+                    sum(turn["cache_write_tokens"] for turn in turns)
+                    + nested["cache_write_tokens"], cache_available,
+                ),
+                self._available(
+                    sum(sum(turn["cost"].values()) for turn in turns if turn["cost"])
+                    + nested["total_cost"],
                     cost_available, EvidenceBasis.ESTIMATED,
                 ),
             ),
@@ -486,8 +1028,8 @@ class PiRuntimeAdapter:
             raise RuntimeError("legacy compatibility projection is unavailable")
         return self.compatibility
 
-    def _legacy_rows(self, source):
-        return self._parsed(source.get("path") or "")["turns"]
+    def _legacy_parsed(self, source):
+        return self._parsed(source.get("path") or "")
 
     def _legacy_usage(self, turn):
         return {
@@ -499,7 +1041,9 @@ class PiRuntimeAdapter:
 
     def recompute_legacy(self, source):
         compat = self._require_compatibility()
-        turns = self._legacy_rows(source)
+        parsed = self._legacy_parsed(source)
+        turns = parsed["turns"]
+        runs = parsed["subagent_runs"]
         if not turns:
             return None
         tot = {"input": 0, "cache_write": 0, "cache_read": 0, "output": 0}
@@ -616,16 +1160,40 @@ class PiRuntimeAdapter:
                     "context_tokens": turn["context_tokens"],
                     "timing_basis": "inferred",
                 })
+        primary_model = max(model_tok, key=model_tok.get) if model_tok else source.get("model")
+        own_output = tot["output"]
+        nested = _nested_usage_totals(runs, parsed["subagent_partial"])
+        for run in runs:
+            usage = run.get("usage")
+            if not usage:
+                continue
+            tot["input"] += usage["input_tokens"]
+            tot["output"] += usage["output_tokens"]
+            tot["cache_read"] += usage["cache_read_tokens"]
+            tot["cache_write"] += usage["cache_write_tokens"]
+            breakdown = usage["cost"] or {key: 0.0 for key in cost}
+            for key in cost:
+                cost[key] += breakdown[key]
+            run_model = (
+                _public_model_id(run["model"]) if run["model"]
+                else "unknown-model"
+            )
+            model_tok[run_model] += usage["tokens"]
+            model_cost[run_model] += (
+                usage["total_cost"] if usage["cost_available"] else 0.0
+            )
+        all_tokens_available = all_tokens_available and nested["tokens_available"]
+        all_cache_available = all_cache_available and nested["cache_available"]
+        all_cost_available = all_cost_available and nested["cost_available"]
         total_tokens, total_cost = sum(tot.values()), sum(cost.values())
         tool_data = compat["tool_summary"](executions)
-        primary_model = max(model_tok, key=model_tok.get) if model_tok else source.get("model")
         analyses = compat["analysis_block"](
             tot, total_cost, 0, 0, 0.0, model_tok, model_cost, tool_data, 0.0, 0, len(executions),
         )
         active = merge_execution_intervals(intervals)
         source = dict(source)
         source["context_latest"] = executions[-1]["context_tokens"] if executions else 0
-        throughput = performance_summary(wait_samples, tot["output"])
+        throughput = performance_summary(wait_samples, own_output)
         context_available = bool(turns) and all(turn["context_available"] for turn in turns)
         availability = compat["metric_availability"](
             "pi", cost=all_cost_available, tokens=all_tokens_available,
@@ -658,7 +1226,9 @@ class PiRuntimeAdapter:
     def summarize_legacy(self, source, unused=None):
         del unused
         compat = self._require_compatibility()
-        turns = self._legacy_rows(source)
+        parsed = self._legacy_parsed(source)
+        turns = parsed["turns"]
+        runs = parsed["subagent_runs"]
         model_cost, model_tok, model_stats, model_daily = (
             defaultdict(float), defaultdict(int), {}, {}
         )
@@ -714,7 +1284,81 @@ class PiRuntimeAdapter:
                     "namespace": tool["category"], "kind": "tool", "output_tokens": 0,
                     "error": bool(tool.get("error")), "ts": turn["end"], "skills": [],
                 })
-        throughput = performance_summary(wait_samples, output_tokens)
+        own_tokens_available = all_tokens_available
+        own_cache_available = all_cache_available
+        own_cost_available = all_cost_available
+        own_input_tokens = input_tokens
+        own_output_tokens = output_tokens
+        own_tokens = sum(model_tok.values())
+        own_cost = sum(model_cost.values())
+        own_model_tok = dict(model_tok)
+        own_cache_read = sum(turn["cache_read_tokens"] for turn in turns)
+        own_cache_write = sum(turn["cache_write_tokens"] for turn in turns)
+        own_reasoning = sum(turn["reasoning_tokens"] for turn in turns)
+        own_active = merge_execution_intervals(intervals)
+        own_start = min((turn["start"] for turn in turns if turn["start"]), default=0)
+        own_end = max((turn["end"] for turn in turns if turn["end"]), default=0)
+        primary_own_model = (
+            max(own_model_tok, key=own_model_tok.get) if own_model_tok
+            else source.get("model")
+        )
+        own_terminal = bool(turns and turns[-1]["stop_reason"] == "stop")
+        nested = _nested_usage_totals(runs, parsed["subagent_partial"])
+        for run in runs:
+            usage = run.get("usage")
+            if not usage:
+                continue
+            input_tokens += usage["input_tokens"]
+            output_tokens += usage["output_tokens"]
+            value = usage["total_cost"] if usage["cost_available"] else 0.0
+            total_cost += value
+            run_model = (
+                _public_model_id(run["model"]) if run["model"]
+                else "unknown-model"
+            )
+            model_tok[run_model] += usage["tokens"]
+            model_cost[run_model] += value
+            models.add(run_model)
+            usage_row = {
+                "input_tokens": usage["input_tokens"],
+                "output_tokens": usage["output_tokens"],
+                "cache_read_input_tokens": usage["cache_read_tokens"],
+                "cache_creation_input_tokens": usage["cache_write_tokens"],
+            }
+            compat["add_model_summary"](
+                model_stats, run_model, usage_row, value,
+                cost_available=usage["cost_available"],
+            )
+            run_ts = run["last_activity_at"] or 0
+            compat["add_model_daily"](
+                model_daily, run_model, usage_row, value, run_ts,
+                cost_available=usage["cost_available"],
+            )
+            if run_ts:
+                day_cost[time.strftime("%Y-%m-%d", time.localtime(run_ts))] += value
+        all_tokens_available = all_tokens_available and nested["tokens_available"]
+        all_cache_available = all_cache_available and nested["cache_available"]
+        all_cost_available = all_cost_available and nested["cost_available"]
+        agent_records = self._subagent_records(source, runs, own={
+            "input_tokens": own_input_tokens,
+            "output_tokens": own_output_tokens,
+            "cache_read_tokens": own_cache_read,
+            "cache_write_tokens": own_cache_write,
+            "reasoning_tokens": own_reasoning,
+            "tokens": own_tokens,
+            "cost": own_cost,
+            "cost_available": own_cost_available,
+            "tokens_available": own_tokens_available,
+            "model": primary_own_model,
+            "executions": len(turns),
+            "terminal": own_terminal,
+            "started_at": own_start or None,
+            "last_activity_at": own_end or None,
+            "work_time_s": own_active,
+        })
+        # Session pace diagnostics cover parent model calls only, so the
+        # coverage denominator must not grow with nested child output.
+        throughput = performance_summary(wait_samples, own_output_tokens)
         availability = compat["metric_availability"](
             "pi", cost=all_cost_available, tokens=all_tokens_available,
             input_tokens=all_tokens_available, output_tokens=all_tokens_available,
@@ -739,15 +1383,138 @@ class PiRuntimeAdapter:
              "basis": "inferred"}, input_tokens, output_tokens, model_stats,
             list(model_daily.values()), wait_samples, wait_samples, availability,
         )
-        row["primary_model"] = max(model_tok, key=model_tok.get) if model_tok else source.get("model")
+        row["primary_model"] = (
+            max(own_model_tok, key=own_model_tok.get) if own_model_tok
+            else source.get("model")
+        )
+        # summary_row recomputes throughput from the full token total, which
+        # now includes child output; restore the parent-scoped value.
+        row["throughput"] = throughput
         row["context"] = {
             "latest": context_samples[-1] if context_samples else 0,
             "window": None, "latest_pct": None, "estimated": False,
         }
         row["_context_samples"] = context_samples[-compat["context_sample_limit"]:]
+        # Session-row liveness keeps the pre-existing nonterminal behavior so
+        # sessions without subagent calls are unchanged. Agent records use the
+        # recorded stop reason for their own lifecycle state.
         row["terminal"] = False
         row["_tool_evidence"] = compat["summarize_tool_evidence"](tool_calls)
+        if agent_records:
+            row["_agent_records"] = list(agent_records)
+            # Dropped child evidence, including runs dropped by a run cap,
+            # keeps the affected cross-session agent totals partial without
+            # touching the inventory display limit. Rows with complete
+            # evidence do not carry the key.
+            if parsed["subagent_partial"] or parsed.get("subagent_truncated"):
+                row["_agent_records_partial"] = True
         return row
+
+    def _subagent_records(self, source, runs, *, own):
+        """Build one root record and one spawned record per observable run."""
+        runs = tuple(runs or ())
+        if not runs:
+            return ()
+        session_id = str(source.get("id") or "")
+        root_id = _public_agent_id("root", session_id)
+        if not root_id:
+            return ()
+        now = time.time()
+        client = source.get("label") or "Pi"
+        root_last = (
+            own.get("last_activity_at") or float(source.get("mtime") or 0) or None
+        )
+        own_model = own.get("model") or "unknown-model"
+        terminal = bool(own.get("terminal"))
+        records = [{
+            "id": root_id,
+            "parent_id": None,
+            "session_id": session_id or None,
+            "runtime": "pi",
+            "client": client,
+            "kind": "root",
+            "depth": 0,
+            "label": "",
+            "role": None,
+            "model": own_model,
+            "activity_state": (
+                "complete" if terminal
+                else "working" if root_last and now - float(root_last) <= 90
+                else "incomplete"
+            ),
+            "started_at": own.get("started_at"),
+            "ended_at": own.get("last_activity_at") if terminal else None,
+            "last_activity_at": root_last,
+            "input_tokens": own.get("input_tokens") or 0,
+            "output_tokens": own.get("output_tokens") or 0,
+            "cache_read_tokens": own.get("cache_read_tokens") or 0,
+            "cache_write_tokens": own.get("cache_write_tokens") or 0,
+            "reasoning_tokens": own.get("reasoning_tokens") or 0,
+            "tokens": own.get("tokens") if own.get("tokens_available") else None,
+            "tokens_available": bool(own.get("tokens_available")),
+            "cost": own.get("cost") if own.get("cost_available") else None,
+            "cost_available": bool(own.get("cost_available")),
+            "executions": own.get("executions") or 0,
+            "attempts": own.get("executions") or 0,
+            "retries": 0,
+            "failed_attempts": 0,
+            "tool_calls": 0,
+            "work_time_s": own.get("work_time_s"),
+        }]
+        for run in runs:
+            usage = run.get("usage")
+            cache_available = bool(usage and usage["cache_available"])
+            # The child token total includes cache buckets, so a missing
+            # cache report leaves that total partial rather than measured.
+            tokens_available = bool(
+                usage and usage["input_available"] and usage["output_available"]
+                and cache_available
+            )
+            cost_available = bool(usage and usage["cost_available"])
+            started = run.get("started_at")
+            finished = run.get("last_activity_at")
+            work_time = (
+                max(0.0, float(finished) - float(started))
+                if started and finished and finished >= started else None
+            )
+            records.append({
+                "id": _public_agent_id(
+                    "child", session_id, run["call_id"], str(run["index"]),
+                ),
+                "parent_id": root_id,
+                "session_id": None,
+                "runtime": "pi",
+                "client": client,
+                "kind": "spawned",
+                "depth": 1,
+                "label": "",
+                "role": run.get("role") or None,
+                "model": (
+                    _public_model_id(run["model"]) if run.get("model")
+                    else "unknown-model"
+                ),
+                "activity_state": run.get("activity_state") or "incomplete",
+                "started_at": started,
+                "ended_at": run.get("ended_at"),
+                "last_activity_at": finished,
+                "input_tokens": usage["input_tokens"] if usage else 0,
+                "output_tokens": usage["output_tokens"] if usage else 0,
+                "cache_read_tokens": usage["cache_read_tokens"] if usage else 0,
+                "cache_write_tokens": usage["cache_write_tokens"] if usage else 0,
+                "reasoning_tokens": usage["reasoning_tokens"] if usage else 0,
+                "tokens": usage["tokens"] if tokens_available else None,
+                "tokens_available": tokens_available,
+                "cache_available": cache_available,
+                "cost": usage["total_cost"] if cost_available else None,
+                "cost_available": cost_available,
+                "executions": run.get("executions") or 0,
+                "attempts": 1 if started else 0,
+                "retries": 0,
+                "failed_attempts": run.get("failed_attempts") or 0,
+                "tool_calls": 0,
+                "work_time_s": work_time,
+            })
+        return tuple(records)
 
     def deletion_plan(self, source):
         if not isinstance(source, SessionSource) or source.locator.kind != "jsonl":

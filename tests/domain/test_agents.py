@@ -467,6 +467,82 @@ class AgentGroupDomainTests(unittest.TestCase):
             {"spawned", "internal"},
         )
 
+    def test_partial_session_marks_only_its_own_scopes_partial(self):
+        now = 1_000_000
+        pi_session = session(
+            "pi-root",
+            agent("pi-root-agent", session_id="pi-root", kind="root",
+                  depth=0, runtime="pi", cost=1, tokens=100,
+                  last_activity_at=now - 5),
+            agent("pi-child", parent_id="pi-root-agent", runtime="pi",
+                  role="reviewer", cost=0.5, tokens=50,
+                  last_activity_at=now - 5),
+        )
+        pi_session["_agent_records_partial"] = True
+        groups = build_agent_groups([
+            pi_session,
+            session(
+                "claude-root",
+                agent("claude-root-agent", session_id="claude-root",
+                      kind="root", depth=0, runtime="claude", cost=2,
+                      tokens=200, last_activity_at=now - 5),
+                agent("claude-child", parent_id="claude-root-agent",
+                      runtime="claude", role="reviewer", cost=3,
+                      tokens=300, last_activity_at=now - 5),
+            ),
+        ], now=now)
+
+        by_root = {group["root_session_id"]: group for group in groups}
+        pi_group = by_root["pi-root"]
+        claude_group = by_root["claude-root"]
+        self.assertFalse(pi_group["totals"]["cost_available"])
+        self.assertIsNone(pi_group["totals"]["cost"])
+        self.assertEqual(pi_group["totals"]["known_cost"], 1.5)
+        self.assertEqual(pi_group["coverage"]["cost"], "partial")
+        self.assertEqual(pi_group["coverage"]["tokens"], "partial")
+        self.assertTrue(claude_group["totals"]["cost_available"])
+        self.assertEqual(claude_group["coverage"]["cost"], "estimated")
+        self.assertEqual(claude_group["coverage"]["tokens"], "complete")
+
+        usage = aggregate_agent_usage(groups, now=now)
+        # The display limit was not reached; a partial session must not
+        # claim it was.
+        self.assertFalse(usage["inventory_truncated"])
+        self.assertEqual(usage["inventory_count"], 2)
+        self.assertFalse(usage["totals"]["cost_available"])
+        self.assertIsNone(usage["totals"]["cost"])
+        self.assertEqual(usage["totals"]["known_cost"], 3.5)
+        self.assertEqual(usage["totals"]["cost_covered_agents"], 2)
+        self.assertEqual(usage["totals"]["token_covered_agents"], 2)
+
+        scopes = {
+            (row["window"], row["runtime"]): row
+            for row in usage["scopes"]
+        }
+        claude = scopes[("all", "claude")]
+        self.assertTrue(claude["totals"]["cost_available"])
+        self.assertEqual(claude["totals"]["cost"], 3.0)
+        self.assertTrue(claude["totals"]["tokens_available"])
+        self.assertEqual(claude["totals"]["cost_covered_agents"], 1)
+        pi = scopes[("all", "pi")]
+        self.assertFalse(pi["totals"]["cost_available"])
+        self.assertIsNone(pi["totals"]["cost"])
+        self.assertEqual(pi["totals"]["known_cost"], 0.5)
+        self.assertFalse(scopes[("all", "")]["totals"]["cost_available"])
+        self.assertEqual(scopes[("all", "")]["totals"]["known_cost"], 3.5)
+
+        roles = {row["runtime"]: row for row in usage["roles"]}
+        # Kept runs stay priced so per-run averages are exact; the missing
+        # upstream runs show only as row-level unavailability.
+        self.assertFalse(roles["pi"]["cost_available"])
+        self.assertEqual(roles["pi"]["agents"], 1)
+        self.assertEqual(roles["pi"]["cost_covered_agents"], 1)
+        self.assertEqual(roles["pi"]["token_covered_agents"], 1)
+        self.assertEqual(roles["pi"]["known_cost"], 0.5)
+        self.assertTrue(roles["claude"]["cost_available"])
+        self.assertEqual(roles["claude"]["cost_covered_agents"], 1)
+        self.assertEqual(roles["claude"]["token_covered_agents"], 1)
+
     def test_usage_statistics_support_project_runtime_and_time_scopes(self):
         now = 1_000_000
         groups = build_agent_groups([
