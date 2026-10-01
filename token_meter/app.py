@@ -288,6 +288,12 @@ TOKEN_METER_UPDATE_STATUS = os.path.expanduser(
 TOKEN_METER_GIT_DELIVERY_DB = os.path.expanduser(
     os.environ.get("TOKEN_METER_GIT_DELIVERY_DB", "~/.token-meter/git-delivery.sqlite3")
 )
+TOKEN_METER_MATCHED_PACE_CACHE = os.path.expanduser(
+    os.environ.get(
+        "TOKEN_METER_MATCHED_PACE_CACHE",
+        "~/.token-meter/matched-pace-cache.json",
+    )
+)
 PORT = 8722
 
 DEFAULT_FRUSTRATION_TERMS = [
@@ -388,6 +394,24 @@ _summary_cache = {}
 _summary_cache_lock = threading.Lock()
 _matched_pace_cache = {"signature": None, "data": None}
 _matched_pace_cache_lock = threading.Lock()
+# One entry per model-runtime pair for the global (all-session) scope, so a
+# changed model only rebuilds the pairs it participates in. Reused across
+# restarts via TOKEN_METER_MATCHED_PACE_CACHE. Loaded, read, mutated, and saved
+# only by the thread holding the single-flight build flag below; it is never
+# touched by project-scoped builds.
+_matched_pace_pair_cache = {}
+_matched_pace_pair_cache_loaded = False
+# Single-flight guard: one rebuild at a time, so concurrent requests share one
+# computation instead of each starting its own.
+_matched_pace_build_condition = threading.Condition(threading.Lock())
+_matched_pace_build_state = {"building": False}
+# Persistence is opt-in so importing the module (tests, tools) never writes the
+# user's cache file. The server entrypoint turns it on.
+_matched_pace_persist = False
+# Bump whenever the matching algorithm, thresholds, result fields, or pair-key
+# format change, so stale persisted comparisons are discarded on load.
+MATCHED_PACE_CACHE_SCHEMA = 2
+MATCHED_PACE_CACHE_MAX_PAIRS = 4000
 _SKILL_CATALOG_TTL_S = 60.0
 _skill_catalog_cache = {"rows": None, "at": 0.0}
 _skill_catalog_cache_lock = threading.Lock()
@@ -6861,18 +6885,30 @@ def pace_match_distance(left, right):
     right_tools = int(right.get("tool_calls") or 0)
     if bool(left_tools) != bool(right_tools):
         return None
-    dimensions = [
-        (_pace_log_distance(
-            left.get("peak_input_tokens") or left.get("input_tokens"),
-            right.get("peak_input_tokens") or right.get("input_tokens"), 2.0,
-        ), 0.28),
-        (_pace_log_distance(left.get("input_tokens"), right.get("input_tokens"), 3.0), 0.17),
-        (_pace_log_distance(left.get("output_tokens"), right.get("output_tokens"), 2.0), 0.22),
-        (_pace_log_distance(left.get("model_calls") or 1, right.get("model_calls") or 1, 2.0), 0.16),
-    ]
-    if left_tools:
-        dimensions.append((_pace_log_distance(left_tools, right_tools, 2.0), 0.12))
-    if any(distance is None for distance, _ in dimensions):
+    # Reject on the first failing dimension instead of scoring all of them and
+    # discarding the result. Measured over real histories, output rejects the
+    # most candidates and input almost none, so the cheap discriminating gates
+    # run first and the cost of a rejected pair stays low.
+    output_distance = _pace_log_distance(
+        left.get("output_tokens"), right.get("output_tokens"), 2.0,
+    )
+    if output_distance is None:
+        return None
+    peak_distance = _pace_log_distance(
+        left.get("peak_input_tokens") or left.get("input_tokens"),
+        right.get("peak_input_tokens") or right.get("input_tokens"), 2.0,
+    )
+    if peak_distance is None:
+        return None
+    input_distance = _pace_log_distance(
+        left.get("input_tokens"), right.get("input_tokens"), 3.0,
+    )
+    if input_distance is None:
+        return None
+    model_distance = _pace_log_distance(
+        left.get("model_calls") or 1, right.get("model_calls") or 1, 2.0,
+    )
+    if model_distance is None:
         return None
     left_input = max(1, int(left.get("input_tokens") or 0))
     right_input = max(1, int(right.get("input_tokens") or 0))
@@ -6881,7 +6917,15 @@ def pace_match_distance(left, right):
     cache_distance = abs(left_cache - right_cache)
     if cache_distance > 0.60:
         return None
-    score = sum(distance * weight for distance, weight in dimensions)
+    score = peak_distance * 0.28
+    score += input_distance * 0.17
+    score += output_distance * 0.22
+    score += model_distance * 0.16
+    if left_tools:
+        tool_distance = _pace_log_distance(left_tools, right_tools, 2.0)
+        if tool_distance is None:
+            return None
+        score += tool_distance * 0.12
     score += (cache_distance / 0.60) * 0.05
     recency_days = abs(float(left.get("ts") or 0) - float(right.get("ts") or 0)) / 86400.0
     score += min(1.0, recency_days / 90.0) * 0.03
@@ -6976,8 +7020,262 @@ def matched_pace_comparison(a_id, a_samples, b_id, b_samples, distance_cache=Non
     return result
 
 
-def matched_pace_windows(sample_groups, now_ts=None):
-    """Build pairwise matched-pace comparisons for every dashboard history window."""
+def _pace_samples_signature(samples, fields):
+    """Return a stable digest of the fields that affect a pace comparison."""
+    digest = hashlib.sha256()
+    for sample in samples or ():
+        digest.update(b"\0sample\0")
+        digest.update(
+            repr(tuple(sample.get(field) for field in fields)).encode(
+                "utf-8", errors="replace",
+            )
+        )
+    return digest.hexdigest()
+
+
+MATCHED_PACE_WINDOW_KEYS = ("today", "yesterday", "7", "30", "90", "all")
+_MATCHED_PACE_INT_FIELDS = ("a_samples", "b_samples", "matched_pairs")
+_MATCHED_PACE_FLOAT_FIELDS = ("coverage", "pace_ratio", "ci_low", "ci_high")
+
+
+_MATCHED_PACE_COMPARISON_KEYS = frozenset(
+    ("a_id", "b_id", "available", "reason")
+    + _MATCHED_PACE_INT_FIELDS + _MATCHED_PACE_FLOAT_FIELDS
+)
+# Stored numbers outside these bounds are corrupt; the pair is recomputed.
+_MATCHED_PACE_MAX_COUNT = 10 ** 9
+_MATCHED_PACE_MAX_RATIO = 1e15
+_MATCHED_PACE_MAX_REASON = 200
+# Every reason string matched_pace_comparison can produce.
+_MATCHED_PACE_REASON_RE = re.compile(
+    r"|needs \d{1,9} timed turns per runtime"
+    r"|only \d{1,9} comparable turns; needs \d{1,9}"
+    r"|only \d{1,9}% of the smaller history overlaps"
+)
+
+
+def _valid_matched_pace_comparison(value, a_id, b_id):
+    """Return a rebuilt comparison with exactly the builder keys, else None.
+
+    Never raises: magnitude checks run before any float conversion, so a huge
+    JSON integer cannot overflow. Unknown keys reject the comparison so stored
+    content can never reach API output beyond the builder's own fields.
+    """
+    if not isinstance(value, dict) or set(value) != _MATCHED_PACE_COMPARISON_KEYS:
+        return None
+    if value["a_id"] != a_id or value["b_id"] != b_id:
+        return None
+    for field in _MATCHED_PACE_INT_FIELDS:
+        number = value[field]
+        if (isinstance(number, bool) or not isinstance(number, int)
+                or not 0 <= number <= _MATCHED_PACE_MAX_COUNT):
+            return None
+    for field in _MATCHED_PACE_FLOAT_FIELDS:
+        number = value[field]
+        if isinstance(number, bool) or not isinstance(number, (int, float)):
+            return None
+        # Chained comparison is exact for ints of any size and rejects NaN.
+        if not 0 <= number <= _MATCHED_PACE_MAX_RATIO:
+            return None
+        if isinstance(number, float) and not math.isfinite(number):
+            return None
+    if not 0 <= value["coverage"] <= 1:
+        return None
+    if not isinstance(value["available"], bool):
+        return None
+    reason = value["reason"]
+    if (not isinstance(reason, str) or len(reason) > _MATCHED_PACE_MAX_REASON
+            or not _MATCHED_PACE_REASON_RE.fullmatch(reason)):
+        return None
+    return {key: value[key] for key in (
+        "a_id", "b_id", "a_samples", "b_samples", "matched_pairs", "coverage",
+        "pace_ratio", "ci_low", "ci_high", "available", "reason",
+    )}
+
+
+def _valid_matched_pace_entry(entry):
+    """Return the (key, cached) pair for a usable stored entry, else None."""
+    if not isinstance(entry, dict):
+        return None
+    a_id, b_id = entry.get("a_id"), entry.get("b_id")
+    signature, windows = entry.get("signature"), entry.get("windows")
+    if not (isinstance(a_id, str) and isinstance(b_id, str)
+            and isinstance(signature, str) and isinstance(windows, dict)):
+        return None
+    if set(windows) != set(MATCHED_PACE_WINDOW_KEYS):
+        return None
+    rebuilt = {}
+    for window in MATCHED_PACE_WINDOW_KEYS:
+        comparison = _valid_matched_pace_comparison(windows[window], a_id, b_id)
+        if comparison is None:
+            return None
+        rebuilt[window] = comparison
+    return (a_id, b_id), {"signature": signature, "windows": rebuilt}
+
+
+def _ensure_matched_pace_cache_loaded():
+    """Load the persisted pair cache once. Caller holds the single-flight flag."""
+    global _matched_pace_pair_cache_loaded
+    if _matched_pace_pair_cache_loaded:
+        return
+    _matched_pace_pair_cache_loaded = True
+    if not _matched_pace_persist:
+        return
+    try:
+        with open(TOKEN_METER_MATCHED_PACE_CACHE, encoding="utf-8") as fh:
+            stored = json.load(fh)
+    except (OSError, ValueError, RecursionError):
+        # Missing, unreadable, undecodable (including invalid UTF-8), or
+        # malformed files are a cold cache, never a request failure.
+        return
+    if not isinstance(stored, dict):
+        return
+    if stored.get("schema") != MATCHED_PACE_CACHE_SCHEMA:
+        return
+    pairs = stored.get("pairs")
+    if not isinstance(pairs, list):
+        return
+    for entry in pairs:
+        if len(_matched_pace_pair_cache) >= MATCHED_PACE_CACHE_MAX_PAIRS:
+            break
+        try:
+            valid = _valid_matched_pace_entry(entry)
+        except (OverflowError, TypeError, ValueError, RecursionError):
+            # Defense in depth: one malformed entry is skipped, never fatal.
+            valid = None
+        if valid is not None:
+            _matched_pace_pair_cache[valid[0]] = valid[1]
+
+
+def _save_matched_pace_pair_cache():
+    """Persist the pair cache so a restart reuses unchanged comparisons.
+
+    The stored fields are model and runtime identifiers plus aggregate duration,
+    token, ratio, and coverage numbers. No prompt, response, tool, path, or raw
+    trace content is written. Caller holds the single-flight flag.
+    """
+    if not _matched_pace_persist:
+        return
+    entries = [
+        {
+            "a_id": pair_key[0],
+            "b_id": pair_key[1],
+            "signature": cached.get("signature"),
+            "windows": cached.get("windows"),
+        }
+        for pair_key, cached in _matched_pace_pair_cache.items()
+    ]
+    try:
+        atomic_write_text(
+            TOKEN_METER_MATCHED_PACE_CACHE,
+            json.dumps({"schema": MATCHED_PACE_CACHE_SCHEMA, "pairs": entries}),
+        )
+    except OSError:
+        pass
+
+
+def _build_matched_pace_windows(sample_groups, today, signature_fields, pair_cache):
+    """Compute every model-runtime pair comparison, reusing ``pair_cache``.
+
+    Returns ``(data, changed)`` where ``changed`` reports whether any pair cache
+    entry was added, replaced, or removed. Caller owns no lock; for the global
+    pair cache the caller holds the single-flight flag.
+    """
+    changed = False
+    rules = {
+        "today": ("exact", today.isoformat()),
+        "yesterday": ("exact", (today - datetime.timedelta(days=1)).isoformat()),
+        "7": ("since", (today - datetime.timedelta(days=6)).isoformat()),
+        "30": ("since", (today - datetime.timedelta(days=29)).isoformat()),
+        "90": ("since", (today - datetime.timedelta(days=89)).isoformat()),
+        "all": ("all", ""),
+    }
+    result = {window: [] for window in rules}
+    ids = sorted(sample_groups)
+    windowed_samples = {}
+    id_signatures = {}
+    for runtime_id in ids:
+        buckets = {window: [] for window in rules}
+        for sample in sample_groups[runtime_id]:
+            day = str(sample.get("day") or "")
+            for window, (match, boundary) in rules.items():
+                if (
+                    match == "all"
+                    or (match == "exact" and day == boundary)
+                    or (match == "since" and day >= boundary)
+                ):
+                    buckets[window].append(sample)
+        windowed_samples[runtime_id] = buckets
+        id_signatures[runtime_id] = _pace_samples_signature(
+            sample_groups[runtime_id], signature_fields,
+        )
+    live_pairs = {
+        (a_id, b_id)
+        for a_index, a_id in enumerate(ids) for b_id in ids[a_index + 1:]
+    }
+    # Drop pairs that no longer exist before admitting new ones, so the freed
+    # room is usable in this same build.
+    for stale_key in set(pair_cache) - live_pairs:
+        del pair_cache[stale_key]
+        changed = True
+    for a_index, a_id in enumerate(ids):
+        for b_id in ids[a_index + 1:]:
+            pair_key = (a_id, b_id)
+            # Windows are cut relative to today, so the day is part of the key:
+            # a cached pair from a previous day must never be reused.
+            pair_signature = (
+                f"{today.isoformat()}|{id_signatures[a_id]}|{id_signatures[b_id]}"
+            )
+            cached = pair_cache.get(pair_key)
+            if cached is not None and cached["signature"] == pair_signature:
+                per_window = cached["windows"]
+            else:
+                # Every model-runtime pair is an all-pairs comparison of its
+                # completed turns. Caching per pair means a new turn for one
+                # model only rebuilds the pairs that model takes part in,
+                # instead of every pair in the cross-session state.
+                distance_cache = {}
+                per_window = {
+                    window: matched_pace_comparison(
+                        a_id, windowed_samples[a_id][window],
+                        b_id, windowed_samples[b_id][window],
+                        distance_cache=distance_cache,
+                    )
+                    for window in rules
+                }
+                # Bound memory and the persisted file. A cached pair is always
+                # refreshed in place; a new pair is admitted only while there
+                # is room. Pairs beyond the cap are still reported, simply
+                # recomputed on the next build, and never evict cached pairs,
+                # so an unchanged over-cap history causes no rewrite.
+                if (cached is not None
+                        or len(pair_cache) < MATCHED_PACE_CACHE_MAX_PAIRS):
+                    pair_cache[pair_key] = {
+                        "signature": pair_signature,
+                        "windows": per_window,
+                    }
+                    changed = True
+            for window in rules:
+                result[window].append(per_window[window])
+    # Only a lowered cap can leave the cache oversized; trim the oldest once.
+    while len(pair_cache) > MATCHED_PACE_CACHE_MAX_PAIRS:
+        del pair_cache[next(iter(pair_cache))]
+        changed = True
+    data = {
+        "method": "nearest workload match on context, input, output, cache, model calls, tools, and recency",
+        "min_pairs": MATCHED_PACE_MIN_PAIRS,
+        "min_coverage": MATCHED_PACE_MIN_COVERAGE,
+        "windows": result,
+    }
+    return data, changed
+
+
+def matched_pace_windows(sample_groups, now_ts=None, persistent=True):
+    """Build pairwise matched-pace comparisons for every dashboard history window.
+
+    ``persistent=False`` is the project scope: it computes from a private pair
+    cache and never reads, evicts, overwrites, or persists global entries.
+    """
     today = datetime.date.fromtimestamp(float(now_ts if now_ts is not None else time.time()))
     digest = hashlib.sha256(today.isoformat().encode("utf-8"))
     signature_fields = (
@@ -6993,53 +7291,44 @@ def matched_pace_windows(sample_groups, now_ts=None):
             digest.update(repr(values).encode("utf-8", errors="replace"))
     signature = digest.hexdigest()
 
-    with _matched_pace_cache_lock:
-        if (
-            _matched_pace_cache.get("signature") == signature
-            and _matched_pace_cache.get("data") is not None
-        ):
-            return copy.deepcopy(_matched_pace_cache["data"])
+    if not persistent:
+        data, _ = _build_matched_pace_windows(
+            sample_groups, today, signature_fields, {},
+        )
+        return data
 
-        rules = {
-            "today": ("exact", today.isoformat()),
-            "yesterday": ("exact", (today - datetime.timedelta(days=1)).isoformat()),
-            "7": ("since", (today - datetime.timedelta(days=6)).isoformat()),
-            "30": ("since", (today - datetime.timedelta(days=29)).isoformat()),
-            "90": ("since", (today - datetime.timedelta(days=89)).isoformat()),
-            "all": ("all", ""),
-        }
-        result = {window: [] for window in rules}
-        ids = sorted(sample_groups)
-        windowed_samples = {}
-        for runtime_id in ids:
-            buckets = {window: [] for window in rules}
-            for sample in sample_groups[runtime_id]:
-                day = str(sample.get("day") or "")
-                for window, (match, boundary) in rules.items():
-                    if (
-                        match == "all"
-                        or (match == "exact" and day == boundary)
-                        or (match == "since" and day >= boundary)
-                    ):
-                        buckets[window].append(sample)
-            windowed_samples[runtime_id] = buckets
-        for a_index, a_id in enumerate(ids):
-            for b_id in ids[a_index + 1:]:
-                distance_cache = {}
-                for window in rules:
-                    result[window].append(matched_pace_comparison(
-                        a_id, windowed_samples[a_id][window],
-                        b_id, windowed_samples[b_id][window],
-                        distance_cache=distance_cache,
-                    ))
-        data = {
-            "method": "nearest workload match on context, input, output, cache, model calls, tools, and recency",
-            "min_pairs": MATCHED_PACE_MIN_PAIRS,
-            "min_coverage": MATCHED_PACE_MIN_COVERAGE,
-            "windows": result,
-        }
-        _matched_pace_cache["signature"] = signature
-        _matched_pace_cache["data"] = data
+    while True:
+        with _matched_pace_cache_lock:
+            if (
+                _matched_pace_cache.get("signature") == signature
+                and _matched_pace_cache.get("data") is not None
+            ):
+                return copy.deepcopy(_matched_pace_cache["data"])
+
+        # Only one thread rebuilds at a time. A rebuild takes seconds on a large
+        # history; running the same one concurrently saturates the CPU and every
+        # other cross-session request waits behind it on the cache lock.
+        with _matched_pace_build_condition:
+            if _matched_pace_build_state["building"]:
+                _matched_pace_build_condition.wait(timeout=5)
+                continue
+            _matched_pace_build_state["building"] = True
+        data = None
+        try:
+            _ensure_matched_pace_cache_loaded()
+            data, changed = _build_matched_pace_windows(
+                sample_groups, today, signature_fields, _matched_pace_pair_cache,
+            )
+            if changed:
+                _save_matched_pace_pair_cache()
+        finally:
+            if data is not None:
+                with _matched_pace_cache_lock:
+                    _matched_pace_cache["signature"] = signature
+                    _matched_pace_cache["data"] = data
+            with _matched_pace_build_condition:
+                _matched_pace_build_state["building"] = False
+                _matched_pace_build_condition.notify_all()
         return copy.deepcopy(data)
 
 
@@ -7287,12 +7576,18 @@ def git_delivery_watcher():
         next_scan_at = time.monotonic() + GIT_DELIVERY_INTERVAL_S
 
 
-def aggregate_model_stats(session_rows):
+def aggregate_model_stats(session_rows, global_scope=True):
+    # Project-scoped stats see a subset of samples; they must not evict or
+    # overwrite the persisted global pair cache.
+    matched_pace = (
+        matched_pace_windows if global_scope
+        else functools.partial(matched_pace_windows, persistent=False)
+    )
     return _domain_aggregate_model_stats(
         session_rows,
         runtime_resolver=source_runtime_label,
         throughput_finalizer=_finalize_throughput_fields,
-        matched_pace=matched_pace_windows,
+        matched_pace=matched_pace,
         project_option_limit=MODEL_PROJECT_OPTION_LIMIT,
         project_resolver=project_filter_key,
     )
@@ -7666,7 +7961,7 @@ def project_model_stats(project):
     ]
     if not matching:
         return {"ok": False, "error": "Project was not found."}, 404
-    stats = aggregate_model_stats(matching)
+    stats = aggregate_model_stats(matching, global_scope=False)
     stats.pop("projects", None)
     stats.pop("projects_truncated", None)
     cache[project] = stats
@@ -10156,6 +10451,8 @@ def application():
 
 def main():
     """Run the local HTTP application and its background services."""
+    global _matched_pace_persist
+    _matched_pace_persist = True
     print("Auto-following newest {} sessions. Ctrl-C to stop.".format(
         supported_runtime_phrase()
     ))
