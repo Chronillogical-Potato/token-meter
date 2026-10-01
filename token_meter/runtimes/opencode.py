@@ -992,9 +992,6 @@ class OpenCodeRuntimeAdapter:
     
     def summarize_legacy(self, source, connection=None):
         compat = self._require_compatibility()
-        analyze_language_signal_turns = compat["analyze_language_signal_turns"]
-        attach_language_signals = compat["attach_language_signals"]
-        compact_text = compat["compact_text"]
         metric_availability = compat["metric_availability"]
         model_context_window = compat["model_context_window"]
         summarize_tool_evidence = compat["summarize_tool_evidence"]
@@ -1085,7 +1082,6 @@ class OpenCodeRuntimeAdapter:
     
         # Message metadata is sufficient for exact executions, calendar-day usage,
         # model attribution, context, and response timing. Part text remains unread.
-        signal_turns = []
         for data_raw, row_created in message_rows:
             data = decode_json(data_raw, None)
             if not isinstance(data, dict):
@@ -1096,12 +1092,6 @@ class OpenCodeRuntimeAdapter:
             completed_ms = int_value(time_obj.get("completed"))
             if role == "user":
                 last_user_ms = created_ms
-                content = data.get("content")
-                if isinstance(content, str) and content.strip() and len(signal_turns) < 5:
-                    signal_turns.append({
-                        "ts": created_ms / 1000.0 if created_ms else 0,
-                        "text": compact_text(content, 90), "model": model,
-                    })
                 continue
             if role != "assistant":
                 continue
@@ -1324,8 +1314,6 @@ class OpenCodeRuntimeAdapter:
             row["child_agent_role"] = safe_agent_role(
                 source.get("agent_role")
             ) or None
-        signal_rollups, signal_events = analyze_language_signal_turns(signal_turns)
-        attach_language_signals(row, signal_rollups, signal_events)
         agent_records = self._agent_record_for(
             source, row,
             cost_value=s_cost_val, cost_available=session_cost_available,

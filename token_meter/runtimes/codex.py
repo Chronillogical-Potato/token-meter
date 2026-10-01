@@ -1573,8 +1573,6 @@ class CodexRuntimeAdapter:
         CURRENT_SESSION_CONTEXT_SAMPLES = compat["context_sample_limit"]
         add_model_daily = compat["add_model_daily"]
         add_model_summary = compat["add_model_summary"]
-        analyze_language_signals = compat["analyze_language_signals"]
-        attach_language_signals = compat["attach_language_signals"]
         codex_live_performance_summary = compat["codex_live_performance_summary"]
         codex_performance_samples = compat["codex_performance_samples"]
         codex_tool_call_evidence = compat["codex_tool_call_evidence"]
@@ -1707,10 +1705,6 @@ class CodexRuntimeAdapter:
         row["_context_samples"] = context_samples[-CURRENT_SESSION_CONTEXT_SAMPLES:]
         row["terminal"] = terminal
         row["live_throughput"] = codex_live_performance_summary(objs)
-        signal_rollups, signal_events = analyze_language_signals(
-            "codex", objs, default_model=source.get("model") or "unknown-model"
-        )
-        attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(codex_tool_call_evidence(objs), source.get("tool_catalog") or [])
         row["capabilities"] = session_capabilities(
             row["_tool_evidence"],

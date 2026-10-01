@@ -1620,8 +1620,6 @@ class ClaudeRuntimeAdapter:
         CURRENT_SESSION_CONTEXT_SAMPLES = compat["context_sample_limit"]
         add_model_daily = compat["add_model_daily"]
         add_model_summary = compat["add_model_summary"]
-        analyze_language_signals = compat["analyze_language_signals"]
-        attach_language_signals = compat["attach_language_signals"]
         claude_human_text = compat["claude_human_text"]
         claude_performance_samples = compat["claude_performance_samples"]
         claude_tool_call_evidence = compat["claude_tool_call_evidence"]
@@ -1769,10 +1767,6 @@ class ClaudeRuntimeAdapter:
         }
         row["_context_samples"] = context_samples[-CURRENT_SESSION_CONTEXT_SAMPLES:]
         row["terminal"] = bool(msgs and msgs[-1].get("stop_reason") == "end_turn")
-        signal_rollups, signal_events = analyze_language_signals(
-            "claude", objs, default_model=source.get("model") or "unknown-model"
-        )
-        attach_language_signals(row, signal_rollups, signal_events)
         row["_tool_evidence"] = summarize_tool_evidence(claude_tool_call_evidence(objs, msgs))
         main_path = str(source.get("path") or "")
         loaded_skills, loaded_servers = _loaded_capabilities(

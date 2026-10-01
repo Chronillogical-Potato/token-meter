@@ -1195,8 +1195,6 @@ class CursorRuntimeAdapter:
         """Build a cross-session Cursor row from the same local-estimate contract."""
         compat = self._require_compatibility()
         CURRENT_SESSION_CONTEXT_SAMPLES = compat["context_sample_limit"]
-        analyze_language_signal_turns = compat["analyze_language_signal_turns"]
-        attach_language_signals = compat["attach_language_signals"]
         metric_availability = compat["metric_availability"]
         recompute = compat["recompute"]
         summarize_tool_evidence = compat["summarize_tool_evidence"]
@@ -1355,16 +1353,6 @@ class CursorRuntimeAdapter:
         row["token_estimate"] = bool(state.get("token_estimate"))
         row["provenance"] = usage_provenance([row])
         row["usage_basis"] = row["provenance"]["usage_basis"]
-        turns = []
-        for execution in executions:
-            ts = float(execution.get("ts") or 0)
-            turns.append({
-                "ts": ts,
-                "text": execution.get("user_input") or "",
-                "model": execution.get("model") or "unknown",
-            })
-        signal_rollups, signal_events = analyze_language_signal_turns(turns)
-        attach_language_signals(row, signal_rollups, signal_events)
         calls = []
         for execution in executions:
             for tool in execution.get("tools") or []:
