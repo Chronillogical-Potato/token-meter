@@ -76,6 +76,7 @@ from token_meter.domain.aggregates import (
     daily_summaries as _domain_daily_summaries,
     global_tool_waste as _domain_global_tool_waste,
     metric_coverage as _domain_metric_coverage,
+    session_model_reasoning_efforts as _domain_session_model_reasoning_efforts,
     monthly_summaries as _domain_monthly_summaries,
     spend_log_summaries as _domain_spend_log_summaries,
     spend_projection as _domain_spend_projection,
@@ -7391,6 +7392,51 @@ def delivery_spend_rows(internal_rows):
     return rows
 
 
+def delivery_model_spend_rows(internal_rows):
+    """Project daily covered cost by model, runtime, and reasoning effort."""
+    rows = {}
+    for session in internal_rows or ():
+        project = delivery_project_label(session.get("project"))
+        availability = session.get("availability") or {}
+        if not project or availability.get("cost") is False:
+            continue
+        model_daily = [
+            daily for daily in session.get("_model_daily") or ()
+            if isinstance(daily, dict)
+        ]
+        models = {
+            str(stats.get("model") or "unknown-model")
+            for stats in [*(session.get("model_stats") or []), *model_daily]
+            if isinstance(stats, dict)
+        }
+        efforts = _domain_session_model_reasoning_efforts(session, models)
+        runtime = (
+            session.get("runtime") or source_runtime_label(session)
+            or session.get("label") or session.get("provider") or "unknown"
+        )
+        for daily in model_daily:
+            day = daily.get("day")
+            if not isinstance(day, str) or len(day) != 10:
+                continue
+            if (daily.get("availability") or {}).get("cost") is False:
+                continue
+            try:
+                cost = float(daily.get("cost") or 0)
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(cost) or cost <= 0:
+                continue
+            model = str(daily.get("model") or "unknown-model")
+            key = (project, day, model, runtime, efforts.get(model, ""))
+            target = rows.setdefault(key, {
+                "project": project, "day": day, "model": model,
+                "runtime": runtime, "reasoning_effort": efforts.get(model, ""),
+                "covered_cost": 0.0,
+            })
+            target["covered_cost"] += cost
+    return list(rows.values())
+
+
 def git_delivery_service():
     """Return the process-local service backed by Token Meter's private ledger."""
     global _git_delivery_service_instance
@@ -7421,6 +7467,7 @@ def git_delivery_state(project="", range_key="7"):
         delivery_spend_rows(internal_rows),
         projects,
         candidates,
+        model_spend_rows=delivery_model_spend_rows(internal_rows),
     )
 
 
