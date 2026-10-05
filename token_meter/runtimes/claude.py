@@ -199,6 +199,16 @@ def _normalized_usage(usage):
     }
 
 
+def _content_block_key(block):
+    block_id = block.get("id") or block.get("tool_use_id")
+    if block_id:
+        return ("id", str(block.get("type") or ""), str(block_id))
+    try:
+        return ("value", json.dumps(block, sort_keys=True, default=str))
+    except (TypeError, ValueError):
+        return ("object", id(block))
+
+
 def _has_thinking_block(content):
     return any(
         isinstance(block, dict)
@@ -854,6 +864,7 @@ class ClaudeRuntimeAdapter:
     def _logical_messages(rows, timestamp_parser, include_owner):
         by_id = {}
         order = []
+        block_keys = {}
         for entry in rows:
             if (
                 isinstance(entry, tuple) and len(entry) == 2
@@ -899,9 +910,16 @@ class ClaudeRuntimeAdapter:
                 order.append(logical_key)
             content = message.get("content")
             if isinstance(content, list):
-                logical["content"].extend(
-                    block for block in content if isinstance(block, dict)
-                )
+                # Merged transcript copies repeat the same blocks under one message id.
+                seen = block_keys.setdefault(logical_key, set())
+                for block in content:
+                    if not isinstance(block, dict):
+                        continue
+                    key = _content_block_key(block)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    logical["content"].append(block)
             usage = message.get("usage") or {}
             output_tokens = _safe_int(usage.get("output_tokens"))
             current_output_tokens = _safe_int(

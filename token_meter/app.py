@@ -184,7 +184,10 @@ from token_meter.runtimes.codex import (
     AUTO_REVIEW_MODEL,
     CodexRuntimeAdapter,
     CodexRuntimeAdapterProxy,
+    CODEX_BUILTIN_NAMESPACES,
+    codex_host_provided,
     codex_mcp_tool_name,
+    codex_nested_tool_names,
 )
 from token_meter.runtimes.claude import (
     ClaudeRuntimeAdapter,
@@ -2530,6 +2533,7 @@ def normalize_dynamic_tools(dynamic_tools):
             name = child.get("name") or "?"
             namespace = child.get("namespace") or parent_namespace or "unknown"
             raw_identity = name
+            host_provided = False
             if name.startswith("mcp__"):
                 ident = tool_identity(name)
                 namespace = ident["namespace"]
@@ -2539,19 +2543,26 @@ def normalize_dynamic_tools(dynamic_tools):
                 namespace = parts[1] if len(parts) > 1 and parts[1] else "mcp"
                 raw_identity = f"mcp__{namespace}__{name}"
                 kind = "mcp"
+            elif isinstance(children, list) and namespace not in CODEX_BUILTIN_NAMESPACES:
+                raw_identity = f"mcp__{namespace}__{name}"
+                kind = "mcp"
+                host_provided = True
             else:
                 kind = "tool"
             definition = {
                 "description": child.get("description") or "",
                 "inputSchema": child.get("inputSchema") or child.get("input_schema") or {},
             }
-            out.append({
+            entry = {
                 "namespace": namespace,
                 "name": raw_identity,
                 "kind": kind,
                 "defer_loading": bool(child.get("deferLoading", parent_deferred)),
                 "definition_tokens": len(json.dumps(definition, sort_keys=True)) // CHARS_PER_TOKEN,
-            })
+            }
+            if host_provided:
+                entry["host_provided"] = True
+            out.append(entry)
     return out[:240]
 
 
@@ -4422,7 +4433,10 @@ def skill_names_from_value(value, tool_name=""):
         text = json.dumps(value, ensure_ascii=False, sort_keys=True)
     except (TypeError, ValueError):
         text = str(value or "")
-    names = {match.group(1) for match in SKILL_PATH_RE.finditer(text)}
+    names = {
+        match.group(1) for match in SKILL_PATH_RE.finditer(text)
+        if SKILL_NAME_RE.fullmatch(match.group(1))
+    }
     tool_leaf = str(tool_name or "").rsplit(".", 1)[-1].casefold()
     direct = value.get("skill") if tool_leaf == "skill" and isinstance(value, dict) else None
     if isinstance(direct, str):
@@ -5272,7 +5286,20 @@ def codex_tool_call_evidence(objs):
                     "args_fingerprint": argument_fingerprint(arguments),
                     "skills": skill_names_from_value(arguments, name),
                 }
+                if codex_host_provided(name):
+                    calls[call_id]["host_provided"] = True
                 order.append(call_id)
+                if ptype == "custom_tool_call" and name == "exec":
+                    for index, nested in enumerate(codex_nested_tool_names(arguments)):
+                        nested_id = f"{call_id}#nested-{index}"
+                        calls[nested_id] = {
+                            **tool_identity(nested), "output_chars": 0, "output_tokens": 0,
+                            "error": False, "ts": ts, "args_fingerprint": "",
+                            "skills": [], "nested": True,
+                        }
+                        if codex_host_provided(nested):
+                            calls[nested_id]["host_provided"] = True
+                        order.append(nested_id)
             continue
         if ptype not in ("function_call_output", "custom_tool_call_output", "web_search_end", "tool_search_output", "patch_apply_end"):
             continue
@@ -5545,9 +5572,23 @@ def session_budget_family(session_id, rows=None, root_id=None):
     return owner, root_row, children
 
 
+def capability_host(session):
+    """Return the inventory runtime whose installed skills/plugins a session loads."""
+    provider = str((session or {}).get("provider") or "").lower()
+    if provider == "codex":
+        return "Codex"
+    if provider == "claude":
+        path = os.path.abspath(os.path.expanduser(str(session.get("path") or "")))
+        root = os.path.abspath(CLAUDE_PROJECTS)
+        # Claude Code and the desktop Code tab load ~/.claude plugins; Cowork does not.
+        return "Claude" if path.startswith(root + os.sep) else "Claude Desktop"
+    return None
+
+
 def global_tool_waste(session_rows):
     return _domain_global_tool_waste(
         session_rows, runtime_resolver=source_runtime_label,
+        capability_host_resolver=capability_host,
     )
 
 
@@ -5765,11 +5806,16 @@ def discovered_skills(skill_usage=None):
     }
     for row in rows:
         used = usage.get(str(row.get("name") or "").lower()) or {}
-        providers = {
-            str(provider).lower() for provider in used.get("providers") or []
-        }
-        expected_provider = "codex" if row.get("runtime") == "Codex" else "claude"
-        if providers and expected_provider not in providers:
+        if isinstance(used.get("hosts"), dict):
+            used = used["hosts"].get(row.get("runtime")) or {}
+        else:
+            providers = {
+                str(provider).lower() for provider in used.get("providers") or []
+            }
+            expected_provider = "codex" if row.get("runtime") == "Codex" else "claude"
+            if providers and expected_provider not in providers:
+                used = {}
+        if not int(used.get("activations") or 0):
             used = {}
         row.update({
             "used": bool(used),
@@ -5803,7 +5849,7 @@ def capability_inventory(waste=None):
     tool_evidence = waste.get("inventory_tools") or waste.get("by_name") or []
     tool_items = []
     for row in tool_evidence:
-        if row.get("kind") == "mcp":
+        if row.get("kind") == "mcp" and not row.get("host_provided"):
             continue
         advertised = int(row.get("advertised_sessions") or 0)
         eager = int(row.get("eager_sessions") or 0)
@@ -5819,44 +5865,78 @@ def capability_inventory(waste=None):
             "enabled": None, "configuration": "Unknown", "mutable": False,
             "used": bool(row.get("calls")),
             "calls": int(row.get("calls") or 0), "returned_tokens": int(row.get("output_tokens") or 0),
+            "nested_calls": int(row.get("nested_calls") or 0),
             "advertised_sessions": advertised, "eager_sessions": eager, "deferred_sessions": deferred,
             "last_used": row.get("last_used") or "Never", "recommendation": row.get("recommendation") or "keep",
         })
 
     codex_states, claude_states = codex_mcp_states(), claude_mcp_states()
+
+    def mcp_key(name):
+        # Codex sanitizes configured server names (ghost-mcp-proxy -> ghost_mcp_proxy).
+        return str(name or "").replace("-", "_").casefold()
+
+    display_names = {}
+    for name in (*codex_states, *claude_states):
+        display_names.setdefault(mcp_key(name), name)
+    codex_by_key = {mcp_key(name): value for name, value in codex_states.items()}
+    claude_by_key = {mcp_key(name): value for name, value in claude_states.items()}
     mcp_usage = defaultdict(lambda: {
-        "calls": 0, "tokens": 0, "last_used": "Never", "used": False,
+        "calls": 0, "nested_calls": 0, "tokens": 0, "last_used": "Never", "used": False,
+        "providers": set(),
         "definition_tokens": 0, "eager_definition_tokens": 0,
         "deferred_definition_tokens": 0, "unused_eager_definition_tokens": 0,
     })
     for row in tool_evidence:
-        if row.get("kind") != "mcp":
+        if row.get("kind") != "mcp" or row.get("host_provided"):
             continue
         name = row.get("mcp_server") or row.get("namespace") or "mcp"
-        u = mcp_usage[name]
+        key = mcp_key(name)
+        display_names.setdefault(key, name)
+        u = mcp_usage[key]
         u["calls"] += int(row.get("calls") or 0)
+        u["nested_calls"] += int(row.get("nested_calls") or 0)
         u["tokens"] += int(row.get("output_tokens") or 0)
         u["used"] = u["used"] or bool(row.get("calls"))
-        for key in ("definition_tokens", "eager_definition_tokens", "deferred_definition_tokens",
-                    "unused_eager_definition_tokens"):
-            u[key] += int(row.get(key) or 0)
-        if row.get("last_ts") and row.get("last_used"):
-            u["last_used"] = row["last_used"]
-    all_mcp_names = set(codex_states) | set(claude_states) | set(mcp_usage)
+        u["providers"].update(str(value).lower() for value in row.get("providers") or ())
+        for metric in ("definition_tokens", "eager_definition_tokens", "deferred_definition_tokens",
+                       "unused_eager_definition_tokens"):
+            u[metric] += int(row.get(metric) or 0)
+        last_used = row.get("last_used") or "Never"
+        if row.get("last_ts") and last_used != "Never" and (
+            u["last_used"] == "Never" or last_used > u["last_used"]
+        ):
+            u["last_used"] = last_used
+    provider_labels = {"codex": "Codex", "claude": "Claude", "cursor": "Cursor"}
     mcp_items = []
-    for name in sorted(all_mcp_names):
-        codex_on = bool(codex_states.get(name))
-        claude_on = bool(claude_states.get(name))
-        usage_row = mcp_usage[name]
-        enabled = codex_on or claude_on
+    for key in sorted(display_names, key=lambda item: display_names[item].casefold()):
+        name = display_names[key]
+        codex_on = bool(codex_by_key.get(key))
+        claude_on = bool(claude_by_key.get(key))
+        configured = key in codex_by_key or key in claude_by_key
+        usage_row = mcp_usage[key]
+        enabled = (codex_on or claude_on) if configured else None
+        configuration = ("Enabled" if enabled else "Disabled") if configured else "Not in config"
+        runtimes = set()
+        if key in codex_by_key:
+            runtimes.add("Codex")
+        if key in claude_by_key:
+            runtimes.add("Claude")
+        runtimes.update(
+            provider_labels.get(provider, provider.title())
+            for provider in usage_row["providers"] if provider
+        )
         mcp_items.append({
-            "id": f"mcp:{name}", "type": "mcp", "name": name, "runtime": "Codex + Claude",
-            "source": "trace/config",
-            "state": "Enabled" if enabled else "Disabled", "enabled": enabled,
-            "configuration": "Enabled" if enabled else "Disabled",
+            "id": f"mcp:{name}", "type": "mcp", "name": name,
+            "runtime": " + ".join(sorted(runtimes)) or "Unknown",
+            "source": "trace/config" if configured else "trace",
+            "configured": configured,
+            "state": configuration, "enabled": enabled,
+            "configuration": configuration,
             "mutable": False,
             "codex_enabled": codex_on, "claude_enabled": claude_on, "used": usage_row["used"],
-            "calls": usage_row["calls"], "returned_tokens": usage_row["tokens"], "last_used": usage_row["last_used"],
+            "calls": usage_row["calls"], "nested_calls": usage_row["nested_calls"],
+            "returned_tokens": usage_row["tokens"], "last_used": usage_row["last_used"],
             "definition_tokens": usage_row["definition_tokens"],
             "eager_definition_tokens": usage_row["eager_definition_tokens"],
             "deferred_definition_tokens": usage_row["deferred_definition_tokens"],
@@ -5865,8 +5945,14 @@ def capability_inventory(waste=None):
 
     skill_items = discovered_skills(waste.get("skills") or [])
     control_groups = capability_control_groups(mcp_items, skill_items)
+    observed_hosts = waste.get("capability_host_sessions")
     observed_runtimes = waste.get("runtime_sessions")
-    if observed_runtimes is not None:
+    if observed_hosts is not None:
+        runtime_sessions = {
+            runtime: int(observed_hosts.get(runtime) or 0)
+            for runtime in ("Codex", "Claude", "Claude Desktop", "Cursor")
+        }
+    elif observed_runtimes is not None:
         runtime_sessions = {
             "Codex": int(observed_runtimes.get("Codex") or 0),
             "Claude": int(observed_runtimes.get("Claude") or 0)

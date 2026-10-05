@@ -9740,7 +9740,7 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
         self.assertIn("button.onclick=()=>openCapabilityInventory(button.dataset.capJump)", self.page)
         self.assertIn("function clearCapabilityFilter(key)", self.page)
         self.assertIn("row.measurement==='instruction'?'Instruction-only':'Evidence unavailable'", self.page)
-        self.assertIn("return row.enabled?'Enabled':'Disabled'", self.page)
+        self.assertIn("return row.enabled===true?'Enabled':row.enabled===false?'Disabled':'Unknown'", self.page)
         self.assertIn("const selectedCapabilityIds=new Set()", self.page)
         self.assertIn("openSelectedDisableDialog", self.page)
         self.assertIn("capabilityRuntime='all'", self.page)
@@ -13307,7 +13307,10 @@ class DynamicCatalogTests(unittest.TestCase):
             },
             {"name": "mcp__jira__search", "namespace": "jira", "deferLoading": True},
         ])
-        self.assertEqual([row["name"] for row in catalog], ["open_page", "create_thread", "mcp__jira__search"])
+        self.assertEqual(
+            [row["name"] for row in catalog],
+            ["mcp__codex_app__open_page", "mcp__codex_app__create_thread", "mcp__jira__search"],
+        )
         self.assertEqual(catalog[0]["namespace"], "codex_app")
         self.assertEqual(catalog[2]["namespace"], "jira")
         self.assertEqual(catalog[2]["kind"], "mcp")
@@ -13525,7 +13528,7 @@ class ToolEvidenceTests(unittest.TestCase):
         ]
         waste = meter.global_tool_waste(rows)
         tools = [row for row in waste["inventory_tools"] if row["name"] == "read_file"]
-        self.assertEqual({row["id"] for row in tools}, {"codex::read_file", "cursor::read_file"})
+        self.assertEqual({row["id"] for row in tools}, {"Codex::read_file", "Cursor::read_file"})
         self.assertEqual({row["runtime"] for row in tools}, {"Codex", "Cursor"})
         self.assertEqual(waste["provider_sessions"], {"codex": 1, "cursor": 1})
         self.assertEqual(waste["runtime_sessions"], {"Codex": 1, "Cursor": 1})
@@ -18928,6 +18931,340 @@ console.log(JSON.stringify({{
             "min-width:0}",
             self.page,
         )
+
+
+class ToolUsageEvidenceRealityTests(unittest.TestCase):
+    """Tools-tab usage evidence must match what the raw traces contain."""
+
+    @staticmethod
+    def inventory(waste, *, codex_mcp=None, claude_mcp=None, skills=None):
+        with mock.patch.object(meter, "codex_mcp_states", return_value=codex_mcp or {}), \
+                mock.patch.object(meter, "claude_mcp_states", return_value=claude_mcp or {}), \
+                mock.patch.object(meter, "discovered_skills",
+                                  side_effect=lambda usage=None: [dict(row) for row in (skills or [])]), \
+                mock.patch.object(meter, "claude_desktop_index", return_value={}), \
+                mock.patch.object(meter, "claude_local_agent_sources", return_value=[]):
+            return meter.capability_inventory(waste)
+
+    @staticmethod
+    def codex_exec(code, call_id="exec-1"):
+        return {"timestamp": "2026-10-01T00:00:00.000Z", "payload": {
+            "type": "custom_tool_call", "name": "exec", "call_id": call_id, "input": code,
+        }}
+
+    def test_codex_exec_records_nested_mcp_and_app_tool_calls(self):
+        code = (
+            "const a = await tools.mcp__sharepoint__search({q: 'x'});\n"
+            "await tools.mcp__sharepoint__search({q: 'y'});\n"
+            "await tools.codex_app__load_workspace_dependencies({});\n"
+            "await tools.exec_command({cmd: 'ls'});\n"
+            "await tools.web__run({q: 'z'});\n"
+        )
+        calls = meter.codex_tool_call_evidence([self.codex_exec(code)])
+        nested = {row["name"]: row for row in calls if row.get("nested")}
+        self.assertEqual(
+            set(nested),
+            {"mcp__sharepoint__search", "mcp__codex_app__load_workspace_dependencies"},
+        )
+        self.assertEqual(nested["mcp__sharepoint__search"]["kind"], "mcp")
+        self.assertEqual(nested["mcp__sharepoint__search"]["namespace"], "sharepoint")
+        evidence = meter.summarize_tool_evidence(calls)
+        rows = {row["name"]: row for row in evidence["tools"]}
+        self.assertEqual(rows["mcp__sharepoint__search"]["calls"], 2)
+        self.assertEqual(rows["exec"]["calls"], 1)
+        self.assertEqual(evidence["total_calls"], 1)
+
+    def test_codex_app_namespace_keeps_one_canonical_identity(self):
+        from token_meter.runtimes.codex import codex_mcp_tool_name
+        self.assertEqual(
+            codex_mcp_tool_name("read_thread", "codex_app"), "mcp__codex_app__read_thread",
+        )
+        self.assertEqual(
+            codex_mcp_tool_name("read_thread", "mcp__codex_app"), "mcp__codex_app__read_thread",
+        )
+        for builtin in ("collaboration", "clock", "web", "multi_agent_v1"):
+            self.assertEqual(codex_mcp_tool_name("wait_agent", builtin), "wait_agent")
+
+    def test_codex_dynamic_catalog_matches_code_mode_calls(self):
+        from token_meter.runtimes.codex import _catalog
+        catalog = _catalog([
+            {"name": "codex_app", "tools": [
+                {"name": "wait_threads", "description": "wait"},
+                {"name": "share_thread", "description": "share"},
+            ]},
+            {"name": "exec_command", "description": "flat"},
+        ])
+        names = {row["name"]: row for row in catalog}
+        normalized = meter.normalize_dynamic_tools([
+            {"name": "codex_app", "tools": [{"name": "wait_threads"}]},
+            {"name": "exec_command"},
+        ])
+        self.assertEqual(
+            [(row["name"], row["kind"]) for row in normalized],
+            [("mcp__codex_app__wait_threads", "mcp"), ("exec_command", "tool")],
+        )
+        self.assertIn("mcp__codex_app__wait_threads", names)
+        self.assertEqual(names["mcp__codex_app__wait_threads"]["kind"], "mcp")
+        self.assertEqual(names["mcp__codex_app__wait_threads"]["namespace"], "codex_app")
+        self.assertIn("exec_command", names)
+        calls = meter.codex_tool_call_evidence([
+            self.codex_exec("await tools.mcp__codex_app__wait_threads({});"),
+        ])
+        evidence = meter.summarize_tool_evidence(calls, catalog)
+        share = names["mcp__codex_app__share_thread"]["definition_tokens"]
+        flat = names["exec_command"]["definition_tokens"]
+        self.assertEqual(evidence["unused_eager_definition_tokens"], share + flat)
+
+    def test_duplicated_claude_transcript_copies_count_each_tool_once(self):
+        def assistant(block_id, name="mcp__workspace__bash"):
+            return {
+                "type": "assistant", "timestamp": "2026-10-01T00:00:00Z",
+                "message": {"id": "msg-1", "usage": {"output_tokens": 5}, "content": [
+                    {"type": "tool_use", "id": block_id, "name": name, "input": {}},
+                ]},
+            }
+        objs = [assistant("tool-1"), assistant("tool-1"), assistant("tool-2")]
+        calls = meter.claude_tool_call_evidence(objs)
+        self.assertEqual(len(calls), 2)
+
+    def test_claude_tool_rows_keep_their_own_runtime(self):
+        call = {**meter.tool_identity("Bash"), "output_tokens": 1, "ts": 100,
+                "args_fingerprint": "x", "error": False}
+        rows = [
+            {"id": "a", "provider": "claude", "runtime": "Claude-3P", "project": "/r",
+             "_tool_evidence": meter.summarize_tool_evidence([call])},
+            {"id": "b", "provider": "claude", "runtime": "Claude Code", "project": "/r",
+             "_tool_evidence": meter.summarize_tool_evidence([call, call])},
+        ]
+        waste = meter.global_tool_waste(rows)
+        bash = {row["runtime"]: row["calls"] for row in waste["inventory_tools"]
+                if row["name"] == "Bash"}
+        self.assertEqual(bash, {"Claude-3P": 1, "Claude Code": 2})
+
+    def test_desktop_code_tab_sessions_cover_claude_plugin_packs(self):
+        skill = {
+            "id": "skill:claude:custom@personal:custom", "name": "custom",
+            "runtime": "Claude", "source": "User-installed plugin",
+            "plugin_id": "custom@personal", "mutable": True, "enabled": True,
+            "used": False, "reviewable": True, "measurement": "measurable",
+            "unmeasurable": False, "activations": 0, "last_used": "Never",
+            "setting_path": "~/.claude/settings.json",
+        }
+        code_tab = os.path.join(meter.CLAUDE_PROJECTS, "-repo", "session.jsonl")
+        cowork = "/tmp/Claude-3p/local-agent-mode-sessions/x/.claude/projects/s/a.jsonl"
+        waste = meter.global_tool_waste([
+            {"id": "tab", "provider": "claude", "runtime": "Claude-3P",
+             "path": code_tab, "project": "/r", "_tool_evidence": {}},
+            {"id": "cli", "provider": "claude", "runtime": "Claude Code",
+             "path": code_tab.replace("session", "cli"), "project": "/r", "_tool_evidence": {}},
+            {"id": "cowork", "provider": "claude", "runtime": "Claude-3P",
+             "path": cowork, "project": "/r", "_tool_evidence": {}},
+        ])
+        capabilities = self.inventory(waste, skills=[skill])
+        self.assertEqual(capabilities["control_groups"][0]["scanned_sessions"], 2)
+
+    def test_skill_activations_stay_with_the_runtime_that_used_them(self):
+        evidence = meter.summarize_tool_evidence([{
+            **meter.tool_identity("exec"), "output_tokens": 0, "ts": 100,
+            "args_fingerprint": "x", "error": False, "skills": ["brainstorming"],
+        }])
+        cowork = "/tmp/Claude-3p/local-agent-mode-sessions/x/.claude/projects/s/a.jsonl"
+        waste = meter.global_tool_waste([
+            {"id": "codex", "provider": "codex", "runtime": "Codex", "project": "/r",
+             "path": "/tmp/codex.jsonl", "_tool_evidence": evidence},
+            {"id": "cowork", "provider": "claude", "runtime": "Claude-3P", "project": "/r",
+             "path": cowork, "_tool_evidence": evidence},
+        ])
+        rows = [
+            {"name": "brainstorming", "runtime": "Codex", "measurement": "measurable"},
+            {"name": "brainstorming", "runtime": "Claude", "measurement": "measurable"},
+            {"name": "brainstorming", "runtime": "Claude Desktop", "measurement": "measurable"},
+        ]
+        meter.invalidate_discovered_skill_cache()
+        try:
+            with mock.patch.object(meter, "_scan_discovered_skills", return_value=rows):
+                skills = meter.discovered_skills(waste["skills"])
+        finally:
+            meter.invalidate_discovered_skill_cache()
+        used = {row["runtime"]: row["activations"] for row in skills}
+        self.assertEqual(used, {"Codex": 1, "Claude": 0, "Claude Desktop": 1})
+
+    def test_skill_usage_is_not_truncated_and_rejects_template_names(self):
+        self.assertEqual(
+            meter.skill_names_from_value(
+                "cat skills/${n}/SKILL.md skills/{name}/SKILL.md "
+                "skills/token-meter-*/SKILL.md skills/docx/SKILL.md"
+            ),
+            ["docx"],
+        )
+        calls = [{**meter.tool_identity("exec"), "output_tokens": 0, "ts": 100,
+                  "args_fingerprint": str(index), "error": False,
+                  "skills": [f"skill-{index:03d}"]} for index in range(120)]
+        waste = meter.global_tool_waste([{
+            "id": "codex", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "_tool_evidence": meter.summarize_tool_evidence(calls),
+        }])
+        self.assertEqual(len(waste["skills"]), 120)
+
+    def test_mcp_without_configuration_is_not_reported_disabled(self):
+        waste = {"inventory_tools": [{
+            "id": "mcp__workspace__bash", "name": "mcp__workspace__bash",
+            "display": "bash", "kind": "mcp", "namespace": "workspace",
+            "mcp_server": "workspace", "runtime": "Claude-3P", "providers": ["claude"],
+            "calls": 9, "output_tokens": 10, "last_ts": 100, "last_used": "2026-10-01",
+        }]}
+        row = next(item for item in self.inventory(waste)["items"] if item["type"] == "mcp")
+        self.assertEqual(row["configuration"], "Not in config")
+        self.assertEqual(row["state"], "Not in config")
+        self.assertIsNone(row["enabled"])
+        self.assertEqual(row["runtime"], "Claude")
+
+    def test_codex_host_tool_groups_are_not_mcp_disable_candidates(self):
+        from token_meter.domain.tools import session_capabilities
+        catalog = meter.normalize_dynamic_tools([
+            {"name": "codex_app", "tools": [{"name": "navigate_to_codex_page"}]},
+            {"name": "plugin_management", "tools": [{"name": "uninstall_plugin"}]},
+        ])
+        self.assertTrue(all(row.get("host_provided") for row in catalog))
+        rows = [{
+            "id": f"s{index}", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "path": f"/tmp/s{index}.jsonl",
+            "_tool_evidence": meter.summarize_tool_evidence([], catalog),
+        } for index in range(6)]
+        waste = meter.global_tool_waste(rows)
+        self.assertEqual(
+            [row["name"] for row in waste["inventory_tools"] if row["recommendation"] == "disable"],
+            [],
+        )
+        self.assertNotIn("MCP disable candidate", [row.get("title") for row in waste["insights"]])
+        self.assertEqual(
+            session_capabilities(rows[0]["_tool_evidence"])["mcp_servers"],
+            {"loaded": None, "used": 0},
+        )
+        items = self.inventory(waste)["items"]
+        self.assertEqual([row["name"] for row in items if row["type"] == "mcp"], [])
+        tools = {row["identity"]: row for row in items if row["type"] == "tool"}
+        self.assertEqual(tools["mcp__codex_app__navigate_to_codex_page"]["runtime"], "Codex")
+
+    def test_codex_host_tool_group_calls_are_host_provided(self):
+        calls = meter.codex_tool_call_evidence([
+            self.codex_exec("await tools.mcp__codex_app__wait_threads({});"),
+            {"timestamp": "2026-10-01T00:00:01Z", "payload": {
+                "type": "function_call", "name": "read_thread", "namespace": "codex_app",
+                "call_id": "c2", "arguments": "{}",
+            }},
+        ])
+        hosted = {row["name"]: row.get("host_provided") for row in calls if row["kind"] == "mcp"}
+        self.assertEqual(hosted, {
+            "mcp__codex_app__wait_threads": True, "mcp__codex_app__read_thread": True,
+        })
+
+    def test_advertised_only_mcp_has_runtime_and_no_call_claim(self):
+        catalog = [{"name": "mcp__jira__search", "namespace": "jira", "kind": "mcp",
+                    "defer_loading": True, "definition_tokens": 10}]
+        waste = meter.global_tool_waste([{
+            "id": "s", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "_tool_evidence": meter.summarize_tool_evidence([], catalog),
+        }])
+        row = next(item for item in self.inventory(waste)["items"] if item["type"] == "mcp")
+        self.assertEqual((row["name"], row["runtime"], row["calls"]), ("jira", "Codex", 0))
+        script = Path(meter.__file__).with_name("page.html").read_text()
+        self.assertIn("Advertised in traces; not in Codex or Claude config", script)
+
+    def test_nested_calls_are_daily_and_labelled_as_call_sites(self):
+        calls = meter.codex_tool_call_evidence([
+            self.codex_exec("await tools.mcp__sharepoint__search({});"),
+        ])
+        evidence = meter.summarize_tool_evidence(calls)
+        row = next(item for item in evidence["tools"] if item["name"] == "mcp__sharepoint__search")
+        self.assertEqual(row["nested_calls"], 1)
+        self.assertEqual([day["calls"] for day in row["daily"]], [1])
+        waste = meter.global_tool_waste([{
+            "id": "s", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "_tool_evidence": evidence,
+        }])
+        mcp = next(item for item in self.inventory(waste)["items"] if item["type"] == "mcp")
+        self.assertEqual(mcp["nested_calls"], 1)
+        script = Path(meter.__file__).with_name("page.html").read_text()
+        self.assertIn("code-mode call site", script)
+
+    def test_host_tools_keep_non_disable_advice(self):
+        call = {**meter.tool_identity("mcp__codex_app__read_thread"), "output_tokens": 30000,
+                "ts": 100, "args_fingerprint": "x", "error": False, "host_provided": True}
+        waste = meter.global_tool_waste([{
+            "id": "s", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "_tool_evidence": meter.summarize_tool_evidence([call]),
+        }])
+        row = next(item for item in waste["inventory_tools"]
+                   if item["name"] == "mcp__codex_app__read_thread")
+        self.assertEqual(row["recommendation"], "narrow_results")
+
+    def test_host_tools_get_no_project_scope_advice(self):
+        def call(index):
+            return {**meter.tool_identity("mcp__codex_app__wait_threads"), "output_tokens": 1,
+                    "ts": 100 + index, "args_fingerprint": str(index), "error": False,
+                    "host_provided": True}
+        waste = meter.global_tool_waste([{
+            "id": "s", "provider": "codex", "runtime": "Codex", "project": "/r",
+            "_tool_evidence": meter.summarize_tool_evidence([call(i) for i in range(6)]),
+        }])
+        row = next(item for item in waste["inventory_tools"]
+                   if item["name"] == "mcp__codex_app__wait_threads")
+        self.assertEqual(row["recommendation"], "keep")
+        self.assertEqual(row["reason"], "Provided by the runtime itself; not a configurable MCP server.")
+
+    def test_session_catalog_host_groups_are_not_used_mcp_servers(self):
+        from token_meter.domain.tools import session_capabilities
+        catalog = meter.normalize_dynamic_tools([
+            {"name": "newapp", "tools": [{"name": "open"}]},
+        ])
+        evidence = meter.summarize_tool_evidence(meter.codex_tool_call_evidence([
+            self.codex_exec("await tools.mcp__newapp__open({});"),
+        ]), catalog)
+        self.assertEqual(
+            session_capabilities(evidence)["mcp_servers"], {"loaded": None, "used": 0},
+        )
+
+    def test_builder_recap_tool_total_excludes_code_mode_call_sites(self):
+        from token_meter.domain.builder_recap import _period_rollup
+        evidence = meter.summarize_tool_evidence(meter.codex_tool_call_evidence([
+            self.codex_exec("await tools.mcp__sharepoint__search({});"),
+        ]))
+        day = datetime.date.fromtimestamp(evidence["tools"][0]["last_ts"] or 1790812800)
+        rollup = _period_rollup([{
+            "id": "s", "provider": "codex", "runtime": "Codex", "_tool_evidence": evidence,
+        }], day, day)
+        self.assertEqual(rollup["tool_calls"], 1)
+        self.assertEqual(sorted(rollup["tools"].values()), [1, 1])
+
+    def test_codex_multi_part_mcp_namespace_keeps_server(self):
+        from token_meter.runtimes.codex import codex_mcp_tool_name
+        self.assertEqual(codex_mcp_tool_name("x", "mcp__a__b"), "mcp__a__x")
+        self.assertEqual(codex_mcp_tool_name("x", "foo__bar"), "x")
+
+    def test_tools_page_renders_unconfigured_mcp_without_off_claims(self):
+        script = Path(meter.__file__).with_name("page.html").read_text()
+        start = script.index("function capabilityConfigurationText(row){")
+        body = script[start:script.index("\n}", start)]
+        self.assertNotIn("row.enabled?'Enabled':'Disabled'", body.replace(" ", ""))
+        self.assertIn("row.configured===false", script)
+        for handler in ("$('c-type-filter').onclick", "$('c-state-filter').onclick"):
+            line = script[script.index(handler):].split("\n", 1)[0]
+            self.assertIn("paintCapabilityFilters()", line)
+
+    def test_codex_sanitized_mcp_names_match_configured_server(self):
+        waste = {"inventory_tools": [{
+            "id": "mcp__ghost_mcp_proxy__slack", "name": "mcp__ghost_mcp_proxy__slack",
+            "display": "slack", "kind": "mcp", "namespace": "ghost_mcp_proxy",
+            "mcp_server": "ghost_mcp_proxy", "runtime": "Codex", "providers": ["codex"],
+            "calls": 4, "output_tokens": 0, "last_ts": 100, "last_used": "2026-10-01",
+        }]}
+        items = self.inventory(waste, codex_mcp={"ghost-mcp-proxy": True})["items"]
+        mcps = {row["name"]: row for row in items if row["type"] == "mcp"}
+        self.assertEqual(set(mcps), {"ghost-mcp-proxy"})
+        self.assertEqual(mcps["ghost-mcp-proxy"]["calls"], 4)
+        self.assertTrue(mcps["ghost-mcp-proxy"]["used"])
+        self.assertEqual(mcps["ghost-mcp-proxy"]["configuration"], "Enabled")
 
 
 if __name__ == "__main__":

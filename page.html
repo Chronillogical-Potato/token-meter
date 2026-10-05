@@ -4247,7 +4247,8 @@ if(!['asc','desc'].includes(capabilitySortDir))capabilitySortDir='asc';
 function capabilityUseCount(row){ return row.type==='skill'?(row.activations||0):(row.calls||0); }
 function capabilityConfigurationText(row){
  if(row.type==='tool')return row.configuration||'Unknown';
- return row.enabled?'Enabled':'Disabled';
+ if(row.configuration)return row.configuration;
+ return row.enabled===true?'Enabled':row.enabled===false?'Disabled':'Unknown';
 }
 function capabilityEvidenceText(row){
  const used=capabilityUseCount(row);
@@ -4468,8 +4469,8 @@ function renderCapabilityTable(cap,{force=false}={}){
   const use=capabilityUseCount(row);
   const evidenceDetail=row.unmeasurable
    ? (row.measurement==='instruction'?'Use cannot be inferred from instruction text.':'No reliable activation evidence is available.')
-   : `${f(use)} ${countWord(use,row.type==='skill'?'activation':'call')}${row.type==='skill'?'':` · ${f(row.returned_tokens||0)} returned tokens`}`;
-  return `<tr><td class=nm data-label="Capability">${esc(row.name)}${row.identity&&row.identity!==row.name?`<div class=capPath>${esc(row.identity)}</div>`:''}${identifier}</td><td data-label="Type"><span class="chip ${row.type==='mcp'?'mcp':''}">${typeLabel}</span></td><td data-label="Runtime / source">${esc(source)}${detail}</td><td data-label="Configuration"><span class="stateDot ${capabilityConfigurationClass(row)}">${esc(configuration)}</span>${row.type==='mcp'?`<div class=capPath>Codex ${row.codex_enabled?'on':'off'} · Claude ${row.claude_enabled?'on':'off'}</div>`:''}</td><td data-label="Evidence"><div class=capEvidence><strong><span class="stateDot ${capabilityEvidenceClass(row)}">${esc(evidence)}</span></strong><small>${esc(evidenceDetail)}</small></div></td><td data-label="Last observed">${esc(row.last_used||'Never')}</td><td data-label="Control">${capabilityAction(row)}</td></tr>`;
+   : `${f(use)} ${countWord(use,row.type==='skill'?'activation':'call')}${row.nested_calls?` (${f(row.nested_calls)} ${countWord(row.nested_calls,'code-mode call site')})`:''}${row.type==='skill'?'':` · ${f(row.returned_tokens||0)} returned tokens`}`;
+  return `<tr><td class=nm data-label="Capability">${esc(row.name)}${row.identity&&row.identity!==row.name?`<div class=capPath>${esc(row.identity)}</div>`:''}${identifier}</td><td data-label="Type"><span class="chip ${row.type==='mcp'?'mcp':''}">${typeLabel}</span></td><td data-label="Runtime / source">${esc(source)}${detail}</td><td data-label="Configuration"><span class="stateDot ${capabilityConfigurationClass(row)}">${esc(configuration)}</span>${row.type==='mcp'?`<div class=capPath>${row.configured===false?(row.calls?'Observed in traces; not in Codex or Claude config':'Advertised in traces; not in Codex or Claude config'):`Codex ${row.codex_enabled?'on':'off'} · Claude ${row.claude_enabled?'on':'off'}`}</div>`:''}</td><td data-label="Evidence"><div class=capEvidence><strong><span class="stateDot ${capabilityEvidenceClass(row)}">${esc(evidence)}</span></strong><small>${esc(evidenceDetail)}</small></div></td><td data-label="Last observed">${esc(row.last_used||'Never')}</td><td data-label="Control">${capabilityAction(row)}</td></tr>`;
  }).join('')+(visibleRows.length<rows.length?`<tr><td colspan=7 class=capMore><button class=tbtn type=button data-cap-more>Show next ${f(Math.min(CAPABILITY_PAGE_SIZE,rows.length-visibleRows.length))}</button></td></tr>`:''):`<tr><td colspan=7 class=capEmpty>No capabilities match these filters.<button class=tbtn type=button data-cap-clear>Clear filters</button></td></tr>`;
  lastCapabilityInventoryRevision=String(cap.inventory_revision||cap.revision||'');
  paintCapabilitySort();
@@ -4696,8 +4697,8 @@ $('c-search').oninput=e=>{
  clearTimeout(capabilitySearchTimer);
  capabilitySearchTimer=setTimeout(()=>{const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});},120);
 };
-$('c-type-filter').onclick=e=>{if(!e.target.dataset.ctype)return;capabilityType=e.target.dataset.ctype;capabilityVisibleLimit=CAPABILITY_PAGE_SIZE;const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});};
-$('c-state-filter').onclick=e=>{if(!e.target.dataset.cstate)return;capabilityState=e.target.dataset.cstate;capabilityVisibleLimit=CAPABILITY_PAGE_SIZE;const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});};
+$('c-type-filter').onclick=e=>{if(!e.target.dataset.ctype)return;capabilityType=e.target.dataset.ctype;capabilityVisibleLimit=CAPABILITY_PAGE_SIZE;paintCapabilityFilters();const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});};
+$('c-state-filter').onclick=e=>{if(!e.target.dataset.cstate)return;capabilityState=e.target.dataset.cstate;capabilityVisibleLimit=CAPABILITY_PAGE_SIZE;paintCapabilityFilters();const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});};
 $('c-runtime-filter').onchange=e=>{capabilityRuntime=e.target.value;capabilityVisibleLimit=CAPABILITY_PAGE_SIZE;const inventory=currentCapabilityInventory();if(inventory)renderCapabilityTable(inventory,{force:true});};
 $('c-clear-filters').onclick=clearCapabilityFilters;
 [...document.querySelectorAll('[data-cap-jump]')].forEach(button=>button.onclick=()=>openCapabilityInventory(button.dataset.capJump));
