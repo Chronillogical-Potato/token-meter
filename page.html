@@ -1014,7 +1014,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   <div class=spectrumPageActions><div class=modelControls>
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=m-project aria-label="Model performance project filter"><option value="">All projects</option></select></label>
 	    <div class=filterControl><span>Models</span><details class=modelPicker id=m-model-picker><summary aria-label="Choose models to compare"><span id=m-model-summary>All models</span></summary><div class=modelPickerMenu id=m-model-options role=group aria-label="Models to compare"></div></details></div>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=m-range aria-label="Models history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>Last 7 days</option><option value=30 selected>Last 30 days</option><option value=90>Last 90 days</option><option value=all>All history</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=m-range aria-label="Models history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>Last 7 days</option><option value=30 selected>Last 30 days</option><option value=90>Last 90 days</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
 	   </div></div>
 	  </div>
 	  <div class=modelScopeStatus id=m-project-status aria-live=polite></div>
@@ -1054,7 +1054,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	    <div class=spectrumPageHeadCopy><h1>Spend</h1><p class=spectrumPageSubtitle>Estimated agent spend over time.</p></div>
 	   </div>
 	   <div class=spectrumPageActions><div class=spendRangeControls>
-	    <div class=seg id=s-range aria-label="Spend range"><button data-spend-range=today>Today</button><button data-spend-range=7>7 days</button><button data-spend-range=30>30 days</button><button data-spend-range=month>Month</button><button data-spend-range=custom>Custom</button></div>
+	    <div class=seg id=s-range aria-label="Spend range"><button data-spend-range=today>Today</button><button data-spend-range=7>7 days</button><button data-spend-range=30>30 days</button><button data-spend-range=month>Month</button><button data-spend-range=last_month>Last month</button><button data-spend-range=custom>Custom</button></div>
 	    <div class=spendCustom id=s-custom hidden><label><span>From</span><input id=s-from type=date></label><label><span>To</span><input id=s-to type=date></label><span id=s-range-error role=status aria-live=polite></span></div>
 	   </div></div>
 	  </div>
@@ -1091,7 +1091,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   <div class=spectrumPageActions><div class=modelControls>
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=e-project aria-label="Efficiency project filter"><option value="">All projects</option></select></label>
 	    <div class=filterControl><span>Models</span><details class=modelPicker id=e-model-picker><summary aria-label="Choose models for efficiency"><span id=e-model-summary>All models</span></summary><div class=modelPickerMenu id=e-model-options role=group aria-label="Models for efficiency"></div></details></div>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=e-range aria-label="Efficiency history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>Last 7 days</option><option value=30>Last 30 days</option><option value=90>Last 90 days</option><option value=all>All history</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=e-range aria-label="Efficiency history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>Last 7 days</option><option value=30>Last 30 days</option><option value=90>Last 90 days</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
 	   </div></div>
 	  </div>
 	  <div class=efficiencyHero aria-label="Mechanical efficiency">
@@ -1115,7 +1115,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   </div>
 	   <div class=spectrumPageActions><div class=modelControls>
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=d-project aria-label="Git project filter"><option value="">All projects</option></select></label>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=d-range aria-label="Git history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>Last 7 days</option><option value=30>Last 30 days</option><option value=90>Last 90 days</option><option value=all>Last 12 months</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=d-range aria-label="Git history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>Last 7 days</option><option value=30>Last 30 days</option><option value=90>Last 90 days</option><option value=last_month>Last month</option><option value=all>Last 12 months</option></select></label>
 	   </div></div>
 	  </div>
 	  <section class="card deliveryOverview" aria-label="Git overview">
@@ -1434,7 +1434,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 <script>
 const $=id=>document.getElementById(id);
 const TOKENOMICS_SEARCH_URL='https://www.google.com/search?q=site%3Asplunk.com+tokenomics';
-const DELIVERY_RANGES=['today','yesterday','7','30','90','all'];
+const DELIVERY_RANGES=['today','yesterday','7','30','90','last_month','all'];
 const DELIVERY_EVIDENCE_FILTERS=['all','comparable','spend_only','git_only','unavailable'];
 let deliveryRange=localStorage.getItem('tm_delivery_range')||'7';
 if(!DELIVERY_RANGES.includes(deliveryRange))deliveryRange='7';
@@ -1734,7 +1734,7 @@ const ONBOARDING_KEY='tm_onboarding_v1';
 const ONBOARDING_STEPS=[
  {id:'current',title:'Understand this run',short:'Run',description:'Check cost, context, wait, and the latest execution.',action:'Review Run',route:'summary',lesson:'Use the session Run view to decide whether this work needs attention now.',points:['Cost is observed or locally estimated from trace evidence; the label tells you which.','Context pressure shows how much of the model window the latest execution used.','Check wait time and the latest execution before changing the prompt, model, or budget.']},
  {id:'logs',title:'Look across sessions',short:'All sessions',description:'Check whether a signal repeats.',action:'Open all sessions',route:'sessions-all',lesson:'All sessions turns one-run clues into patterns you can verify across session history.',points:['Filter by app, project, time range, or model to narrow the comparison.','Open a session to confirm the same behavior appears in its execution evidence.','Repeated evidence is a stronger basis for action than one unusually large session.']},
- {id:'daily',title:'Review spend over time',short:'Spend',description:'Compare cost by date and runtime.',action:'Open Spend',route:'spend',lesson:'Spend shows how estimated cost changes over time and which runtime contributed it.',points:['Choose Today, 7 days, 30 days, or an inclusive custom date range.','Use the stacked bars and platform split to find the largest runtime contribution.','Partial coverage is a lower bound; unavailable evidence must not be read as zero.']},
+ {id:'daily',title:'Review spend over time',short:'Spend',description:'Compare cost by date and runtime.',action:'Open Spend',route:'spend',lesson:'Spend shows how estimated cost changes over time and which runtime contributed it.',points:['Choose Today, 7 days, 30 days, Month, Last month, or an inclusive custom date range.','Use the stacked bars and platform split to find the largest runtime contribution.','Partial coverage is a lower bound; unavailable evidence must not be read as zero.']},
  {id:'models',title:'Compare model evidence',short:'Models',description:'Compare model histories and coverage.',action:'Open Models',route:'models',lesson:'Models helps compare observed histories without turning them into a simplistic leaderboard.',points:['The same model name in different runtimes remains separate because the execution environment matters.','Check pair count, timing coverage, output length, and workload before comparing observed pace.','Treat matched pace as a diagnostic signal, not proof that one model is universally faster or better.']},
  {id:'efficiency',title:'Review token efficiency',short:'Efficiency',description:'Compare token use and output evidence.',action:'Open Efficiency',route:'efficiency',lesson:'Efficiency helps you compare token use and output evidence by runtime and model without turning the result into a quality score.',points:['Start with the coverage label; unavailable or partial evidence is not a measured zero.','Compare a model only within its runtime and workload context.','Use the result to investigate a repeated pattern, not to make a blanket ranking.']},
  {id:'budgets',title:'Set a monthly budget',short:'Monthly budget',description:'Compare month-to-date spend with your limits.',action:'Open Budgets',route:'settings-budgets',lesson:'Monthly budget keeps the machine-wide view of recorded spend, runtime limits, and projected pace together.',points:['Set runtime budgets; Token Meter calculates the combined monthly total.','Treat partial coverage as a lower bound before making a spending decision.','Use projected pace as a prompt to review evidence, not as a guarantee of final spend.']},
@@ -3194,7 +3194,7 @@ function saveActiveModelFilters(){
 }
 let modelProject=localStorage.getItem('tm_model_project')||'';
 let modelFilters=loadModelFilters(modelProject);
-const MODEL_RANGES=['today','yesterday','7','30','90','all'];
+const MODEL_RANGES=['today','yesterday','7','30','90','last_month','all'];
 let modelRange=localStorage.getItem('tm_model_range')||'30';
 let modelTrendMetric=localStorage.getItem('tm_model_trend_metric')||'speed';
 const MODEL_MIX_KEYS=['cost','output','executions'];
@@ -4744,6 +4744,10 @@ function spendRangeWindow(range,from='',to='',now=new Date()){
   const startDate=new Date(now.getFullYear(),now.getMonth(),1,12,0,0,0),endDate=spendDayDate(end);
   return {valid:true,start:spendDayKey(startDate),end,dayCount:Math.round((endDate-startDate)/86400000)+1,error:''};
  }
+ if(range==='last_month'){
+  const startDate=new Date(now.getFullYear(),now.getMonth()-1,1,12,0,0,0),endDate=new Date(now.getFullYear(),now.getMonth(),0,12,0,0,0);
+  return {valid:true,start:spendDayKey(startDate),end:spendDayKey(endDate),dayCount:endDate.getDate(),error:''};
+ }
  if(range==='custom'){
   const startDate=spendDayDate(from),endDate=spendDayDate(to);
   if(!startDate||!endDate)return {valid:false,start:from,end:to,dayCount:0,error:'Choose both From and To dates.'};
@@ -4844,7 +4848,7 @@ function spendScatterRows(rows,metric){
   return active!==null&&active>0&&value!==null&&value>=0;
  });
 }
-function normalizeSpendRangeChoice(value){return ['today','7','30','month','custom'].includes(value)?value:'7';}
+function normalizeSpendRangeChoice(value){return ['today','7','30','month','last_month','custom'].includes(value)?value:'7';}
 // spend-range-logic-end
 const SPEND_RANGE_KEY='tm_spend_range_v1';
 const SPEND_SCATTER_METRIC_KEY='tm_spend_scatter_metric_v1';
@@ -5708,7 +5712,7 @@ $('delivery-clear').addEventListener('click',async()=>{
 
 const MODEL_COUNTER_KEYS=['input_tokens','output_tokens','cost_covered_output_tokens','cost_covered_cost','executions','token_covered_executions','io_covered_executions','cost_covered_executions','cost','cache_read_tokens','cache_write_tokens','cache_covered_input_tokens','reasoning_tokens','reasoning_output_tokens','reasoning_executions','reasoning_unavailable_executions','thinking_executions','thinking_covered_executions','attempts','retries','failed_attempts','attempt_samples','timed_output_tokens','timed_seconds','timed_samples','tool_free_output_tokens','tool_free_seconds','tool_free_samples','ttft_total_s','ttft_samples','wait_seconds','wait_samples','user_pause_seconds'];
 const MODEL_ARRAY_KEYS=['wait_durations_s','workload_peak_inputs','workload_outputs','workload_tool_calls','workload_model_calls','workload_cache_ratios'];
-const EFFICIENCY_RANGES=['today','yesterday','7','30','90','all'];
+const EFFICIENCY_RANGES=['today','yesterday','7','30','90','last_month','all'];
 function loadEfficiencyFilters(project=''){
  if(project){
   const stored=localStorage.getItem('tm_efficiency_project_filters');
@@ -5758,8 +5762,14 @@ function modelTrendPaint(seriesColor){return {barFill:MODEL_OUTPUT_BAR_FILL,barS
 // model-color-logic-end
 function localDateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 function dateKeyAgo(days,now=new Date()){const date=new Date(now);date.setHours(12,0,0,0);date.setDate(date.getDate()-days);return localDateKey(date);}
+function calendarMonthWindow(monthsAgo,now=new Date()){
+ const start=new Date(now.getFullYear(),now.getMonth()-monthsAgo,1,12,0,0,0),days=[];
+ for(const date=new Date(start);date.getMonth()===start.getMonth();date.setDate(date.getDate()+1))days.push(localDateKey(date));
+ return {days,daySet:new Set(days)};
+}
 function modelRangeWindow(range,now=new Date()){
  if(range==='all')return {days:null,daySet:null};
+ if(range==='last_month')return calendarMonthWindow(1,now);
  if(range==='today'||range==='yesterday'){
   const day=dateKeyAgo(range==='today'?0:1,now);
   return {days:[day],daySet:new Set([day])};
@@ -5768,7 +5778,7 @@ function modelRangeWindow(range,now=new Date()){
  return {days,daySet:new Set(days)};
 }
 function modelDayInRange(day,window){return !window.daySet||window.daySet.has(day);}
-function modelRangeLabel(range){return range==='today'?'Today':range==='yesterday'?'Yesterday':range==='all'?'all history':`${range}d`;}
+function modelRangeLabel(range){return range==='today'?'Today':range==='yesterday'?'Yesterday':range==='last_month'?'Last month':range==='all'?'all history':`${range}d`;}
 function modelWaitDistribution(values){
  const sorted=(values||[]).map(Number).filter(value=>value>0).sort((a,b)=>a-b),count=sorted.length;
  if(!count)return {median_wait_s:0,p95_wait_s:0};
@@ -5865,6 +5875,7 @@ function efficiencyTrendDelta(trend,key){
 function efficiencyComparisonWindows(range,now=new Date()){
  if(range==='today')return {current:modelRangeWindow('today',now),prior:modelRangeWindow('yesterday',now),label:'yesterday'};
  if(range==='yesterday')return {current:modelRangeWindow('yesterday',now),prior:{days:[dateKeyAgo(2,now)],daySet:new Set([dateKeyAgo(2,now)])},label:'the day before'};
+ if(range==='last_month')return {current:calendarMonthWindow(1,now),prior:calendarMonthWindow(2,now),label:'the month before'};
  const count=Number(range);
  if(!Number.isInteger(count)||count<=0)return null;
  const priorDays=Array.from({length:count},(_,index)=>dateKeyAgo(count*2-1-index,now));

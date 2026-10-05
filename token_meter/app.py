@@ -6909,7 +6909,7 @@ def _pace_samples_signature(samples, fields):
     return digest.hexdigest()
 
 
-MATCHED_PACE_WINDOW_KEYS = ("today", "yesterday", "7", "30", "90", "all")
+MATCHED_PACE_WINDOW_KEYS = ("today", "yesterday", "7", "30", "90", "last_month", "all")
 _MATCHED_PACE_INT_FIELDS = ("a_samples", "b_samples", "matched_pairs")
 _MATCHED_PACE_FLOAT_FIELDS = ("coverage", "pace_ratio", "ci_low", "ci_high")
 
@@ -7058,12 +7058,14 @@ def _build_matched_pace_windows(sample_groups, today, signature_fields, pair_cac
     pair cache the caller holds the single-flight flag.
     """
     changed = False
+    last_month_end = today.replace(day=1) - datetime.timedelta(days=1)
     rules = {
         "today": ("exact", today.isoformat()),
         "yesterday": ("exact", (today - datetime.timedelta(days=1)).isoformat()),
         "7": ("since", (today - datetime.timedelta(days=6)).isoformat()),
         "30": ("since", (today - datetime.timedelta(days=29)).isoformat()),
         "90": ("since", (today - datetime.timedelta(days=89)).isoformat()),
+        "last_month": ("month", last_month_end.isoformat()[:7]),
         "all": ("all", ""),
     }
     result = {window: [] for window in rules}
@@ -7079,6 +7081,7 @@ def _build_matched_pace_windows(sample_groups, today, signature_fields, pair_cac
                     match == "all"
                     or (match == "exact" and day == boundary)
                     or (match == "since" and day >= boundary)
+                    or (match == "month" and day[:7] == boundary)
                 ):
                     buckets[window].append(sample)
         windowed_samples[runtime_id] = buckets

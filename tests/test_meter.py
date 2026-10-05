@@ -3233,7 +3233,7 @@ class ModelPerformanceTests(unittest.TestCase):
 
         windows = meter.matched_pace_windows(groups, now_ts=now)["windows"]
 
-        self.assertEqual(list(windows), ["today", "yesterday", "7", "30", "90", "all"])
+        self.assertEqual(list(windows), ["today", "yesterday", "7", "30", "90", "last_month", "all"])
         for name in ("today", "yesterday"):
             self.assertEqual(len(windows[name]), 1)
             self.assertEqual(windows[name][0]["a_samples"], 20)
@@ -3242,6 +3242,8 @@ class ModelPerformanceTests(unittest.TestCase):
         self.assertEqual(windows["7"][0]["b_samples"], 40)
         self.assertEqual(windows["all"][0]["a_samples"], 60)
         self.assertEqual(windows["all"][0]["b_samples"], 60)
+        self.assertEqual(windows["last_month"][0]["a_samples"], 20)
+        self.assertEqual(windows["last_month"][0]["b_samples"], 20)
 
     def test_matched_pace_reuses_unchanged_inputs_and_invalidates_changed_samples(self):
         now = datetime.datetime(2026, 8, 11, 12, 0, 0).timestamp()
@@ -3298,10 +3300,11 @@ class ModelPerformanceTests(unittest.TestCase):
             meter.matched_pace_windows(changed_groups, now_ts=now)
             after_change = comparison.call_count
 
-        # Four models form six pairs across six windows. Only the three pairs
+        # Four models form six pairs across every window. Only the three pairs
         # that include the changed model may be recomputed.
-        self.assertEqual(first_call_count, 6 * 6)
-        self.assertEqual(after_change - first_call_count, 3 * 6)
+        windows = len(meter.MATCHED_PACE_WINDOW_KEYS)
+        self.assertEqual(first_call_count, 6 * windows)
+        self.assertEqual(after_change - first_call_count, 3 * windows)
 
     def test_matched_pace_cached_pairs_match_a_cold_computation(self):
         """Per-pair caching must not change any reported comparison."""
@@ -3648,7 +3651,9 @@ class ModelPerformanceTests(unittest.TestCase):
                 self.assertEqual(result, expected)
                 self.assertEqual(result, self._cold_pace(groups, now))
                 # Only the corrupted pair is recomputed; the others are kept.
-                self.assertEqual(comparison.call_count, 6)
+                self.assertEqual(
+                    comparison.call_count, len(meter.MATCHED_PACE_WINDOW_KEYS),
+                )
 
     def test_matched_pace_persisted_entries_cannot_inject_output_fields(self):
         now = datetime.datetime(2026, 8, 11, 12, 0, 0).timestamp()
@@ -8305,7 +8310,7 @@ console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroI
 
     def test_efficiency_uses_one_range_for_overall_and_per_model_statistics(self):
         for marker in (
-            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','all']",
+            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','last_month','all']",
             "tm_efficiency_range", "tm_efficiency_project", "efficiencyRangeWindow", "efficiencyModelRows",
             "aggregateModelDays(efficiencyModelRows", "efficiencyMetrics(overall)",
             "efficiencyMetrics(row.window)", "efficiencyTrendDays",
@@ -8485,7 +8490,8 @@ console.log(JSON.stringify({
         self.assertIsNotNone(date_key, "Efficiency windows need date-key arithmetic")
         functions = ["function localDateKey(date){return String(date.getFullYear())+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}", date_key.group(0)]
         for name in (
-            "modelRangeWindow", "efficiencyComparisonWindows", "efficiencyPeriodDelta",
+            "calendarMonthWindow", "modelRangeWindow", "efficiencyComparisonWindows",
+            "efficiencyPeriodDelta",
         ):
             match = re.search(rf"function {name}\(.*?\n\}}", self.page, re.DOTALL)
             self.assertIsNotNone(match, f"Efficiency needs {name} for matched comparisons")
@@ -8495,7 +8501,9 @@ const now=new Date(2026,8,1,15,20,0);
 const today=efficiencyComparisonWindows('today',now);
 const yesterday=efficiencyComparisonWindows('yesterday',now);
 const seven=efficiencyComparisonWindows('7',now);
+const lastMonth=efficiencyComparisonWindows('last_month',new Date(2026,2,15,9,0,0));
 console.log(JSON.stringify({
+  lastMonth:{first:lastMonth.current.days[0],last:lastMonth.current.days.at(-1),count:lastMonth.current.days.length,priorFirst:lastMonth.prior.days[0],priorLast:lastMonth.prior.days.at(-1),label:lastMonth.label},
   all:efficiencyComparisonWindows('all',now),
   today:{current:today.current.days,prior:today.prior.days,label:today.label},
   yesterday:{current:yesterday.current.days,prior:yesterday.prior.days,label:yesterday.label},
@@ -8508,6 +8516,11 @@ console.log(JSON.stringify({
             ["node", "-e", script], capture_output=True, text=True, check=True,
         )
         self.assertEqual(json.loads(result.stdout), {
+            "lastMonth": {
+                "first": "2026-02-01", "last": "2026-02-28", "count": 28,
+                "priorFirst": "2026-01-01", "priorLast": "2026-01-31",
+                "label": "the month before",
+            },
             "all": None,
             "today": {
                 "current": ["2026-09-01"], "prior": ["2026-08-31"],
@@ -9413,6 +9426,7 @@ console.log(JSON.stringify({
             '<option value=7>Last 7 days</option>',
             '<option value=30 selected>Last 30 days</option>',
             '<option value=90>Last 90 days</option>',
+            '<option value=last_month>Last month</option>',
             '<option value=all>All history</option>',
         )
         for option in expected:
@@ -9421,7 +9435,9 @@ console.log(JSON.stringify({
             history.index(option) for option in expected
         ))
         for marker in (
-            "const MODEL_RANGES=['today','yesterday','7','30','90','all'];",
+            "const MODEL_RANGES=['today','yesterday','7','30','90','last_month','all'];",
+            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','last_month','all'];",
+            "const DELIVERY_RANGES=['today','yesterday','7','30','90','last_month','all'];",
             "if(!MODEL_RANGES.includes(modelRange))",
             "function modelRangeWindow(range,now=new Date())",
             "if(range==='today'||range==='yesterday')",
@@ -9767,7 +9783,7 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
             "<h1>Spend</h1>",
             "id=s-range", "data-spend-range=today", "data-spend-range=7",
             "data-spend-range=30", "data-spend-range=month",
-            "data-spend-range=custom",
+            "data-spend-range=last_month", "data-spend-range=custom",
             "id=s-from", "id=s-to", "id=s-total", "id=s-average",
             "id=s-top-runtime", "id=s-highest-day", "id=s-chart",
             "id=s-chart-tip", "id=s-legend", "id=s-platforms",
@@ -9932,6 +9948,26 @@ console.log(JSON.stringify({
             ".spendChart{min-height:270px;margin-top:12px;overflow-x:auto",
             self.page,
         )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_spend_last_month_is_previous_full_calendar_month(self):
+        logic = self.page.split("// spend-range-logic-start", 1)[1].split(
+            "// spend-range-logic-end", 1,
+        )[0]
+        script = logic + """
+console.log(JSON.stringify([
+  spendRangeWindow('last_month','','',new Date(2026,2,15,9,0,0)),
+  spendRangeWindow('last_month','','',new Date(2026,0,1,0,5,0)),
+  normalizeSpendRangeChoice('last_month'),
+]));
+"""
+        result = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), [
+            {"valid": True, "start": "2026-02-01", "end": "2026-02-28", "dayCount": 28, "error": ""},
+            {"valid": True, "start": "2025-12-01", "end": "2025-12-31", "dayCount": 31, "error": ""},
+            "last_month",
+        ])
 
     def test_spend_average_reference_uses_every_calendar_day(self):
         """Dropping zero-spend days makes the chart line disagree with the KPI."""

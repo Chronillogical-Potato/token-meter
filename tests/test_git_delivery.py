@@ -191,6 +191,18 @@ class GitDeliveryScannerTests(unittest.TestCase):
         )
         self.assertTrue(run.call_args.kwargs.get("close_fds", False))
 
+    def test_last_month_window_is_previous_calendar_month(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            service = meter.GitDeliveryService(
+                str(Path(tmp) / "delivery.sqlite3"),
+                now=lambda: local_timestamp("2026-03-15"), salt="test-salt",
+            )
+            current, previous = service._windows("last_month")
+
+        D = datetime.date
+        self.assertEqual(current, (D(2026, 2, 1), D(2026, 2, 28)))
+        self.assertEqual(previous, (D(2026, 1, 1), D(2026, 1, 31)))
+
     def test_scan_limits_generator_candidates_without_losing_limit_coverage(self):
         with tempfile.TemporaryDirectory() as tmp:
             service = meter.GitDeliveryService(
