@@ -859,7 +859,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
      <label class="filterControl logSearchControl"><span>Search</span><input class=searchbox id=g-search type=search placeholder="Title, project, or model"></label>
      <label class=filterControl><span>App</span><select class=filterSelect id=g-app aria-label="App filter"><option value="">All apps</option></select></label>
      <label class=filterControl><span>Projects</span><select class=filterSelect id=g-project aria-label="Projects filter"><option value="">All projects</option></select></label>
-     <label class=filterControl><span>Time range</span><select class=filterSelect id=g-time aria-label="Time range filter"><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option></select></label>
+     <label class=filterControl><span>Time range</span><select class=filterSelect id=g-time aria-label="Time range filter"><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option><option value=last_month>Last month</option></select></label>
      <div class="filterControl filterSort"><span>Subagents</span><div class="seg sortseg" id=g-children aria-label="Subagent run visibility">
       <button type=button aria-pressed=true data-gchildren=hide class=on title="Hide subagent runs as rows. Their spend is still counted in totals and shown under each parent session.">Hidden</button>
       <button type=button aria-pressed=false data-gchildren=show title="Also list subagent runs as their own rows.">Listed</button>
@@ -908,7 +908,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <label class="filterControl logSearchControl"><span>Search</span><input class=searchbox id=subagent-filter-search type=search placeholder="Role, nickname, model, or project"></label>
       <label class=filterControl><span>App</span><select class=filterSelect id=subagent-filter-app><option value="">All apps</option></select></label>
       <label class=filterControl><span>Project</span><select class=filterSelect id=subagent-filter-project><option value="">All projects</option></select></label>
-      <label class=filterControl><span>Time range</span><select class=filterSelect id=subagent-filter-time><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option></select></label>
+      <label class=filterControl><span>Time range</span><select class=filterSelect id=subagent-filter-time><option value=all>Any time</option><option value=24h>Last 24 hours</option><option value=7d>Last 7 days</option><option value=30d>Last 30 days</option><option value=90d>Last 90 days</option><option value=last_month>Last month</option></select></label>
       <button class=subagentFilterMore id=subagent-filter-more type=button aria-expanded=false aria-controls=subagent-filter-advanced>More filters <span id=subagent-filter-more-count></span></button>
      </div>
      <div class=subagentFilterAdvanced id=subagent-filter-advanced hidden>
@@ -1435,6 +1435,13 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 const $=id=>document.getElementById(id);
 const TOKENOMICS_SEARCH_URL='https://www.google.com/search?q=site%3Asplunk.com+tokenomics';
 const DELIVERY_RANGES=['today','yesterday','7','30','90','last_month','all'];
+const TIME_FILTER_WINDOWS=['all','24h','7d','30d','90d','last_month'];
+const TIME_FILTER_LABELS={'24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days','last_month':'Last month'};
+function timeFilterBounds(window,nowMs=Date.now()){
+ if(window==='last_month'){const now=new Date(nowMs);return {start:new Date(now.getFullYear(),now.getMonth()-1,1).getTime()/1000,end:new Date(now.getFullYear(),now.getMonth(),1).getTime()/1000};}
+ const seconds={'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[window]||0;
+ return {start:seconds?nowMs/1000-seconds:0,end:0};
+}
 const DELIVERY_EVIDENCE_FILTERS=['all','comparable','spend_only','git_only','unavailable'];
 let deliveryRange=localStorage.getItem('tm_delivery_range')||'7';
 if(!DELIVERY_RANGES.includes(deliveryRange))deliveryRange='7';
@@ -3227,7 +3234,7 @@ globalProject=migrateStoredProjectFilters('tm_global_project');
 modelProject=migrateStoredProjectFilters('tm_model_project');
 modelFilters=loadModelFilters(modelProject);
 if(!['recent','cost','tokens','executions','wait'].includes(globalSort)) globalSort='recent';
-if(!['all','24h','7d','30d','90d'].includes(globalTime)) globalTime='all';
+if(!TIME_FILTER_WINDOWS.includes(globalTime)) globalTime='all';
 if(!MODEL_RANGES.includes(modelRange)){modelRange='30';localStorage.setItem('tm_model_range',modelRange);}
 if(!['speed','wait','avg_input','avg_output'].includes(modelTrendMetric))modelTrendMetric='speed';
 $('m-range').value=modelRange;
@@ -6806,7 +6813,7 @@ function subagentActiveFilterItems(filters){
  if(filters.kind)items.push({key:'kind',label:'Kind',value:filters.kind});
  if(filters.runtime)items.push({key:'runtime',label:'App',value:appFilterLabel({provider:filters.runtime})});
  if(filters.project)items.push({key:'project',label:'Project',value:projectFilterLabel(filters.project)});
- if(filters.window!=='all')items.push({key:'window',label:'Time',value:{'24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[filters.window]||filters.window});
+ if(filters.window!=='all')items.push({key:'window',label:'Time',value:TIME_FILTER_LABELS[filters.window]||filters.window});
  if(filters.model)items.push({key:'model',label:'Model',value:filters.model});
  if(filters.status!=='all')items.push({key:'status',label:'Status',value:filters.status});
  if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Cost/retry signal':String(filters.signal).replaceAll('_',' ')});
@@ -6817,7 +6824,7 @@ function filterSubagentInventory(usage,filters,nowSeconds){
  filters=filters||{};nowSeconds=nowSeconds==null?Date.now()/1000:Number(nowSeconds);
  const inventory=Array.isArray(usage?.inventory)?usage.inventory:[],query=String(filters.query||'').trim().toLowerCase();
  const runtime=String(filters.runtime||''),project=String(filters.project||''),model=String(filters.model||''),role=String(filters.role||''),kind=String(filters.kind||''),status=String(filters.status||'all'),signal=String(filters.signal||'all'),window=String(filters.window||'all'),sort=String(filters.sort||'recent');
- const seconds={all:0,'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[window]||0,rangeStart=seconds?Number(nowSeconds)-seconds:0;
+ const {start:rangeStart,end:rangeEnd}=timeFilterBounds(window,Number(nowSeconds)*1000);
  const rows=inventory.filter(row=>{
   const reasons=Array.isArray(row?.attention)?row.attention:[];
   if(runtime&&String(row?.runtime||'')!==runtime)return false;
@@ -6829,6 +6836,7 @@ function filterSubagentInventory(usage,filters,nowSeconds){
   if(signal==='attention'&&!reasons.length)return false;
   if(signal!=='all'&&signal!=='attention'&&!reasons.some(reason=>String(reason?.code||'')===signal))return false;
   if(rangeStart&&Number(row?.last_activity_at||0)<rangeStart)return false;
+  if(rangeEnd&&Number(row?.last_activity_at||0)>=rangeEnd)return false;
   if(query&&!['role','label','model','project','runtime','client'].some(key=>String(row?.[key]||'').toLowerCase().includes(query)))return false;
   return true;
  });
@@ -6999,7 +7007,10 @@ function subagentRoleDayRows(usage,filters,nowMs=Date.now()){
  const query=String(filters?.query||'').trim().toLowerCase();
  if(query)rows=rows.filter(row=>String(row?.role||'').toLowerCase().includes(query));
  const dayCount={"24h":1,"7d":7,"30d":30,"90d":90}[filters?.window];
- if(dayCount){
+ if(filters?.window==='last_month'){
+  const month=calendarMonthWindow(1,new Date(nowMs));
+  rows=rows.filter(row=>month.daySet.has(String(row?.day||'')));
+ }else if(dayCount){
   const cutoff=new Date(nowMs);cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-(dayCount-1));
   const year=cutoff.getFullYear(),month=String(cutoff.getMonth()+1).padStart(2,'0'),day=String(cutoff.getDate()).padStart(2,'0'),cutoffKey=`${year}-${month}-${day}`;
   rows=rows.filter(row=>String(row?.day||'')>=cutoffKey);
@@ -7260,7 +7271,7 @@ function persistSubagentFilter(key){
 }
 function resetSubagentResultView(){subagentVisibleLimit=SUBAGENT_PAGE_SIZE;selectedSubagentId='';}
 function normalizedSubagentNavigationState(view,filters){
- const allowed={status:['all','working','complete','incomplete','waiting','recent','unknown'],signal:['all','attention','peer_cost_outlier','active_cost_concentration','retry_pressure'],window:['all','24h','7d','30d','90d'],sort:['recent','cost','tokens','work','name']},rawSource=filters&&typeof filters==='object'?filters:{},source=rawSource.sort==='elapsed'?{...rawSource,sort:'work'}:rawSource;
+ const allowed={status:['all','working','complete','incomplete','waiting','recent','unknown'],signal:['all','attention','peer_cost_outlier','active_cost_concentration','retry_pressure'],window:['all','24h','7d','30d','90d','last_month'],sort:['recent','cost','tokens','work','name']},rawSource=filters&&typeof filters==='object'?filters:{},source=rawSource.sort==='elapsed'?{...rawSource,sort:'work'}:rawSource;
  const normalized={...subagentFilterDefaults};
  ['query','role','kind','runtime','project','model'].forEach(key=>normalized[key]=String(source[key]??subagentFilterDefaults[key]??''));
  Object.entries(allowed).forEach(([key,values])=>normalized[key]=values.includes(source[key])?source[key]:subagentFilterDefaults[key]);
@@ -7351,11 +7362,12 @@ $('subagent-inspector').onclick=event=>{
  if(root){selectSession(root,{returnScope:'subagents'});return;}
  if(event.target.closest('[data-subagent-close-detail]')){selectedSubagentId='';renderSubagentExplorer(LATEST?.xsession?.agent_usage);}
 };
-function allSessionsView(all,{showChildren=false,app='',project='',rangeStart=0,query=''}={}){
+function allSessionsView(all,{showChildren=false,app='',project='',rangeStart=0,rangeEnd=0,query=''}={}){
  const baseMatch=s=>{
   if(app&&appFilterGroup(s)!==app)return false;
   if(project&&projectFilterValue(s.project)!==project)return false;
   if(rangeStart&&(s.mtime||0)<rangeStart)return false;
+  if(rangeEnd&&(s.mtime||0)>=rangeEnd)return false;
   return true;
  };
  const textMatch=s=>!query||[s.title,s.project,s.provider,s.label,s.child_agent_role,(s.models||[]).join(' ')].join(' ').toLowerCase().includes(query);
@@ -7428,7 +7440,7 @@ function renderAllSessions(xs){
  }
  setLogSelectOptions($('g-project'),'<option value="">All projects</option>'+projects.map(project=>`<option value="${esc(project)}">${esc(projectFilterLabel(project))}</option>`).join(''),globalProject);
  paintGlobalFilters();
- const timeLabels={'24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'};
+ const timeLabels=TIME_FILTER_LABELS;
  const appLabel=apps.find(app=>app.id===globalApp)?.label||globalApp;
  const activeFilters=[
   globalSearch.trim()&&['search',`Search: “${globalSearch.trim()}”`],
@@ -7442,9 +7454,8 @@ function renderAllSessions(xs){
   ? `<span>Filtered by</span>${activeFilters.map(([key,label])=>`<button type=button data-clear-log-filter="${key}" title="Remove ${esc(label)} filter">${esc(label)}<b aria-hidden=true>×</b></button>`).join('')}`
   : '');
  const q=globalSearch.trim().toLowerCase();
- const rangeSeconds={all:0,'24h':86400,'7d':604800,'30d':2592000,'90d':7776000}[globalTime]||0;
- const rangeStart=rangeSeconds?Date.now()/1000-rangeSeconds:0;
- const view=allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,query:q});
+ const {start:rangeStart,end:rangeEnd}=timeFilterBounds(globalTime);
+ const view=allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,rangeEnd,query:q});
  let sessions=view.rows;
  // Header stats count every matching run, so hiding subagent rows never removes
  // their spend from the figures that the Hidden control says are still counted.

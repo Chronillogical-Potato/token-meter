@@ -6682,7 +6682,7 @@ const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
 eval(extract('agentIdentityPresentation'));
-eval(extract('filterSubagentInventory'));
+eval(extract('timeFilterBounds'));eval(extract('filterSubagentInventory'));
 const usage={{inventory_count:3,inventory_truncated:false,inventory:[
  {{id:'a',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:'token_meter_reviewer',label:'Heisenberg',activity_state:'complete',last_activity_at:100,tokens:10,tokens_available:true,cost:1,cost_available:true,work_time_s:30,attention:[]}},
  {{id:'b',root_session_id:'root-a',project:'/token-meter',runtime:'codex',model:'gpt',role:null,label:'Gauss',activity_state:'incomplete',last_activity_at:200,tokens:20,tokens_available:true,cost:4,cost_available:true,work_time_s:60,attention:[{{code:'peer_cost_outlier',explanation:'3x peers'}}]}},
@@ -6721,12 +6721,46 @@ process.stdout.write(JSON.stringify({{
         )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_last_month_time_filter_bounds_sessions_subagents_and_role_days(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const appFilterGroup=s=>s.provider,projectFilterValue=p=>p||'';
+eval(['timeFilterBounds','agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','calendarMonthWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
+eval(page.slice(page.indexOf('function allSessionsView('),page.indexOf('function allSessionsCountText(')));
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const now=new Date(2026,9,5,12).getTime(),at=(...parts)=>new Date(...parts).getTime()/1000;
+const bounds=timeFilterBounds('last_month',now);
+const stamps={{current:at(2026,9,1,0,0,1),lastStart:at(2026,8,1),lastEnd:at(2026,8,30,23,59,59),prior:at(2026,7,31,23,59,59)}};
+const inventory=Object.entries(stamps).map(([id,last])=>({{id,root_session_id:'root',runtime:'codex',label:id,activity_state:'complete',last_activity_at:last,attention:[]}}));
+const agents=filterSubagentInventory({{inventory}},{{window:'last_month',status:'all',signal:'all',sort:'recent'}},now/1000).rows.map(row=>row.id).sort();
+const sessions=allSessionsView(Object.entries(stamps).map(([id,mtime])=>({{id,provider:'codex',title:id,cost:1,mtime}})),{{rangeStart:bounds.start,rangeEnd:bounds.end}}).rows.map(row=>row.id).sort();
+const roleRow=day=>({{day,runtime:'codex',kind:'spawned',role:'reviewer',project:''}});
+const roleDays=subagentRoleDayRows({{role_days:['2026-10-01','2026-09-30','2026-09-01','2026-08-31'].map(roleRow)}},{{window:'last_month'}},now).map(row=>row.day);
+process.stdout.write(JSON.stringify({{
+ agents,sessions,roleDays,
+ restored:normalizedSubagentNavigationState('roles',{{window:'last_month'}}).filters.window,
+ rolling:timeFilterBounds('7d',now).end,
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload["agents"], ["lastEnd", "lastStart"])
+        self.assertEqual(payload["sessions"], ["lastEnd", "lastStart"])
+        self.assertEqual(payload["roleDays"], ["2026-09-01", "2026-09-30"])
+        self.assertEqual(payload["restored"], "last_month")
+        self.assertEqual(payload["rolling"], 0)
+        self.assertEqual(self.page.count("<option value=last_month>Last month</option></select>"), 2)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_explorer_withholds_filtered_totals_when_inventory_is_truncated(self):
         script = f"""
 const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-eval(extract('filterSubagentInventory'));
+eval(extract('timeFilterBounds'));eval(extract('filterSubagentInventory'));
 const result=filterSubagentInventory({{inventory_count:1001,inventory_truncated:true,inventory:[{{id:'a',root_session_id:'root',runtime:'codex',label:'Agent A',activity_state:'complete',last_activity_at:100,attention:[]}}]}},{{query:'agent',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}},200);
 process.stdout.write(JSON.stringify(result));
 """
@@ -7028,7 +7062,7 @@ process.stdout.write(JSON.stringify({{subagents:sessionScopeRoute('subagents'),a
 const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-eval(extract('filterSubagentInventory'));
+eval(extract('timeFilterBounds'));eval(extract('filterSubagentInventory'));
 eval(extract('subagentModelDistribution'));
 const rows=[
  {{id:'1',runtime:'codex',kind:'spawned',role:'token_meter_reviewer',model:'gpt-x',cost:2,cost_available:true}},
@@ -10580,16 +10614,16 @@ console.log(JSON.stringify({
         self.assertIn("id=g-clear", clear_wrapper.group(1))
         self.assertNotIn("id=g-count", clear_wrapper.group(1))
         self.assertLess(self.page.index("id=g-clear"), self.page.index("id=g-sort"))
-        for value in ("value=24h", "value=7d", "value=30d", "value=90d"):
+        for value in ("value=24h", "value=7d", "value=30d", "value=90d", "value=last_month"):
             self.assertIn(value, self.page)
-        self.assertIn("allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,query:q})", self.page)
+        self.assertIn("allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,rangeEnd,query:q})", self.page)
         self.assertIn("if(app&&appFilterGroup(s)!==app)return false;", self.page)
         self.assertIn("const appFilterGroup=session=>runtimeId(session)", self.page)
         self.assertIn("const appFilterLabel=session=>runtimeMeta(session).label", self.page)
         self.assertIn("['claude_code','claude_desktop'].includes(globalApp)", self.page)
         self.assertIn("if(project&&projectFilterValue(s.project)!==project)return false;", self.page)
         self.assertIn("Other local sessions", self.page)
-        self.assertIn("Date.now()/1000-rangeSeconds", self.page)
+        self.assertIn("const {start:rangeStart,end:rangeEnd}=timeFilterBounds(globalTime);", self.page)
         self.assertIn("tm_global_app", self.page)
         self.assertIn("tm_global_project", self.page)
         self.assertIn("tm_global_time", self.page)
