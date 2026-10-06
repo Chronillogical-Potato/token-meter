@@ -1116,13 +1116,13 @@ class GitDashboardContractTests(unittest.TestCase):
         self.assertIn("addEventListener('focus'", self.page)
         self.assertIn("addEventListener('click'", self.page)
         self.assertIn(
-            "if(!target?.closest('#d-chart-wrap')&&!target?.closest('#d-map')"
+            "if(!target?.closest('#d-chart-wrap')"
             "&&!target?.closest('#d-day-inspector'))"
             "dismissGitChartInspector()",
             self.page,
         )
         self.assertIn(
-            "if(event.key==='Escape'){dismissGitChartInspector();hideDeliveryMapTip();}",
+            "if(event.key==='Escape')dismissGitChartInspector();",
             self.page,
         )
         self.assertIn("deliverySelectedDay=''", self.page)
@@ -1329,11 +1329,20 @@ console.log(JSON.stringify({measuredTip,measuredMetrics,
 
         for marker in (
             "class=deliveryInsightSection", ">Delivery economics<", ">Signals<",
-            ">Daily shape<", ">Cost by pushed lines<", "id=d-signals",
-            "id=d-shape", "id=d-map", "id=d-map-svg", "id=d-insight-range",
-            "id=d-map-coverage",
+            ">Daily shape<", "id=d-signals", "id=d-shape", "id=d-insight-range",
         ):
             self.assertIn(marker, git_page)
+        for removed in (
+            ">Cost by pushed lines<", "id=d-map", "class=deliveryMapViewport",
+        ):
+            self.assertNotIn(removed, git_page)
+        for removed in (
+            "function drawDeliveryMap", "function deliveryMapPoints",
+            "function showDeliveryMapTip", "function hideDeliveryMapTip",
+            ".deliveryMapCard", ".deliveryMapSvg", ".deliveryMapPoint",
+            "data-delivery-map-day", "$('d-map",
+        ):
+            self.assertNotIn(removed, self.page)
         self.assertLess(
             git_page.index('class="card deliveryVisual"'),
             git_page.index("class=deliveryInsightSection"),
@@ -1358,14 +1367,10 @@ console.log(JSON.stringify({measuredTip,measuredMetrics,
             "data-delivery-evidence-filter=comparable",
             "id=d-day-inspector hidden", "id=d-day-prev", "id=d-day-next",
             "id=d-day-close", "id=d-evidence-filter",
-            ">Evidence<", "Below 50 pushed lines",
+            ">Evidence<",
         ):
             self.assertIn(marker, git_page)
 
-        self.assertIn(
-            ".deliveryMapHit[aria-pressed=true] .deliveryMapPoint", self.page,
-        )
-        self.assertIn(".deliveryMapPoint.lowVolume", self.page)
         self.assertIn(".deliveryChartTip{display:none!important}", self.page)
 
     def test_signals_card_keeps_a_fixed_scrollable_frame(self):
@@ -1619,30 +1624,6 @@ console.log(JSON.stringify({
         })
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_map_points_require_both_pushed_lines_and_covered_spend(self):
-        driver = """
-const payload={days:[
- {day:'2026-01-01',comparable_changed_lines:0,covered_cost:5,availability:{cost:true}},
- {day:'2026-01-02',comparable_changed_lines:400,covered_cost:0,availability:{cost:true}},
- {day:'2026-01-03',comparable_changed_lines:400,covered_cost:8,availability:{cost:false}},
- {day:'2026-01-04',comparable_changed_lines:49,covered_cost:10,availability:{cost:true}},
- {day:'2026-01-05',comparable_changed_lines:500,covered_cost:10,availability:{cost:true}},
-]};
-console.log(JSON.stringify(deliveryMapPoints(payload)));
-"""
-        payload = self.run_js(
-            ["deliveryMapPoints"], driver,
-            consts=(r"^const DELIVERY_MIN_RATIO_LINES=\d+;$",),
-        )
-
-        self.assertEqual(payload, [
-            {"day": "2026-01-04", "lines": 49, "cost": 10,
-             "intensity": 10000 / 49, "lowVolume": True},
-            {"day": "2026-01-05", "lines": 500, "cost": 10,
-             "intensity": 20, "lowVolume": False},
-        ])
-
-    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_signal_actions_link_peak_day_project_and_coverage_explorer(self):
         driver = """
 const day=(iso,intensity)=>({day:iso,changed_lines:200,comparable_changed_lines:200,
@@ -1838,7 +1819,7 @@ console.log(JSON.stringify({
         self.assertEqual(payload["lower"]["tone"], "deliveryTrendNeutral")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_map_pointer_selection_survives_the_bubbled_document_click(self):
+    def test_chart_selection_survives_the_bubbled_document_click(self):
         preamble = """
 const handlers={};
 class Element{
@@ -1847,15 +1828,10 @@ class Element{
 }
 const buttons=[{dataset:{deliveryDay:'2026-01-01'},pressed:'false',
  setAttribute(name,value){if(name==='aria-pressed')this.pressed=value;},scrollIntoView(){}}];
-const mapButtons=[{dataset:{deliveryMapDay:'2026-01-01'},pressed:'false',
- setAttribute(name,value){if(name==='aria-pressed')this.pressed=value;}}];
 const nodes={
  'd-chart-tip':{hidden:true,innerHTML:'',style:{}},
  'd-chart-hits':{querySelectorAll(selector){
   return selector.includes('[aria-pressed=true]')?buttons.filter(button=>button.pressed==='true'):buttons;
- }},
- 'd-map-svg':{querySelectorAll(selector){
-  return selector.includes('[aria-pressed=true]')?mapButtons.filter(button=>button.pressed==='true'):mapButtons;
  }},
  'd-day-inspector':{hidden:true},
  'd-day-title':{textContent:''},'d-day-note':{textContent:''},
@@ -1864,7 +1840,6 @@ const nodes={
 const $=id=>nodes[id];
 const document={activeElement:null,addEventListener:(name,handler)=>{handlers[name]=handler;}};
 const esc=value=>String(value);
-const hideDeliveryMapTip=()=>{};
 let deliverySelectedDay='';
 const deliveryPayload={days:[{day:'2026-01-01',added:80,deleted:20,covered_cost:2,
  changed_lines:100,comparable_changed_lines:100,spend_per_1k:20,rolling_spend_per_1k:20,
@@ -1874,13 +1849,13 @@ const deliveryPayload={days:[{day:'2026-01-01',added:80,deleted:20,covered_cost:
         click_end = self.page.index("\n});", click_start) + len("\n});")
         driver = """
 selectDeliveryDay('2026-01-01');
-handlers.click({target:new Element(['#d-map'])});
-const afterMap={selected:deliverySelectedDay,pressed:buttons[0].pressed,
- mapPressed:mapButtons[0].pressed,hidden:nodes['d-chart-tip'].hidden,
+handlers.click({target:new Element(['#d-chart-wrap'])});
+const afterChart={selected:deliverySelectedDay,pressed:buttons[0].pressed,
+ hidden:nodes['d-chart-tip'].hidden,
  inspectorHidden:nodes['d-day-inspector'].hidden,dayTitle:nodes['d-day-title'].textContent};
 handlers.click({target:new Element([])});
-console.log(JSON.stringify({afterMap,afterOutside:{selected:deliverySelectedDay,
- pressed:buttons[0].pressed,mapPressed:mapButtons[0].pressed,
+console.log(JSON.stringify({afterChart,afterOutside:{selected:deliverySelectedDay,
+ pressed:buttons[0].pressed,
  hidden:nodes['d-chart-tip'].hidden,inspectorHidden:nodes['d-day-inspector'].hidden}}));
 """
         script = preamble + delivery_js(
@@ -1896,13 +1871,12 @@ console.log(JSON.stringify({afterMap,afterOutside:{selected:deliverySelectedDay,
         )
 
         self.assertEqual(json.loads(result.stdout), {
-            "afterMap": {
-                "selected": "2026-01-01", "pressed": "true",
-                "mapPressed": "true", "hidden": False,
+            "afterChart": {
+                "selected": "2026-01-01", "pressed": "true", "hidden": False,
                 "inspectorHidden": False, "dayTitle": "Jan 1",
             },
             "afterOutside": {
-                "selected": "", "pressed": "false", "mapPressed": "false",
+                "selected": "", "pressed": "false",
                 "hidden": True, "inspectorHidden": True,
             },
         })
@@ -1931,13 +1905,12 @@ console.log(JSON.stringify({
         git_page = self.git_view()
 
         for marker in (
-            "class=deliveryChartViewport", "class=deliveryMapViewport",
-            "class=deliveryMobileScrollHint",
+            "class=deliveryChartViewport", "class=deliveryMobileScrollHint",
         ):
             self.assertIn(marker, git_page)
         for marker in (
-            ".deliveryChartViewport,.deliveryMapViewport{",
-            ".deliveryChartWrap,.deliveryMapWrap{min-width:720px}",
+            ".deliveryChartViewport{",
+            ".deliveryChartWrap{min-width:720px}",
             ".deliveryMobileScrollHint{display:none}",
             ".deliveryShapeHeader{display:none}",
             'data-label="${esc(range.label)}"',

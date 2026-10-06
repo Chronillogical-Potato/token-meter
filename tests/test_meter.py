@@ -10238,8 +10238,6 @@ console.log(JSON.stringify({
             "Conversion, typical days, and outliers. Statistics only · no quality judgment.",
             "Ranked local Git and covered-spend observations.",
             "Median, range, and high day · ratios require 50+ pushed lines.",
-            "Log-scaled daily evidence · diagonal shows average Spend / 1K.",
-            "Low-volume ratios are context only and excluded from distributions.",
         )
         for copy in hover_copy:
             self.assertIn(f'aria-description="{copy}"', git)
