@@ -1031,6 +1031,11 @@ class GitDashboardContractTests(unittest.TestCase):
             self.assertNotIn(commit_detail, git_page.lower())
         self.assertNotIn("radial-gradient", git_page)
         self.assertNotIn("Last 12 months", git_page)
+        self.assertIn('<div class="modelControls deliveryControls">', git_page)
+        self.assertIn(
+            ".modelControls.deliveryControls{grid-template-columns:minmax(150px,210px) minmax(130px,160px)}",
+            Path(meter.__file__).with_name("page.html").read_text(encoding="utf-8"),
+        )
         git_range = git_page.split('id=d-range aria-label="Git history range">', 1)[1].split("</select>", 1)[0]
         self.assertNotIn("<option value=all>", git_range)
         self.assertIn(
