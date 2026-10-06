@@ -9540,6 +9540,7 @@ console.log(JSON.stringify({
             "const MODEL_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
             "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
             "const DELIVERY_RANGES=['today','yesterday','7','30','90','month','last_month'];",
+            "if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='7';localStorage.setItem('tm_delivery_range',deliveryRange);}",
             "if(!MODEL_RANGES.includes(modelRange))",
             "function modelRangeWindow(range,now=new Date())",
             "if(range==='today'||range==='yesterday')",

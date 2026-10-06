@@ -1448,7 +1448,7 @@ function timeFilterBounds(window,nowMs=Date.now()){
 }
 const DELIVERY_EVIDENCE_FILTERS=['all','comparable','spend_only','git_only','unavailable'];
 let deliveryRange=localStorage.getItem('tm_delivery_range')||'7';
-if(!DELIVERY_RANGES.includes(deliveryRange))deliveryRange='7';
+if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='7';localStorage.setItem('tm_delivery_range',deliveryRange);}
 let deliveryProject=localStorage.getItem('tm_delivery_project')||'';
 let deliveryPayload=null,deliveryRequest=0,deliverySelectedDay='',deliveryLastLoadedAt=0;
 let deliverySort={key:'covered_cost',direction:'desc'};

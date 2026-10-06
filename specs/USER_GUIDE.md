@@ -167,9 +167,11 @@ application and child kind. Three summary metrics separate total named-role
 covered spend, cost per covered run, and run volume, so reduced spend is not
 mistaken for fewer executions. Each role then gets its own trend chart with a
 shared Spend, Cost/run, or Runs mode. Spend and cost-per-run changes compare the
-selected 24-hour, 7-day, 30-day, or 90-day period with the immediately previous
-period of the same duration. **Any time** shows available history without a
-comparison baseline. Each compact role row keeps run count, cost coverage,
+selected period with the one before it: Today with yesterday up to the same
+time, Yesterday with the day before, 7, 30, or 90 days with the previous period
+of the same length, Month with the same number of days at the start of last
+month, and Last month with the month before. **All history** shows available
+history without a comparison baseline. Each compact role row keeps run count, cost coverage,
 average and p95 estimated cost, incomplete and review counts, and a **View
 runs** action. It opens **Sessions → Subagents**, filtered to that exact role,
 application, and child kind,
@@ -219,7 +221,8 @@ safe, recoverable target.
 
 ### Spend
 
-Spend supports Today, 7-day, 30-day, This month, and custom calendar ranges.
+Spend supports Today, Yesterday, 7 days, 30 days, 90 days, Month, Last month,
+All history, and Custom calendar ranges.
 Use its daily bars, platform split, projects, runtimes, and highest-cost logs to
 understand where usage accumulated. Partial and locally estimated costs remain
 explicitly labeled. Session economics shows the share attributable to the top
