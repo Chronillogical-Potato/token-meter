@@ -203,6 +203,25 @@ class GitDeliveryScannerTests(unittest.TestCase):
         self.assertEqual(current, (D(2026, 2, 1), D(2026, 2, 28)))
         self.assertEqual(previous, (D(2026, 1, 1), D(2026, 1, 31)))
 
+    def test_month_window_is_month_to_date_with_equal_elapsed_prior(self):
+        D = datetime.date
+        for today, current, previous in (
+            ("2026-03-15", (D(2026, 3, 1), D(2026, 3, 15)),
+             (D(2026, 2, 1), D(2026, 2, 15))),
+            # A prior month shorter than the elapsed span stops at its last day.
+            ("2026-03-31", (D(2026, 3, 1), D(2026, 3, 31)),
+             (D(2026, 2, 1), D(2026, 2, 28))),
+            ("2026-01-01", (D(2026, 1, 1), D(2026, 1, 1)),
+             (D(2025, 12, 1), D(2025, 12, 1))),
+        ):
+            with tempfile.TemporaryDirectory() as tmp:
+                service = meter.GitDeliveryService(
+                    str(Path(tmp) / "delivery.sqlite3"),
+                    now=lambda today=today: local_timestamp(today),
+                    salt="test-salt",
+                )
+                self.assertEqual(service._windows("month"), (current, previous))
+
     def test_scan_limits_generator_candidates_without_losing_limit_coverage(self):
         with tempfile.TemporaryDirectory() as tmp:
             service = meter.GitDeliveryService(
@@ -1011,7 +1030,14 @@ class GitDashboardContractTests(unittest.TestCase):
         ):
             self.assertNotIn(commit_detail, git_page.lower())
         self.assertNotIn("radial-gradient", git_page)
-        self.assertIn("Last 12 months", git_page)
+        self.assertNotIn("Last 12 months", git_page)
+        git_range = git_page.split('id=d-range aria-label="Git history range">', 1)[1].split("</select>", 1)[0]
+        self.assertNotIn("<option value=all>", git_range)
+        self.assertIn(
+            "<option value=90>90 days</option><option value=month>Month</option>"
+            "<option value=last_month>Last month</option></select>",
+            git_page,
+        )
         for repeated_copy in (
             "Review pushed code, cost intensity, and project coverage.",
             "Period-over-period signal from locally observed successful pushes.",

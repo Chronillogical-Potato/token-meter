@@ -3233,7 +3233,11 @@ class ModelPerformanceTests(unittest.TestCase):
 
         windows = meter.matched_pace_windows(groups, now_ts=now)["windows"]
 
-        self.assertEqual(list(windows), ["today", "yesterday", "7", "30", "90", "last_month", "all"])
+        self.assertEqual(
+            list(windows),
+            ["today", "yesterday", "7", "30", "90", "month", "last_month", "all"],
+        )
+        self.assertEqual(windows["month"][0]["a_samples"], 40)
         for name in ("today", "yesterday"):
             self.assertEqual(len(windows[name]), 1)
             self.assertEqual(windows[name][0]["a_samples"], 20)
@@ -6727,7 +6731,7 @@ const fs=require('fs');
 const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
 const appFilterGroup=s=>s.provider,projectFilterValue=p=>p||'';
-eval(['timeFilterBounds','agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','calendarMonthWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
+eval(['timeFilterBounds','agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','dateKeyAgo','calendarMonthWindow','monthToDateWindow','modelRangeWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
 eval(page.slice(page.indexOf('function allSessionsView('),page.indexOf('function allSessionsCountText(')));
 const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
 const now=new Date(2026,9,5,12).getTime(),at=(...parts)=>new Date(...parts).getTime()/1000;
@@ -6752,7 +6756,63 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(payload["roleDays"], ["2026-09-01", "2026-09-30"])
         self.assertEqual(payload["restored"], "last_month")
         self.assertEqual(payload["rolling"], 0)
-        self.assertEqual(self.page.count("<option value=last_month>Last month</option></select>"), 2)
+        self.assertEqual(self.page.count(
+            "<option value=today>Today</option><option value=yesterday>Yesterday</option>"
+            "<option value=7d>7 days</option><option value=30d>30 days</option>"
+            "<option value=90d>90 days</option><option value=month>Month</option>"
+            "<option value=last_month>Last month</option><option value=all>All history</option></select>"
+        ), 2)
+        self.assertNotIn("value=24h", self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_calendar_time_filters_bound_sessions_subagents_and_role_days(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const appFilterGroup=s=>s.provider,projectFilterValue=p=>p||'';
+eval(page.slice(page.indexOf('const TIME_FILTER_WINDOWS='),page.indexOf('const DELIVERY_EVIDENCE_FILTERS=')).replace(/^const /gm,'var '));
+eval(['agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','dateKeyAgo','calendarMonthWindow','monthToDateWindow','modelRangeWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
+eval(page.slice(page.indexOf('function allSessionsView('),page.indexOf('function allSessionsCountText(')));
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const now=new Date(2026,9,5,12).getTime(),at=(...parts)=>new Date(...parts).getTime()/1000;
+const stamps={{today:at(2026,9,5,0,0,1),yesterdayStart:at(2026,9,4),yesterdayEnd:at(2026,9,4,23,59,59),monthStart:at(2026,9,1),lastMonth:at(2026,8,30,23,59,59)}};
+const inventory=Object.entries(stamps).map(([id,last])=>({{id,root_session_id:'root',runtime:'codex',label:id,activity_state:'complete',last_activity_at:last,attention:[]}}));
+const result={{}};
+for(const window of ['today','yesterday','month']){{
+ const bounds=timeFilterBounds(window,now);
+ result[window]={{
+  agents:filterSubagentInventory({{inventory}},{{window,status:'all',signal:'all',sort:'recent'}},now/1000).rows.map(row=>row.id).sort(),
+  sessions:allSessionsView(Object.entries(stamps).map(([id,mtime])=>({{id,provider:'codex',title:id,cost:1,mtime}})),{{rangeStart:bounds.start,rangeEnd:bounds.end}}).rows.map(row=>row.id).sort(),
+  roleDays:subagentRoleDayRows({{role_days:['2026-10-05','2026-10-04','2026-10-01','2026-09-30'].map(day=>({{day,runtime:'codex',kind:'spawned',role:'reviewer',project:''}}))}},{{window}},now).map(row=>row.day),
+ }};
+}}
+process.stdout.write(JSON.stringify({{
+ result,
+ migrated:normalizeTimeFilterWindow('24h'),invalid:normalizeTimeFilterWindow('bogus'),
+ restored:normalizedSubagentNavigationState('roles',{{window:'24h'}}).filters.window,
+ restoredMonth:normalizedSubagentNavigationState('roles',{{window:'month'}}).filters.window,
+ labels:TIME_FILTER_LABELS,
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        result = payload["result"]
+        self.assertEqual(result["today"]["agents"], ["today"])
+        self.assertEqual(result["today"]["sessions"], ["today"])
+        self.assertEqual(result["today"]["roleDays"], ["2026-10-05"])
+        self.assertEqual(result["yesterday"]["agents"], ["yesterdayEnd", "yesterdayStart"])
+        self.assertEqual(result["yesterday"]["sessions"], ["yesterdayEnd", "yesterdayStart"])
+        self.assertEqual(result["yesterday"]["roleDays"], ["2026-10-04"])
+        self.assertEqual(result["month"]["agents"], ["monthStart", "today", "yesterdayEnd", "yesterdayStart"])
+        self.assertEqual(result["month"]["roleDays"], ["2026-10-01", "2026-10-04", "2026-10-05"])
+        self.assertEqual(payload["migrated"], "today")
+        self.assertEqual(payload["invalid"], "all")
+        self.assertEqual(payload["restored"], "today")
+        self.assertEqual(payload["restoredMonth"], "month")
+        self.assertEqual(payload["labels"]["month"], "Month")
+        self.assertNotIn("24h", payload["labels"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_explorer_withholds_filtered_totals_when_inventory_is_truncated(self):
@@ -8344,7 +8404,7 @@ console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroI
 
     def test_efficiency_uses_one_range_for_overall_and_per_model_statistics(self):
         for marker in (
-            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','last_month','all']",
+            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','month','last_month','all']",
             "tm_efficiency_range", "tm_efficiency_project", "efficiencyRangeWindow", "efficiencyModelRows",
             "aggregateModelDays(efficiencyModelRows", "efficiencyMetrics(overall)",
             "efficiencyMetrics(row.window)", "efficiencyTrendDays",
@@ -8512,7 +8572,7 @@ console.log(JSON.stringify({
         })
         self.assertIn("let efficiencyRange=localStorage.getItem('tm_efficiency_range')||'7';", self.page)
         self.assertIn("if(!EFFICIENCY_RANGES.includes(efficiencyRange))efficiencyRange='7';", self.page)
-        self.assertIn('<option value=7 selected>Last 7 days</option>', self.page)
+        self.assertIn('<option value=7 selected>7 days</option>', self.page)
         self.assertIn(
             "renderEfficiencyTrendDelta('e-reasoning-change',reasoningDelta,'down',!comparison);",
             self.page,
@@ -8524,8 +8584,8 @@ console.log(JSON.stringify({
         self.assertIsNotNone(date_key, "Efficiency windows need date-key arithmetic")
         functions = ["function localDateKey(date){return String(date.getFullYear())+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}", date_key.group(0)]
         for name in (
-            "calendarMonthWindow", "modelRangeWindow", "efficiencyComparisonWindows",
-            "efficiencyPeriodDelta",
+            "calendarMonthWindow", "monthToDateWindow", "modelRangeWindow",
+            "efficiencyComparisonWindows", "efficiencyPeriodDelta",
         ):
             match = re.search(rf"function {name}\(.*?\n\}}", self.page, re.DOTALL)
             self.assertIsNotNone(match, f"Efficiency needs {name} for matched comparisons")
@@ -8536,7 +8596,9 @@ const today=efficiencyComparisonWindows('today',now);
 const yesterday=efficiencyComparisonWindows('yesterday',now);
 const seven=efficiencyComparisonWindows('7',now);
 const lastMonth=efficiencyComparisonWindows('last_month',new Date(2026,2,15,9,0,0));
+const month=efficiencyComparisonWindows('month',new Date(2026,2,15,9,0,0));
 console.log(JSON.stringify({
+  month:{first:month.current.days[0],last:month.current.days.at(-1),count:month.current.days.length,priorFirst:month.prior.days[0],priorLast:month.prior.days.at(-1),label:month.label},
   lastMonth:{first:lastMonth.current.days[0],last:lastMonth.current.days.at(-1),count:lastMonth.current.days.length,priorFirst:lastMonth.prior.days[0],priorLast:lastMonth.prior.days.at(-1),label:lastMonth.label},
   all:efficiencyComparisonWindows('all',now),
   today:{current:today.current.days,prior:today.prior.days,label:today.label},
@@ -8550,6 +8612,11 @@ console.log(JSON.stringify({
             ["node", "-e", script], capture_output=True, text=True, check=True,
         )
         self.assertEqual(json.loads(result.stdout), {
+            "month": {
+                "first": "2026-03-01", "last": "2026-03-15", "count": 15,
+                "priorFirst": "2026-02-01", "priorLast": "2026-02-28",
+                "label": "last month",
+            },
             "lastMonth": {
                 "first": "2026-02-01", "last": "2026-02-28", "count": 28,
                 "priorFirst": "2026-01-01", "priorLast": "2026-01-31",
@@ -9457,9 +9524,10 @@ console.log(JSON.stringify({
         expected = (
             '<option value=today>Today</option>',
             '<option value=yesterday>Yesterday</option>',
-            '<option value=7>Last 7 days</option>',
-            '<option value=30 selected>Last 30 days</option>',
-            '<option value=90>Last 90 days</option>',
+            '<option value=7>7 days</option>',
+            '<option value=30 selected>30 days</option>',
+            '<option value=90>90 days</option>',
+            '<option value=month>Month</option>',
             '<option value=last_month>Last month</option>',
             '<option value=all>All history</option>',
         )
@@ -9469,9 +9537,9 @@ console.log(JSON.stringify({
             history.index(option) for option in expected
         ))
         for marker in (
-            "const MODEL_RANGES=['today','yesterday','7','30','90','last_month','all'];",
-            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','last_month','all'];",
-            "const DELIVERY_RANGES=['today','yesterday','7','30','90','last_month','all'];",
+            "const MODEL_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
+            "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
+            "const DELIVERY_RANGES=['today','yesterday','7','30','90','month','last_month'];",
             "if(!MODEL_RANGES.includes(modelRange))",
             "function modelRangeWindow(range,now=new Date())",
             "if(range==='today'||range==='yesterday')",
@@ -9815,9 +9883,8 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
             "data-label=Spend aria-label=Spend",
             "<span class=tabLabel>Spend</span>",
             "<h1>Spend</h1>",
-            "id=s-range", "data-spend-range=today", "data-spend-range=7",
-            "data-spend-range=30", "data-spend-range=month",
-            "data-spend-range=last_month", "data-spend-range=custom",
+            "id=s-range", "<option value=today>Today</option>", "<option value=7>7 days</option>",
+            "<option value=month>Month</option>", "<option value=custom>Custom</option>",
             "id=s-from", "id=s-to", "id=s-total", "id=s-average",
             "id=s-top-runtime", "id=s-highest-day", "id=s-chart",
             "id=s-chart-tip", "id=s-legend", "id=s-platforms",
@@ -10033,7 +10100,10 @@ console.log(JSON.stringify({
         for marker in (
             "// spend-range-logic-start",
             "const SPEND_RUNTIME_COLORS={claude:'#f26722',codex:'#04a4b0',cursor:'#a974f7',opencode:'#fa5762',kiro:'#868ec2',unknown:'#889099'};",
-            "function spendRangeWindow(range,from='',to='',now=new Date())",
+            "function spendRangeWindow(range,from='',to='',now=new Date(),earliest='')",
+            "<select class=filterSelect id=s-range aria-label=\"Spend history range\"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option><option value=custom>Custom</option></select>",
+            "$('s-range').value=spendRangeChoice;",
+            "$('s-range').onchange=event=>{",
             "function normalizeSpendRangeChoice(value)",
             "function spendCalendarRows(days,window)",
             "function spendRuntimeKey(provider)",
@@ -10059,14 +10129,18 @@ const month = spendRangeWindow('month', '', '', now);
 const monthFirst = spendRangeWindow('month', '', '', new Date(2026, 8, 1, 12, 0, 0));
 const january = spendRangeWindow('month', '', '', new Date(2027, 0, 9, 12, 0, 0));
 const custom = spendRangeWindow('custom', '2026-08-01', '2026-08-03', now);
+const yesterday = spendRangeWindow('yesterday', '', '', now);
+const ninety = spendRangeWindow('90', '', '', now);
+const allHistory = spendRangeWindow('all', '', '', now, '2026-05-01');
+const allEmpty = spendRangeWindow('all', '', '', now, '');
 const invalid = spendRangeWindow('custom', '2026-08-04', '2026-08-03', now);
 const rows = spendCalendarRows([
   {day:'2026-08-03',cost:3,providers:[{provider:'claude',cost:3}]},
   {day:'2026-08-01',cost:2,providers:[{provider:'codex',cost:2}]},
 ], custom);
 console.log(JSON.stringify({
-  today, seven, thirty, month, monthFirst, january, custom, invalid,
-  savedRanges: ['today','7','30','month','custom','unexpected'].map(normalizeSpendRangeChoice),
+  today, seven, thirty, month, monthFirst, january, custom, invalid, yesterday, ninety, allHistory, allEmpty,
+  savedRanges: ['today','yesterday','7','30','90','month','last_month','all','custom','unexpected'].map(normalizeSpendRangeChoice),
   rowDays: rows.map(row=>row.day),
   rowCosts: rows.map(row=>row.cost),
   keys: ['Claude Code','codex','Cursor IDE','OpenCode','Kiro CLI','other'].map(spendRuntimeKey),
@@ -10097,8 +10171,20 @@ console.log(JSON.stringify({
         })
         self.assertEqual(
             payload["savedRanges"],
-            ["today", "7", "30", "month", "custom", "7"],
+            ["today", "yesterday", "7", "30", "90", "month", "last_month", "all", "custom", "7"],
         )
+        self.assertEqual(payload["yesterday"], {
+            "valid": True, "start": "2026-08-11", "end": "2026-08-11",
+            "dayCount": 1, "error": "",
+        })
+        self.assertEqual(payload["ninety"]["start"], "2026-05-15")
+        self.assertEqual(payload["ninety"]["dayCount"], 90)
+        self.assertEqual(payload["allHistory"], {
+            "valid": True, "start": "2026-05-01", "end": "2026-08-12",
+            "dayCount": 104, "error": "",
+        })
+        self.assertEqual(payload["allEmpty"]["start"], "2026-08-12")
+        self.assertEqual(payload["allEmpty"]["dayCount"], 1)
         self.assertEqual(payload["custom"]["dayCount"], 3)
         self.assertFalse(payload["invalid"]["valid"])
         self.assertEqual(payload["rowDays"], [
@@ -10612,7 +10698,7 @@ console.log(JSON.stringify({
         self.assertIn("id=g-clear", clear_wrapper.group(1))
         self.assertNotIn("id=g-count", clear_wrapper.group(1))
         self.assertLess(self.page.index("id=g-clear"), self.page.index("id=g-sort"))
-        for value in ("value=24h", "value=7d", "value=30d", "value=90d", "value=last_month"):
+        for value in ("value=today", "value=yesterday", "value=7d", "value=30d", "value=90d", "value=month", "value=last_month"):
             self.assertIn(value, self.page)
         self.assertIn("allSessionsView(all,{showChildren:globalShowChildren,app:globalApp,project:globalProject,rangeStart,rangeEnd,query:q})", self.page)
         self.assertIn("if(app&&appFilterGroup(s)!==app)return false;", self.page)
@@ -11720,15 +11806,10 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
     def test_mobile_header_action_rows_scroll_instead_of_stacking(self):
         for marker in (
             ".spectrumPageActions .modelControls{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr))",
-            ".spectrumPageActions .spendRangeControls .seg{display:flex;width:100%",
-            ".spectrumPageActions .spendRangeControls .seg button{flex:0 0 auto}",
-            ".spectrumPageActions .spendRangeControls .seg::-webkit-scrollbar{display:none}",
-            ".spectrumPageActions .spendRangeControls [data-spend-range=custom]{grid-column:auto}",
-            "data-spend-range=month>Month</button>",
-            "data-spend-range=custom>Custom</button>",
-            ".spectrumPageActions .spendRangeControls .seg button{padding-inline:8px}",
         ):
             self.assertIn(marker, self.page)
+        self.assertNotIn("data-spend-range", self.page)
+        self.assertNotIn(".spendRangeControls .seg", self.page)
 
     def test_session_shader_border_tracks_the_hero_edges(self):
         for marker in (

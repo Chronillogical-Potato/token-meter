@@ -7000,7 +7000,9 @@ def _pace_samples_signature(samples, fields):
     return digest.hexdigest()
 
 
-MATCHED_PACE_WINDOW_KEYS = ("today", "yesterday", "7", "30", "90", "last_month", "all")
+MATCHED_PACE_WINDOW_KEYS = (
+    "today", "yesterday", "7", "30", "90", "month", "last_month", "all",
+)
 _MATCHED_PACE_INT_FIELDS = ("a_samples", "b_samples", "matched_pairs")
 _MATCHED_PACE_FLOAT_FIELDS = ("coverage", "pace_ratio", "ci_low", "ci_high")
 
@@ -7156,6 +7158,7 @@ def _build_matched_pace_windows(sample_groups, today, signature_fields, pair_cac
         "7": ("since", (today - datetime.timedelta(days=6)).isoformat()),
         "30": ("since", (today - datetime.timedelta(days=29)).isoformat()),
         "90": ("since", (today - datetime.timedelta(days=89)).isoformat()),
+        "month": ("month", today.isoformat()[:7]),
         "last_month": ("month", last_month_end.isoformat()[:7]),
         "all": ("all", ""),
     }
