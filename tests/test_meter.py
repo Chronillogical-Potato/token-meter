@@ -5866,6 +5866,20 @@ class CurrentSessionSummaryTests(unittest.TestCase):
         self.assertNotIn("model_stats", result)
         self.assertNotIn("priced-model", json.dumps(result))
 
+    def test_projects_only_valid_claude_desktop_resume_ids(self):
+        resumable = self.row("resumable", 49_990)
+        resumable["desktop_resume_id"] = "0f9f0062-51be-4131-acfa-51034ef23f99"
+        forged = self.row("forged", 49_980)
+        forged["desktop_resume_id"] = "0f9f0062-51be-4131-acfa-51034ef23f99&q=x"
+        plain = self.row("plain", 49_970)
+        results = {
+            row["id"]: row
+            for row in meter.current_session_summaries([resumable, forged, plain], now=50_000)
+        }
+        self.assertEqual(results["resumable"]["desktop_resume_id"], "0f9f0062-51be-4131-acfa-51034ef23f99")
+        self.assertIsNone(results["forged"]["desktop_resume_id"])
+        self.assertIsNone(results["plain"]["desktop_resume_id"])
+
     def test_projects_bounded_capability_counts_with_unknown_loads(self):
         known = self.row("known", 49_990)
         known["capabilities"] = {
@@ -7772,15 +7786,37 @@ console.log(JSON.stringify({
         for marker in (
             'id=session-desktop-link',
             'aria-label="Open this session in the Codex desktop app"',
-            'function codexDesktopSessionHref(session)',
-            "provider==='codex'&&id",
+            'function desktopSessionTarget(session)',
+            "provider==='codex'",
             'codex://threads/${encodeURIComponent(id)}',
-            'function renderCodexDesktopSessionLink(session)',
-            'link.hidden=!href',
+            'function renderDesktopSessionLink(session)',
+            'link.hidden=!target',
             "link.removeAttribute('href')",
-            'renderCodexDesktopSessionLink(s);',
+            'renderDesktopSessionLink(s);',
         ):
             self.assertIn(marker, self.page)
+
+    def test_claude_sessions_link_to_the_desktop_code_session(self):
+        for marker in (
+            "provider==='claude'",
+            "/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i",
+            'claude://resume?session=${encodeURIComponent(resume)}',
+            "label:'Open in Claude'",
+            "label:'Open in Codex'",
+            'link.textContent=target.label',
+        ):
+            self.assertIn(marker, self.page)
+
+    def test_current_session_cards_offer_a_sibling_desktop_link(self):
+        render = self.page[self.page.index("function renderCurrentSessions("):]
+        render = render[:render.index("\nfunction ")]
+        self.assertIn("desktopSessionTarget(row)", render)
+        self.assertIn('<div class=currentSessionSlot', render)
+        self.assertIn('class=currentSessionDesktop', render)
+        self.assertIn('draggable=false', render)
+        self.assertIn("</button>${desktopLink}</div>", render)
+        self.assertIn(".currentSessionSlot{", self.page)
+        self.assertIn(".currentSessionDesktop{", self.page)
 
     def test_browser_operational_alerts_are_budget_only(self):
         self.assertNotIn("function isNotifiableInsight(i)", self.page)
@@ -9579,7 +9615,7 @@ console.log(JSON.stringify({
 
     def test_session_card_hover_preserves_the_live_card_node(self):
         for marker in (
-            "currentGrid=$('current-session-grid'),interactingCurrentSessionCard=currentGrid.querySelector('.currentSessionCard:hover,.currentSessionCard:focus');",
+            "currentGrid=$('current-session-grid'),interactingCurrentSessionCard=currentGrid.querySelector('.currentSessionSlot:hover,.currentSessionCard:focus,.currentSessionDesktop:focus');",
             "const mountedCurrentSessionIds=[...currentGrid.querySelectorAll('.currentSessionCard[data-current-session-id]')].map(card=>card.dataset.currentSessionId);",
             "if(currentSessionDragId||(interactingCurrentSessionCard&&currentSessionIdsMatch(mountedCurrentSessionIds,rows))){syncCurrentSessionActivity(currentGrid,rows);return;}",
             "card.classList.remove('activity-working','activity-waiting','activity-recent');",
@@ -13591,6 +13627,29 @@ class ClaudeDesktopDiscoveryTests(unittest.TestCase):
         self.assertEqual(idx["cli-session-id"]["desktop_session_id"], "local_desktop-session")
         self.assertEqual(idx["cli-session-id"]["cwd"], "/tmp/project")
         self.assertEqual(idx["cli-session-id"]["title"], "Desktop project task")
+
+    def test_desktop_resume_id_is_the_cli_uuid_of_project_transcripts(self):
+        from token_meter.runtimes.claude import ClaudeRuntimeAdapter
+        cli_id = "0f9f0062-51be-4131-acfa-51034ef23f99"
+        cowork_id = "45892917-f18f-4f00-b89e-5e332838e372"
+        with tempfile.TemporaryDirectory() as tmp:
+            projects = Path(tmp) / "projects" / "-tmp-project"
+            projects.mkdir(parents=True)
+            (projects / f"{cli_id}.jsonl").write_text("{}\n")
+            (projects / "not-a-uuid.jsonl").write_text("{}\n")
+            agent_root = Path(tmp) / "Claude" / "local-agent-mode-sessions" / "account" / "org"
+            trace = agent_root / "local_cowork" / ".claude" / "projects" / "outputs" / f"{cowork_id}.jsonl"
+            trace.parent.mkdir(parents=True)
+            trace.write_text("{}\n")
+            (agent_root / "local_cowork.json").write_text(json.dumps({
+                "sessionId": "local_cowork", "cliSessionId": cowork_id,
+                "cwd": str(agent_root / "local_cowork" / "outputs"), "lastActivityAt": 1,
+            }))
+            adapter = ClaudeRuntimeAdapter(Path(tmp) / "projects", [Path(tmp) / "Claude"])
+            records = {row["id"]: row for row in adapter.discover_legacy(None)}
+        self.assertEqual(records[cli_id]["desktop_resume_id"], cli_id)
+        self.assertIsNone(records["not-a-uuid"]["desktop_resume_id"])
+        self.assertIsNone(records[cowork_id].get("desktop_resume_id"))
 
     def test_discovers_no_project_agent_trace(self):
         with tempfile.TemporaryDirectory() as tmp:
