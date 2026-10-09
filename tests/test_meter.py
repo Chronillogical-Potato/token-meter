@@ -9777,6 +9777,32 @@ console.log(JSON.stringify({
         self.assertIn("h==='settings-budgets'||h==='budgets'", self.page)
         self.assertIn("$('model-pricing-settings').scrollIntoView", self.page)
 
+    def test_model_pricing_groups_rows_by_provider_tabs_in_a_bounded_scroll(self):
+        pricing = self.page.split("id=model-pricing-settings", 1)[1].split(
+            "id=delivery-settings", 1,
+        )[0]
+        self.assertIn('id=model-price-tabs role=tablist', pricing)
+        self.assertIn('id=model-price-table-wrap', pricing)
+        self.assertLess(
+            pricing.index("id=model-price-tabs"),
+            pricing.index("id=model-pricing-rows"),
+        )
+        for marker in (
+            "function renderModelPriceTabs",
+            "function applyModelPriceTab",
+            "function selectModelPriceTab",
+            'data-model-price-provider="${esc(row.provider)}"',
+            "root.dataset.modelPriceProvider!==modelPricingTab",
+            "modelPricingSelected.has(modelPriceKey(row.provider,row.model))",
+            "event.key==='ArrowRight'",
+        ):
+            self.assertIn(marker, self.page)
+        self.assertRegex(
+            self.page,
+            r"\.modelPriceTableWrap\{overflow:auto;max-height:min\(460px,58vh\)",
+        )
+        self.assertIn(".modelPriceTable tr[hidden]{display:none!important}", self.page)
+
     def test_model_pricing_uses_explicit_row_selection_without_an_actions_column(self):
         pricing = self.page.split("id=model-pricing-settings", 1)[1].split(
             "id=delivery-settings", 1,
