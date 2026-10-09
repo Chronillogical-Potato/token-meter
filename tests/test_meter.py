@@ -2324,6 +2324,8 @@ class CursorTraceTests(unittest.TestCase):
         self.assertEqual(stats["executions"], 2)
         self.assertEqual(stats["token_covered_executions"], 1)
         self.assertEqual(stats["io_covered_executions"], 1)
+        self.assertEqual(stats["io_covered_input_tokens"], 100)
+        self.assertEqual(stats["io_covered_output_tokens"], 20)
         self.assertEqual(stats["cost_covered_executions"], 1)
         self.assertEqual(stats["cost_covered_output_tokens"], 20)
         self.assertAlmostEqual(stats["cost_covered_cost"], 0.1)
@@ -2334,6 +2336,9 @@ class CursorTraceTests(unittest.TestCase):
         self.assertFalse(aggregate["coverage"]["cost"]["complete"])
         self.assertFalse(aggregate["coverage"]["reasoning_tokens"]["complete"])
         self.assertEqual(aggregate["io_covered_executions"], 1)
+        self.assertEqual(aggregate["io_covered_input_tokens"], 100)
+        self.assertEqual(aggregate["io_covered_output_tokens"], 20)
+        self.assertEqual(aggregate["daily"][0]["io_covered_input_tokens"], 100)
         self.assertAlmostEqual(aggregate["cost_covered_cost"], 0.1)
 
     def test_usage_provenance_distinguishes_reported_estimated_and_mixed(self):
@@ -2810,6 +2815,8 @@ class ModelPerformanceTests(unittest.TestCase):
             "thinking_covered_executions": 0,
             "token_covered_executions": 2,
             "io_covered_executions": 2,
+            "io_covered_input_tokens": 230,
+            "io_covered_output_tokens": 50,
             "executions": 2,
             "input_evidence": True,
             "output_evidence": True,
@@ -8524,7 +8531,20 @@ const zeroInput = efficiencyMetrics({
   cost_covered_cost:1,
   availability:{tokens:true,input_tokens:true,output_tokens:true,cost:true,cache:false,reasoning_tokens:false,attempts:false},
 });
-console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroInput}));
+const partialPaired = efficiencyMetrics({
+  input_tokens:600, output_tokens:15, cost:.1, executions:3,
+  token_covered_executions:3, io_covered_executions:2,
+  io_covered_input_tokens:100, io_covered_output_tokens:10,
+  coverage:{tokens:{complete:false}},
+  availability:{tokens:true,input_tokens:true,output_tokens:true,cost:true,cache:false,reasoning_tokens:false,attempts:false},
+});
+const noPaired = efficiencyMetrics({
+  input_tokens:600, output_tokens:15, cost:.1, executions:3,
+  token_covered_executions:3, io_covered_executions:0,
+  io_covered_input_tokens:0, io_covered_output_tokens:0,
+  availability:{tokens:true,input_tokens:true,output_tokens:true,cost:true,cache:false,reasoning_tokens:false,attempts:false},
+});
+console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroInput,partialPaired,noPaired}));
 """
         result = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True, check=True,
@@ -8551,6 +8571,8 @@ console.log(JSON.stringify({complete,missing,partial,coveredZero,inputOnly,zeroI
         self.assertEqual(payload["coveredZero"]["output_per_dollar"], 0)
         self.assertIsNone(payload["inputOnly"]["output_per_dollar"])
         self.assertEqual(payload["zeroInput"]["context_load"], 0)
+        self.assertEqual(payload["partialPaired"]["context_load"], 10)
+        self.assertIsNone(payload["noPaired"]["context_load"])
 
     def test_efficiency_uses_one_range_for_overall_and_per_model_statistics(self):
         for marker in (
@@ -8756,6 +8778,8 @@ console.log(JSON.stringify({
   seven:{current:seven.current.days,prior:seven.prior.days,label:seven.label},
   increase:efficiencyPeriodDelta({output_per_dollar:125},{output_per_dollar:100},'output_per_dollar','yesterday'),
   unavailable:efficiencyPeriodDelta({output_per_dollar:25},{output_per_dollar:0},'output_per_dollar','yesterday'),
+  currentMissing:efficiencyPeriodDelta({context_load:null},{context_load:254},'context_load','prior 7 days'),
+  priorMissing:efficiencyPeriodDelta({context_load:12},{context_load:null},'context_load','prior 7 days'),
 }));
 """
         result = subprocess.run(
@@ -8788,6 +8812,8 @@ console.log(JSON.stringify({
             },
             "increase": {"text": "↑ 25.0% vs yesterday", "direction": "up"},
             "unavailable": {"text": "No comparable prior period", "direction": ""},
+            "currentMissing": {"text": "No comparable prior period", "direction": ""},
+            "priorMissing": {"text": "No comparable prior period", "direction": ""},
         })
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
@@ -10526,11 +10552,17 @@ console.log(JSON.stringify({
             "id=budget-progress-markers", "id=budget-allocation-note",
             "id=budget-plan-jump",
             "class=budgetDashboard", "class=budgetLeadHeadActions",
-            "class=\"card pad budgetLead\"",
+            "class=\"card budgetLead\"",
             "class=\"card pad budgetRuntimeCard budgetConfig\"",
             "class=budgetLeadBody",
-            "class=budgetSpendSummary", "class=budgetSpendLimit",
-            "class=budgetReadouts", "class=budgetRuntimeValue",
+            "class=budgetLeadTop", "class=budgetFigureLine",
+            "id=budget-spend-qualifier hidden>At least</span>",
+            "class=budgetStats", "class=budgetMeterFoot", "id=budget-month",
+            "$('budget-spend-qualifier').hidden=!status.lower_bound",
+            "$('budget-spend').textContent=wholeMoney(status.spend||0)",
+            "const wholeMoney=n=>",
+            "function budgetMonthLabel(month)",
+            "class=budgetRuntimeValue",
             "class=budgetRuntimeTrack",
             "class=budgetFormGroup", "class=budgetAlertInline",
             "class=\"budgetForm budgetInlineForm\"",
@@ -10546,7 +10578,6 @@ console.log(JSON.stringify({
             "id=budget-runtime-track-opencode",
             "/settings/budgets", "tm_monthly_budget_alerts",
             "Partial cost coverage: recorded spend is a lower bound.",
-            "Calculated budget",
             "The sum of the registered runtime budgets.",
             "Runtime budgets are added to calculate the monthly total.",
             "function ensureBudgetRuntimeRows()",
@@ -10586,6 +10617,8 @@ console.log(JSON.stringify({
         self.assertNotIn("budget-runtime-meta-", self.page)
         self.assertNotIn("const meta=allocated?", self.page)
         self.assertEqual(self.page.count(" id=budget-config hidden>"), 1)
+        for removed in ("class=budgetSpendSummary", "class=budgetSpendLimit", "class=budgetReadouts>"):
+            self.assertNotIn(removed, self.page)
         for removed in (
             "id=budget-bars", "id=budget-history-note", ">Monthly spend</h2>",
             "class=budgetDetailGrid", "budgetHistory", "budgetChartInner",
@@ -10596,7 +10629,7 @@ console.log(JSON.stringify({
         spend = self.page.split("id=view-daily", 1)[1].split("id=view-efficiency", 1)[0]
         self.assertLess(spend.index("<h1>Spend</h1>"), spend.index("id=spend-budgets"))
         self.assertLess(spend.index("id=spend-budgets"), spend.index("class=spendKpis"))
-        self.assertLess(spend.index("class=\"card pad budgetLead\""), spend.index("id=budget-config"))
+        self.assertLess(spend.index("class=\"card budgetLead\""), spend.index("id=budget-config"))
         settings = self.page.split("id=view-settings", 1)[1]
         self.assertNotIn("id=budget-form", settings)
 
