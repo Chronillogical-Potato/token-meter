@@ -97,6 +97,39 @@ class ClaudeCostCalculationTests(unittest.TestCase):
         }.items():
             self.assertAlmostEqual(cost[component], value)
 
+    def test_haiku_5_5_uses_published_rate_cards_split_at_100k_prompt(self):
+        price, unavailable = meter.price_for("claude-haiku-5-5", "claude")
+        self.assertFalse(unavailable)
+        self.assertEqual(price, {
+            "input": 0.10, "output": 0.50, "cache_write": 0.125, "cache_read": 0.01,
+        })
+        cases = (
+            (50_000, {
+                "input": 0.005, "cache_write": 0.001625,
+                "cache_read": 0.0004, "output": 0.5,
+            }),
+            (50_001, {
+                "input": 0.0250005, "cache_write": 0.008125,
+                "cache_read": 0.002, "output": 2.5,
+            }),
+        )
+        for input_tokens, expected in cases:
+            with self.subTest(prompt_tokens=input_tokens + 50_000):
+                usage = claude_usage(
+                    input_tokens=input_tokens,
+                    output_tokens=1_000_000,
+                    cache_read=40_000,
+                    cache_write_5m=5_000,
+                    cache_write_1h=5_000,
+                    inference_geo="global",
+                )
+                self.assertTrue(
+                    meter.claude_billing_supported(usage, "claude-haiku-5-5")
+                )
+                cost = meter.cost_of(usage, "claude-haiku-5-5", "claude")
+                for component, value in expected.items():
+                    self.assertAlmostEqual(cost[component], value)
+
     def test_opus_5_5_fast_us_pricing_uses_published_multipliers(self):
         cost = meter.cost_of(
             claude_usage(
