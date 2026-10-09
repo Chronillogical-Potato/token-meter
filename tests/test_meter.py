@@ -9861,7 +9861,11 @@ console.log(JSON.stringify([
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_settings_polling_pauses_while_the_user_is_selecting_or_editing(self):
         functions = []
-        for name in ("settingsInteractionActive", "renderSettings"):
+        for name in ("settingsInteractionActive", "budgetInteractionActive"):
+            match = re.search(rf"^function {name}\(\)\{{[^\n]*\}}\n", self.page, re.MULTILINE)
+            self.assertIsNotNone(match, f"dashboard needs {name}")
+            functions.append(match.group(0))
+        for name in ("viewInteractionActive", "renderSettings", "renderSpendView"):
             match = re.search(
                 rf"^function {name}\(.*?^\}}\n",
                 self.page,
@@ -9871,54 +9875,50 @@ console.log(JSON.stringify([
             functions.append(match.group(0))
         script = """
 let settingsPointerActive=false;
-const view={contains:node=>Boolean(node?.insideSettings)};
-const field={insideSettings:true,matches:selector=>selector.includes('input')};
-const outside={insideSettings:false,matches:()=>false};
+let region='settings';
+const view={contains:node=>Boolean(node?.inside===region&&region==='settings')};
+const budgetView={contains:node=>Boolean(node?.inside===region&&region==='budgets')};
+const field={get inside(){return region;},matches:selector=>selector.includes('input')};
+const outside={inside:null,matches:()=>false};
 let activeElement=outside;
 let selection={isCollapsed:true,rangeCount:0,anchorNode:null,focusNode:null};
 const document={get activeElement(){return activeElement;}};
 const window={getSelection:()=>selection};
-const $=id=>id==='view-settings'?view:null;
+const $=id=>id==='view-settings'?view:id==='spend-budgets'?budgetView:null;
 let calls=[];
 const renderBudgets=()=>calls.push('budgets');
 const renderModelPricing=()=>calls.push('pricing');
+const renderSpend=()=>calls.push('spend');
+function render(){renderSettings(xs);renderSpendView(xs);}
 """ + "\n".join(functions) + """
 const xs={model_pricing:{}};
-activeElement=field;
-const focused=settingsInteractionActive();
-renderSettings(xs);
-const focusedCalls=[...calls];
-calls=[];
-activeElement=outside;
-selection={isCollapsed:false,rangeCount:1,anchorNode:{insideSettings:true},focusNode:{insideSettings:true}};
-const selected=settingsInteractionActive();
-renderSettings(xs);
-const selectedCalls=[...calls];
-calls=[];
-selection={isCollapsed:true,rangeCount:0,anchorNode:null,focusNode:null};
-settingsPointerActive=true;
-const dragging=settingsInteractionActive();
-renderSettings(xs);
-const draggingCalls=[...calls];
-calls=[];
-settingsPointerActive=false;
-selection={isCollapsed:true,rangeCount:1,anchorNode:{insideSettings:true},focusNode:{insideSettings:true}};
-const idle=settingsInteractionActive();
-renderSettings(xs);
-console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging,draggingCalls,idle,idleCalls:calls}));
+const out={};
+for(const where of ['settings','budgets']){
+ region=where;
+ activeElement=field;
+ calls=[];render();out[where+'Focused']=[...calls];
+ activeElement=outside;
+ selection={isCollapsed:false,rangeCount:1,anchorNode:{inside:where},focusNode:{inside:where}};
+ calls=[];render();out[where+'Selected']=[...calls];
+ selection={isCollapsed:true,rangeCount:0,anchorNode:null,focusNode:null};
+ settingsPointerActive=true;
+ calls=[];render();out[where+'Dragging']=[...calls];
+ settingsPointerActive=false;
+}
+calls=[];render();out.idle=[...calls];
+console.log(JSON.stringify(out));
 """
         result = subprocess.run(
             ["node", "-e", script], capture_output=True, text=True, check=True,
         )
         self.assertEqual(json.loads(result.stdout), {
-            "focused": True,
-            "focusedCalls": [],
-            "selected": True,
-            "selectedCalls": [],
-            "dragging": True,
-            "draggingCalls": [],
-            "idle": False,
-            "idleCalls": ["budgets", "pricing"],
+            "settingsFocused": ["spend", "budgets"],
+            "settingsSelected": ["spend", "budgets"],
+            "settingsDragging": ["spend"],
+            "budgetsFocused": ["pricing", "spend"],
+            "budgetsSelected": ["pricing", "spend"],
+            "budgetsDragging": ["spend"],
+            "idle": ["pricing", "spend", "budgets"],
         })
 
     def test_execution_overview_separates_activity_from_removable_optimization(self):
@@ -10049,10 +10049,10 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
         self.assertNotIn("id=learn-glossary", self.page)
         self.assertIn("Review loop", self.page)
         self.assertIn("if(h==='daily')setHashRoute('spend',{replace:true,apply:false})", self.page)
-        self.assertIn("if(h==='spend'||h==='daily')", self.page)
+        self.assertIn("if(h==='spend'||h==='daily'||h==='spend-budgets'||h==='settings-budgets'||h==='budgets')", self.page)
         self.assertIn("if(h==='learn'||h==='learn-agent-access')", self.page)
-        self.assertIn("h==='settings-budgets'||h==='budgets'", self.page)
-        self.assertIn("if(h==='budgets')setHashRoute('settings-budgets'", self.page)
+        self.assertIn("if(h==='settings-budgets'||h==='budgets')setHashRoute('spend-budgets',{replace:true,apply:false})", self.page)
+        self.assertNotIn("setHashRoute('settings-budgets'", self.page)
         self.assertIn("activeTop.scrollIntoView({block:'nearest',inline:'center'})", self.page)
 
     def test_spend_route_and_shell_replace_daily_brief(self):
@@ -10066,7 +10066,7 @@ console.log(JSON.stringify({focused,focusedCalls,selected,selectedCalls,dragging
             "id=s-top-runtime", "id=s-highest-day", "id=s-chart",
             "id=s-chart-tip", "id=s-legend", "id=s-platforms",
             "if(h==='daily')setHashRoute('spend',{replace:true,apply:false})",
-            "if(h==='spend'||h==='daily')",
+            "if(h==='spend'||h==='daily'||h==='spend-budgets'",
             "openTopLevelRoute('spend')",
             "{id:'spend',label:'Spend'",
             "data-learn-route=spend>Open Spend",
@@ -10443,7 +10443,7 @@ console.log(JSON.stringify({
             "models": ["Cost, speed, and context."],
             "learn": ["The Token Meter review loop."],
             "capabilities": ["Tools, MCP servers, and skills."],
-            "settings": ["Budgets, connections, pricing, and updates."],
+            "settings": ["Connections, pricing, and updates."],
         }
         boundaries = (
             ("models", "daily"),
@@ -10518,24 +10518,23 @@ console.log(JSON.stringify({
         )
         self.assertIn("ratio.dataset.tip=detail", self.page)
 
-    def test_settings_monthly_budget_derives_total_from_runtime_budgets(self):
+    def test_spend_monthly_budget_derives_total_from_runtime_budgets(self):
         for marker in (
-            "id=budget-settings", "data-settings-target=budget-settings",
+            "id=spend-budgets", "class=spendBudgetSection", "class=spendBudgetEditor",
             "id=budget-spend", "id=budget-total", "id=budget-remaining",
-            "id=budget-projected", "id=budget-runtimes", "id=budget-bars",
+            "id=budget-projected", "id=budget-runtimes",
             "id=budget-progress-markers", "id=budget-allocation-note",
             "id=budget-plan-jump",
             "class=budgetDashboard", "class=budgetLeadHeadActions",
             "class=\"card pad budgetLead\"",
             "class=\"card pad budgetRuntimeCard budgetConfig\"",
-            "class=budgetLeadBody", "class=budgetDetailGrid",
+            "class=budgetLeadBody",
             "class=budgetSpendSummary", "class=budgetSpendLimit",
             "class=budgetReadouts", "class=budgetRuntimeValue",
             "class=budgetRuntimeTrack",
             "class=budgetFormGroup", "class=budgetAlertInline",
             "class=\"budgetForm budgetInlineForm\"",
             "class=budgetRuntimeHead", "class=budgetRuntimeInput",
-            "class=budgetChartInner", "class=budgetTarget",
             "id=budget-input-claude", "id=budget-input-codex",
             "id=budget-input-cursor", "id=budget-input-opencode",
             "id=budget-input-threshold-early",
@@ -10551,10 +10550,15 @@ console.log(JSON.stringify({
             "The sum of the registered runtime budgets.",
             "Runtime budgets are added to calculate the monthly total.",
             "function ensureBudgetRuntimeRows()",
-            "planJump.textContent=configured?'Edit budgets':'Set budgets'",
+            "planJump.textContent=open?'Close editor':budgetConfigured?'Edit budgets':'Set budgets'",
+            "planJump.setAttribute('aria-expanded',String(open))",
+            "aria-expanded=false aria-controls=budget-config>Set budgets</button>",
+            "$('budget-plan-jump').onclick=()=>setBudgetEditorOpen($('budget-config').hidden,true)",
             "config.scrollIntoView({behavior:",
-            "const config=$('budget-config'),input=config.querySelector('.budgetRuntimeInput input')",
+            "const input=config.querySelector('.budgetRuntimeInput input')",
             "input.focus({preventScroll:true})",
+            ".budgetConfig[hidden]{display:none}",
+            ".spendBudgetSection .budgetRuntimeFields{grid-column:2;grid-row:2}",
             "function budgetAllocationsFromInputs()",
             "function previewCalculatedBudget()",
             "const payload={currency:'USD',default_session_budget:",
@@ -10562,8 +10566,6 @@ console.log(JSON.stringify({
             "Save budgets",
             "Set budgets</h2>",
             "Spent this month</span><span>Budget (USD)",
-            "@media(min-width:901px){.budgetDetailGrid{align-items:stretch}",
-            ".budgetHistory .budgetChartInner{flex:1;display:grid",
             "DEFAULT_RUNTIME_BUDGET=0",
             "value=0",
         ):
@@ -10583,11 +10585,20 @@ console.log(JSON.stringify({
         self.assertNotIn("Runtime allocations cannot exceed", self.page)
         self.assertNotIn("budget-runtime-meta-", self.page)
         self.assertNotIn("const meta=allocated?", self.page)
-        self.assertEqual(self.page.count(" id=budget-config>"), 1)
-        settings = self.page[self.page.index("id=view-settings"):]
-        self.assertLess(settings.index("class=budgetDetailGrid"), settings.index("id=budget-config"))
-        self.assertLess(settings.index(">Monthly spend</h2>"), settings.index("id=budget-config"))
-        self.assertLess(settings.index("id=budget-settings"), settings.index("id=agent-access"))
+        self.assertEqual(self.page.count(" id=budget-config hidden>"), 1)
+        for removed in (
+            "id=budget-bars", "id=budget-history-note", ">Monthly spend</h2>",
+            "class=budgetDetailGrid", "budgetHistory", "budgetChartInner",
+            "data-settings-target=budget-settings",
+        ):
+            self.assertNotIn(removed, self.page)
+        self.assertNotRegex(self.page, r"id=budget-settings[\s>]")
+        spend = self.page.split("id=view-daily", 1)[1].split("id=view-efficiency", 1)[0]
+        self.assertLess(spend.index("<h1>Spend</h1>"), spend.index("id=spend-budgets"))
+        self.assertLess(spend.index("id=spend-budgets"), spend.index("class=spendKpis"))
+        self.assertLess(spend.index("class=\"card pad budgetLead\""), spend.index("id=budget-config"))
+        settings = self.page.split("id=view-settings", 1)[1]
+        self.assertNotIn("id=budget-form", settings)
 
     def test_software_updates_keep_checks_and_install_preferences_independent(self):
         for marker in (
@@ -10649,7 +10660,6 @@ console.log(JSON.stringify({
             "</div>\n</div>\n<dialog class=commandPalette", 1
         )[0]
         for title, target in (
-            ("Monthly budget", "budget-settings"),
             ("Agent connection", "agent-access"),
             ("Model pricing", "model-pricing-settings"),
             ("Software updates", "update-settings"),
@@ -10658,6 +10668,7 @@ console.log(JSON.stringify({
                 f"data-settings-target={target}><b>{title}</b>", settings,
             )
             self.assertIn(f">{title}</h2>", settings)
+        self.assertNotIn(">Monthly budget</", settings)
         for removed in (
             "id=agent-access-badge", "class=mcpMark", "class=agentPromise",
             "class=agentTools", "class=agentPrivacy", "id=frustration-term-count",
@@ -10678,7 +10689,8 @@ console.log(JSON.stringify({
             "id=current-budget-warning",
             "id=current-budget-warning-msg",
             "id=current-budget-settings",
-            "Open budget settings",
+            "Open monthly budget",
+            "$('current-budget-settings').onclick=()=>setHashRoute('spend-budgets')",
             "function renderCurrentBudgetWarning(status)",
             "status?.exceeded_runtimes||[]",
             "renderCurrentBudgetWarning(s.xsession?.budget||LATEST?.xsession?.budget)",
@@ -10812,7 +10824,7 @@ console.log(JSON.stringify({
         self.assertIn("short:'Efficiency'", steps)
         self.assertIn("short:'Monthly budget'", steps)
         self.assertIn("route:'efficiency'", steps)
-        self.assertIn("route:'settings-budgets'", steps)
+        self.assertIn("route:'spend-budgets'", steps)
         for marker in (
             "const ONBOARDING_KEY='tm_onboarding_v1'",
             "raw.completed.filter(id=>ONBOARDING_STEP_IDS.has(id))",
@@ -10860,7 +10872,7 @@ console.log(JSON.stringify({
             ("Spend review", "spend", "Open Spend"),
             ("Model comparison", "models", "Open Models"),
             ("Efficiency review", "efficiency", "Open Efficiency"),
-            ("Monthly budget", "settings-budgets", "Open Budgets"),
+            ("Monthly budget", "spend-budgets", "Open Budgets"),
         ):
             self.assertIn(title, learn)
             self.assertIn(f"data-learn-route={route}>{action}", learn)
@@ -11951,7 +11963,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "Local token efficiency.",
             "Pushed code &times; covered spend.",
             "The Token Meter review loop.",
-            "Budgets, connections, pricing, and updates.",
+            "Connections, pricing, and updates.",
         ):
             self.assertIn(marker, self.page)
         self.assertEqual(self.page.count("data-page-signal="), 9)

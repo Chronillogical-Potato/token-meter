@@ -293,9 +293,11 @@ older reflog entries are not imported again.
 
 ### Settings
 
-Settings contains the default session budget, server-persisted per-session caps, monthly budget allocations and
-thresholds, effective-dated model pricing, Git evidence history, software updates,
-menu-bar preferences, and local agent connections. The default session
+Settings contains effective-dated model pricing, Git evidence history, software
+updates, menu-bar preferences, and local agent connections. The monthly budget
+status, runtime allocations, alert thresholds, and the default session budget
+live on **Spend → Monthly budget** (`#spend-budgets`); choose **Set budgets** or
+**Edit budgets** to open the editor. The default session
 budget applies whenever a session has no saved cap; changing it
 does not replace existing per-session caps. Model pricing shows the review date
 and provider sources for bundled rates. Select the models to change, edit their
