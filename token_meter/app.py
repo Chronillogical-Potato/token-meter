@@ -5509,6 +5509,10 @@ def summary_row(source, title, cost, tokens, turns, models, first_ts, last_ts, m
                 **({"cache_covered_input_tokens": int(
                     values.get("cache_covered_input_tokens") or 0
                 )} if "cache_covered_input_tokens" in values else {}),
+                **({
+                    field: int(values.get(field) or 0)
+                    for field in ("io_covered_input_tokens", "io_covered_output_tokens")
+                } if "io_covered_input_tokens" in values else {}),
             }
             for model, values in model_stats.items()
         ], key=lambda row: (-row["cost"], -row["tokens"], row["model"])),

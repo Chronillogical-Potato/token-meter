@@ -66,6 +66,7 @@ def add_model_summary(stats, model, usage, cost, cost_available=None):
         "reasoning_unavailable_executions": 0,
         "thinking_executions": 0, "thinking_covered_executions": 0,
         "token_covered_executions": 0, "io_covered_executions": 0,
+        "io_covered_input_tokens": 0, "io_covered_output_tokens": 0,
         "executions": 0,
     })
     reasoning_tokens, reasoning_reported = normalize_reported_token_count(
@@ -106,6 +107,8 @@ def add_model_summary(stats, model, usage, cost, cost_available=None):
         row["token_covered_executions"] += 1
     if input_available and output_available:
         row["io_covered_executions"] += 1
+        row["io_covered_input_tokens"] += input_tokens
+        row["io_covered_output_tokens"] += output_tokens
     row["input_evidence"] = row.get("input_evidence") is True or input_available
     row["output_evidence"] = row.get("output_evidence") is True or output_available
     if cost_available is not None:
@@ -145,6 +148,7 @@ def add_model_daily(stats, model, usage, cost, timestamp, localtime=time.localti
         "reasoning_executions": 0, "reasoning_unavailable_executions": 0,
         "thinking_executions": 0, "thinking_covered_executions": 0,
         "token_covered_executions": 0, "io_covered_executions": 0,
+        "io_covered_input_tokens": 0, "io_covered_output_tokens": 0,
         "executions": 0,
     })
     reasoning_tokens, reasoning_reported = normalize_reported_token_count(
@@ -184,6 +188,8 @@ def add_model_daily(stats, model, usage, cost, timestamp, localtime=time.localti
         row["token_covered_executions"] += 1
     if input_available and output_available:
         row["io_covered_executions"] += 1
+        row["io_covered_input_tokens"] += input_tokens
+        row["io_covered_output_tokens"] += output_tokens
     row["input_evidence"] = row.get("input_evidence") is True or input_available
     row["output_evidence"] = row.get("output_evidence") is True or output_available
     if cost_available is not None:
@@ -1425,6 +1431,7 @@ def aggregate_model_stats(session_rows, runtime_resolver=None, throughput_finali
             "providers": set(), "logs": 0,
             "executions": 0, "token_covered_executions": 0,
             "io_covered_executions": 0,
+            "io_covered_input_tokens": 0, "io_covered_output_tokens": 0,
             "cost_covered_executions": 0,
             "input_tokens": 0, "output_tokens": 0,
             "cost_covered_output_tokens": 0,
@@ -1465,6 +1472,7 @@ def aggregate_model_stats(session_rows, runtime_resolver=None, throughput_finali
             "attempts": 0, "retries": 0, "failed_attempts": 0,
             "attempt_samples": 0, "executions": 0,
             "token_covered_executions": 0, "io_covered_executions": 0,
+            "io_covered_input_tokens": 0, "io_covered_output_tokens": 0,
             "cost_covered_executions": 0,
             "cost_covered_cost": 0.0,
             "cost": 0.0,
@@ -1558,6 +1566,19 @@ def aggregate_model_stats(session_rows, runtime_resolver=None, throughput_finali
                   and stats_availability.get("output_tokens") is not False
                   and metric_available(session, "tokens")):
                 row["io_covered_executions"] += executions
+            if "io_covered_input_tokens" in stats:
+                row["io_covered_input_tokens"] += int(
+                    stats.get("io_covered_input_tokens") or 0
+                )
+                row["io_covered_output_tokens"] += int(
+                    stats.get("io_covered_output_tokens") or 0
+                )
+            elif (stats_availability.get("tokens") is not False
+                  and stats_availability.get("input_tokens") is not False
+                  and stats_availability.get("output_tokens") is not False
+                  and metric_available(session, "tokens")):
+                row["io_covered_input_tokens"] += int(stats.get("input_tokens") or 0)
+                row["io_covered_output_tokens"] += int(stats.get("output_tokens") or 0)
             if "cost_covered_executions" in stats:
                 row["cost_covered_executions"] += int(
                     stats.get("cost_covered_executions") or 0
@@ -1680,6 +1701,19 @@ def aggregate_model_stats(session_rows, runtime_resolver=None, throughput_finali
                   and stats_availability.get("output_tokens") is not False
                   and metric_available(session, "tokens")):
                 daily["io_covered_executions"] += executions
+            if "io_covered_input_tokens" in stats:
+                daily["io_covered_input_tokens"] += int(
+                    stats.get("io_covered_input_tokens") or 0
+                )
+                daily["io_covered_output_tokens"] += int(
+                    stats.get("io_covered_output_tokens") or 0
+                )
+            elif (stats_availability.get("tokens") is not False
+                  and stats_availability.get("input_tokens") is not False
+                  and stats_availability.get("output_tokens") is not False
+                  and metric_available(session, "tokens")):
+                daily["io_covered_input_tokens"] += int(stats.get("input_tokens") or 0)
+                daily["io_covered_output_tokens"] += int(stats.get("output_tokens") or 0)
             if "cost_covered_executions" in stats:
                 daily["cost_covered_executions"] += int(
                     stats.get("cost_covered_executions") or 0
