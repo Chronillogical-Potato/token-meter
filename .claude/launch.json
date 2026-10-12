@@ -17,6 +17,12 @@
         "import token_meter.app as a; a.PORT=8733; a.main()"
       ],
       "port": 8733
+    },
+    {
+      "name": "talk-deck",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8740", "--bind", "127.0.0.1", "--directory", "docs"],
+      "port": 8740
     }
   ]
 }

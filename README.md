@@ -151,6 +151,7 @@ Full details: [User guide](specs/USER_GUIDE.md#data-and-evidence) ·
 | Document | Covers |
 | --- | --- |
 | [User guide](specs/USER_GUIDE.md) | Setup, daily use, MCP, updates, troubleshooting |
+| [Cost estimates and budgets](specs/COST_AND_BUDGETS.md) | How reliable costs are, converting credits into agent budgets |
 | [Security](specs/SECURITY.md) | Privacy boundaries, vulnerability reporting |
 | [Architecture](specs/ARCHITECTURE.md) | Components, data flow, extension contracts |
 | [Contributing](specs/CONTRIBUTING.md) | Issues, pull requests, validation |
