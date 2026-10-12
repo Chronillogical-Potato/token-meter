@@ -1011,7 +1011,8 @@ class BuilderRecapStandalonePageTests(unittest.TestCase):
         self.assertEqual(page.count("function drawBuilderRecap("), 1)
         self.assertNotRegex(page, r'<(?:script|img|link)[^>]+(?:src|href)=["\']https?://')
         self.assertNotIn("foreignObject", page)
-        self.assertNotIn("localStorage", page)
+        # Only the shared theme boot script may read storage; the studio never persists builder input.
+        self.assertNotIn("localStorage", re.sub(r"<script id=theme-boot>.*?</script>", "", page, flags=re.S))
         self.assertNotIn("Display name", page)
         self.assertNotIn("id=spotlight", page)
         self.assertNotIn("id=include-git", page)
@@ -1094,7 +1095,7 @@ class BuilderRecapStandalonePageTests(unittest.TestCase):
         script = f"""
 const fs=require('fs'),page=fs.readFileSync({json.dumps(str(page_path))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
+for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','cardPalette','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
 class Gradient{{constructor(kind,coords){{this.kind=kind;this.coords=coords;this.stops=[];}}addColorStop(offset,color){{this.stops.push([offset,color]);}}}}
 class Context{{constructor(){{this.ops=[];this.font='';}}fillRect(...v){{this.ops.push(['rect',this.fillStyle,...v]);}}fillText(...v){{this.ops.push(['text',String(v[0]),...v.slice(1),this.font]);}}drawImage(image,...v){{this.ops.push(['image',image.src,...v]);}}createLinearGradient(...c){{return new Gradient('linear',c);}}createRadialGradient(...c){{return new Gradient('radial',c);}}measureText(v){{const size=Number((/([0-9.]+)px/.exec(this.font)||[])[1])||14,narrow=/Narrow|Condensed/.test(this.font);return {{width:String(v).length*size*(narrow?.45:.55)}};}}beginPath(){{}}arc(){{}}stroke(){{}}save(){{}}restore(){{}}translate(){{}}rotate(){{}}}}
 class Canvas{{constructor(){{this.ctx=new Context();this.attrs={{}};}}getContext(){{return this.ctx;}}setAttribute(k,v){{this.attrs[k]=String(v);}}}}
@@ -1214,7 +1215,7 @@ console.log(JSON.stringify({{
         script = f"""
 const fs=require('fs'),page=fs.readFileSync({json.dumps(str(page_path))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
+for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','cardPalette','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
 const stops={{addColorStop(){{}}}};
 class Context{{
  constructor(){{this.ops=[];this.font='';this.bands=[];}}
@@ -1262,7 +1263,7 @@ console.log(JSON.stringify({{
         script = f"""
 const fs=require('fs'),page=fs.readFileSync({json.dumps(str(page_path))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
+for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','cardPalette','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap'])eval(extract(name));
 class Gradient{{constructor(kind){{this.kind=kind;this.stops=[];}}addColorStop(offset,color){{this.stops.push([offset,color]);}}}}
 class Context{{constructor(){{this.ops=[];this.font='';}}fillRect(...v){{this.ops.push(['rect',this.fillStyle,...v]);}}fillText(...v){{this.ops.push(['text',String(v[0]),...v.slice(1),this.font]);}}drawImage(){{}}createLinearGradient(){{return new Gradient('linear');}}createRadialGradient(){{return new Gradient('radial');}}measureText(v){{const size=Number((/([0-9.]+)px/.exec(this.font)||[])[1])||14,narrow=/Narrow|Condensed/.test(this.font);return {{width:String(v).length*size*(narrow?.45:.55)}};}}beginPath(){{}}arc(){{}}stroke(){{}}save(){{}}restore(){{}}translate(){{}}rotate(){{}}}}
 class Canvas{{constructor(){{this.ctx=new Context();this.attrs={{}};}}getContext(){{return this.ctx;}}setAttribute(k,v){{this.attrs[k]=String(v);}}}}
@@ -1296,7 +1297,7 @@ console.log(JSON.stringify({{
         script = f"""
 const fs=require('fs'),page=fs.readFileSync({json.dumps(str(page_path))},'utf8');
 function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);if(page.slice(start-6,start)==='async ')start-=6;let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-	for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap','hasActivity'])eval(extract(name));
+	for(const name of ['safeArray','sanitizeBuilderName','compactNumber','durationLabel','formatStat','formatSpend','ellipsize','fitText','gradientFill','radialFill','fillRoundedRect','setTracking','cardPalette','ditherRegion','supportingStats','drawUsageGroup','drawBuilderRecap','hasActivity'])eval(extract(name));
 class Gradient{{constructor(kind,coords){{this.kind=kind;this.coords=coords;this.stops=[];}}addColorStop(offset,color){{this.stops.push([offset,color]);}}}}
 class Context{{constructor(){{this.ops=[];this.font='';this.lineWidth=1;}}fillRect(...v){{this.ops.push(['rect',this.fillStyle,...v]);}}fillText(...v){{this.ops.push(['text',String(v[0]),...v.slice(1),this.font]);}}createLinearGradient(...c){{return new Gradient('linear',c);}}createRadialGradient(...c){{return new Gradient('radial',c);}}measureText(v){{const size=Number((/([0-9.]+)px/.exec(this.font)||[])[1])||14,narrow=/Narrow|Condensed/.test(this.font);return {{width:String(v).length*size*(narrow?.45:.55)}};}}beginPath(){{}}arc(...v){{this.ops.push(['arc',this.strokeStyle,...v]);}}stroke(){{this.ops.push(['stroke',this.strokeStyle,this.lineWidth]);}}save(){{}}restore(){{}}translate(){{}}rotate(){{}}}}
 class Canvas{{constructor(){{this.ctx=new Context();this.attrs={{}};this.width=1;this.height=1;}}getContext(){{return this.ctx;}}setAttribute(k,v){{this.attrs[k]=String(v);}}}}
@@ -10965,7 +10966,7 @@ console.log(JSON.stringify({
             "const hasChildren=childAgentsFor(s).length>0;",
             "const compareIndex=compareIds.indexOf(rowKey);",
             "className=`srow${active?' active':''}${live?' live':''}${hasChildren?' hasChildren':''}${compareIndex>=0?' compareSelected':''}`",
-            ".srow.active,.srow.live{border-color:rgb(var(--cyan-rgb)/.62)",
+            ".srow.active,.srow.live{border-color:rgb(var(--signal-rgb)/.62)",
             "const existing=new Map([...root.children]",
             "if(row.className!==className)row.className=className",
             "if(row.getAttribute('aria-label')!==ariaLabel)",
@@ -12316,13 +12317,14 @@ console.log(JSON.stringify({history,html,firstRunHtml}));
             "session-spectrum-field-v2",
             "THESIS: Sessions are live instruments",
             "<body class=spectrumApp>",
-            "--cyan:#00bceb",
-            "--blue:#1ba0e1",
-            "--sky:#7fdbf2",
-            "--violet:#c7a7ff",
+            ":root,[data-theme=classic]{",
+            "--signal:#00bceb",
+            "--signal-mid:#1ba0e1",
+            "--signal-hi:#7fdbf2",
+            "--aura:#c7a7ff",
             "--orange:#ffb457",
             "body.sessionRoute{",
-            "--session-cyan:var(--cyan)",
+            "--session-signal:var(--signal)",
             'class="previewHead spectrumPageHead sessionFlowHead"',
             'class="previewHeadCopy spectrumPageHeadCopy"',
             ".spectrumPageHead:before",
@@ -19675,6 +19677,155 @@ class ToolUsageEvidenceRealityTests(unittest.TestCase):
         self.assertEqual(mcps["ghost-mcp-proxy"]["calls"], 4)
         self.assertTrue(mcps["ghost-mcp-proxy"]["used"])
         self.assertEqual(mcps["ghost-mcp-proxy"]["configuration"], "Enabled")
+
+
+class DashboardThemeTests(unittest.TestCase):
+    """Theme choice is a browser preference applied before first paint and offered in Settings and ⌘K."""
+
+    def setUp(self):
+        self.page = Path(__file__).resolve().parents[1].joinpath("page.html").read_text(encoding="utf-8")
+
+    def run_boot(self, stored, throws=False):
+        boot = re.search(r"<script id=theme-boot>(.*?)</script>", self.page, re.S).group(1)
+        script = (
+            "const document={documentElement:{dataset:{theme:'classic'}}};const window={};"
+            f"const localStorage={{getItem(){{if({json.dumps(throws)})throw new Error('blocked');return {json.dumps(stored)};}}}};"
+            f"{boot};console.log(document.documentElement.dataset.theme);"
+        )
+        return subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout.strip()
+
+    def test_boot_script_applies_only_known_stored_themes(self):
+        self.assertIn("<html lang=en data-theme=classic>", self.page)
+        self.assertLess(self.page.index("<script id=theme-boot>"), self.page.index("<style>"))
+        self.assertEqual(self.run_boot("voltage"), "voltage")
+        self.assertEqual(self.run_boot("monolith"), "monolith")
+        self.assertEqual(self.run_boot("nebula"), "nebula")
+        self.assertEqual(self.run_boot("not-a-theme"), "classic")
+        self.assertEqual(self.run_boot(None), "classic")
+        self.assertEqual(self.run_boot("voltage", throws=True), "classic")
+
+    def daily_themes(self, dates):
+        boot = re.search(r"<script id=theme-boot>(.*?)</script>", self.page, re.S).group(1)
+        script = (
+            "const document={documentElement:{dataset:{}}};const window={};const localStorage={getItem(){return null;}};"
+            + boot.replace("window.tokenMeterTheme", "globalThis.tokenMeterTheme")
+            + f";console.log(JSON.stringify({json.dumps(dates)}.map(d=>tokenMeterTheme.resolve('random',new Date(d).getTime()))));"
+        )
+        return json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+
+    def test_random_theme_is_stable_within_a_day_and_changes_daily(self):
+        morning, evening = self.daily_themes(["2026-10-12T00:05:00", "2026-10-12T23:55:00"])
+        self.assertEqual(morning, evening)
+        start = datetime.date(2026, 9, 1)
+        days = [f"{start + datetime.timedelta(days=offset)}T12:00:00" for offset in range(56)]
+        picks = self.daily_themes(days)
+        ids = ["classic", "nebula", "monolith", "voltage", "phosphor"]
+        self.assertTrue(set(picks) <= set(ids))
+        self.assertEqual(sorted(set(picks)), sorted(ids), "every theme should appear over eight weeks")
+        self.assertTrue(all(a != b for a, b in zip(picks, picks[1:])), "a day never repeats yesterday's theme")
+        self.assertIn("setInterval(()=>{if(themePreference===THEME_RANDOM.id)", self.page)
+        self.assertIn("{id:'theme-random',label:`Theme · ${THEME_RANDOM.name}`", self.page)
+
+    def test_theme_registry_normalizes_and_feeds_the_palette(self):
+        start = self.page.index("const THEMES=[")
+        registry = self.page[start:self.page.index("let activeTheme=", start)]
+        script = registry + (
+            "console.log(JSON.stringify({ids:THEMES.map(t=>t.id),bad:normalizeThemeId('x'),ok:normalizeThemeId('voltage'),"
+            "label:themeLabel('monolith'),key:THEME_STORAGE_KEY,random:normalizeThemeId('random')}));"
+        )
+        result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(result, {"ids": ["classic", "nebula", "monolith", "voltage", "phosphor"], "bad": "classic", "ok": "voltage",
+                                  "label": "Monolith", "key": "tm_theme", "random": "random"})
+        self.assertIn("...THEMES.map(theme=>({id:`theme-${theme.id}`,label:`Theme · ${theme.label}`", self.page)
+        self.assertIn("if(command.action==='theme'){setTheme(command.theme);return;}", self.page)
+        self.assertIn("route:'settings-appearance'", self.page)
+
+    def test_rapid_theme_changes_keep_page_and_storage_in_sync(self):
+        start = self.page.index("function setTheme(")
+        body = self.page[start:self.page.index("\n}\n", start) + 2]
+        script = (
+            "const THEMES=[{id:'nebula'},{id:'monolith'},{id:'voltage'}];"
+            "const normalizeThemeId=v=>THEMES.some(t=>t.id===v)?v:'nebula';const THEME_STORAGE_KEY='tm_theme';"
+            "const resolveTheme=v=>v;let themePreference='nebula';"
+            "let stored=null,repaints=0,queued=[];const localStorage={setItem(k,v){stored=v;}};"
+            "const pageSignalReducedMotionQuery={matches:false};"
+            "const document={documentElement:{dataset:{theme:'nebula'}},startViewTransition(cb){queued.push(cb);return {};}};"
+            "function paintThemePicker(){}function repaintThemedSurfaces(){repaints++;}"
+            "let activeTheme='nebula';" + body +
+            "setTheme('voltage');setTheme('monolith');setTheme('nebula');queued.forEach(cb=>cb());"
+            "console.log(JSON.stringify({page:document.documentElement.dataset.theme,stored,active:activeTheme,repaints}));"
+        )
+        result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(result["page"], "nebula")
+        self.assertEqual(result["stored"], "nebula")
+        self.assertEqual(result["active"], "nebula")
+        self.assertGreaterEqual(result["repaints"], 1)
+
+    def test_performance_page_follows_the_dashboard_theme(self):
+        perf = Path(__file__).resolve().parents[1].joinpath("performance.html").read_text(encoding="utf-8")
+        boot = re.compile(r"<script id=theme-boot>.*?</script>", re.S)
+        self.assertEqual(boot.search(perf).group(0), boot.search(self.page).group(0))
+        self.assertIn("<html lang=en data-theme=classic>", perf)
+        block = re.compile(r"\n((?::root,)?\[data-theme=(\w+)\])\{([^{}]*)\}")
+        dashboard = {m.group(2): dict(re.findall(r"--([\w-]+):([^;]+);", m.group(3))) for m in block.finditer(self.page)}
+        performance = {m.group(2): dict(re.findall(r"--([\w-]+):([^;]+);", m.group(3))) for m in block.finditer(perf)}
+        self.assertEqual(sorted(performance), sorted(dashboard))
+        self.assertIn(":root,[data-theme=classic]{", perf)
+        for theme, tokens in performance.items():
+            with self.subTest(theme=theme):
+                self.assertTrue(tokens)
+                shared = {k: v for k, v in tokens.items() if not k.startswith("card-")}
+                self.assertEqual(shared, {k: dashboard[theme][k] for k in shared})
+                card = sorted(k for k in tokens if k.startswith("card-"))
+                self.assertEqual(card, ["card-a-rgb", "card-b-rgb", "card-c-rgb", "card-foot", "card-glow-rgb",
+                                        "card-hero", "card-hi-rgb", "card-idle-rgb", "card-paper-a-rgb",
+                                        "card-paper-b-rgb"])
+        style = perf[perf.index("<style>"):perf.index("</style>")]
+        chrome = block.sub("", style)
+        self.assertNotIn("#00bceb", chrome)
+        self.assertNotIn("rgba(0,188,235", chrome)
+        script = perf[perf.index("<script>"):perf.rindex("</script>")]
+        draw = script[script.index("function cardPalette("):script.index("function setStatus(")]
+        draw = draw.replace(draw[draw.index("const CLASSIC_CARD="):draw.index("\n", draw.index("const CLASSIC_CARD="))], "")
+        for literal in ("#00bceb", "#4054d6", "#8ee9f2", "#8f6ce6", "rgba(0,188,235", "rgba(64,84,214", "rgba(127,219,242", "#0d2c3d"):
+            with self.subTest(card_literal=literal):
+                self.assertNotIn(literal, draw)
+        self.assertIn("window.addEventListener('storage',event=>{", script)
+
+    def test_performance_rail_lists_the_same_destinations_as_the_dashboard(self):
+        perf = Path(__file__).resolve().parents[1].joinpath("performance.html").read_text(encoding="utf-8")
+        def groups(source, primary, secondary, label):
+            top = source[source.index(f"<div class={primary}>"):source.index(f"<div class={secondary}>")]
+            bottom = source[source.index(f"<div class={secondary}>"):source.index("</nav>", source.index(f"<div class={secondary}>"))]
+            return re.findall(label, top), re.findall(label, bottom)
+        dashboard = groups(self.page, "navPrimary", "navSecondary", r'class="?tab[^>]*data-label=(\w+)')
+        performance = groups(perf, "railPrimary", "railSecondary", r"<span class=railLabel>(\w+)</span>")
+        self.assertEqual(performance, dashboard)
+        self.assertEqual(dashboard[1][0], "Read")
+        tokenomics = re.search(r"const TOKENOMICS_SEARCH_URL='([^']+)'", self.page).group(1)
+        self.assertIn(f'id=tab-read href="{tokenomics}" target=_blank rel="noopener noreferrer"', perf)
+
+    def test_appearance_settings_section_and_route(self):
+        self.assertIn("<div class=settingsMapIntro><h2>Sections</h2></div>\n    <button type=button data-settings-target=appearance-settings><b>Appearance</b></button>", self.page)
+        content = self.page.index("<div class=settingsPageContent>")
+        self.assertEqual(self.page.index("<section", content), self.page.index('<section class="card pad appearanceSettings"', content))
+        self.assertIn('<section class="card pad appearanceSettings" id=appearance-settings>', self.page)
+        self.assertIn("<div class=themePicker id=theme-picker role=group aria-labelledby=appearance-title></div>", self.page)
+        self.assertIn("h==='settings-appearance'", self.page)
+        self.assertIn("option.setAttribute('aria-pressed',String(option.dataset.themeOption===themePreference));", self.page)
+        self.assertIn("window.addEventListener('storage',event=>{if(event.key===THEME_STORAGE_KEY)", self.page)
+
+    def test_theme_switch_repaints_token_driven_surfaces(self):
+        start = self.page.index("function repaintThemedSurfaces(){")
+        body = self.page[start:self.page.index("\n}", start)]
+        for marker in ("readChartTokens();", "drawIO(", "renderModelStats(", "renderEfficiency(",
+                       "drawSpendScatter(", "drawDeliveryChart(", "syncActivePageSignalEffects();", "meta[name=theme-color]"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, body)
+        effects = Path(__file__).resolve().parents[1].joinpath("assets", "session-effects.js").read_text(encoding="utf-8")
+        self.assertIn("getComputedStyle(element)", effects)
+        for token in ("--fx-front-rgb", "--fx-back-rgb", "--fx-edge-a-rgb", "--fx-edge-b-rgb"):
+            self.assertIn(f'"{token}"', effects)
 
 
 if __name__ == "__main__":
