@@ -64,7 +64,7 @@
  --spectrum-ease:cubic-bezier(.16,1,.3,1);
  /* == Motion: strong curves; UI stays under 300ms, data explanation may run longer == */
  --ease-out:cubic-bezier(.23,1,.32,1); --ease-in-out:cubic-bezier(.77,0,.175,1);
- --dur-press:160ms; --dur-ui:240ms; --dur-enter:320ms; --dur-data:480ms;
+ --dur-press:160ms; --dur-enter:320ms; --dur-data:480ms;
  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
  --spectrum-shadow:0 1px 0 var(--spectrum-edge-light),0 16px 38px rgb(var(--shade-rgb)/.32),0 5px 16px rgb(var(--signal-rgb)/calc(.06*var(--glow)));
  --spectrum-depth-focus:0 1px 0 rgb(var(--signal-pale-rgb)/.22),0 20px 46px rgb(var(--shade-rgb)/.38),0 8px 28px rgb(var(--signal-rgb)/calc(.13*var(--glow)));
@@ -90,7 +90,7 @@
  --ring:var(--signal),var(--signal-hi) 20%,var(--flare) 38%,var(--aura) 52%,transparent 64% 86%,var(--signal);
  --ring-speed:20s;
  --title-glow:0 0 18px rgb(var(--signal-rgb)/.28);
- --grain-opacity:.05; --spot-strength:.11;
+ --grain-opacity:.05;
  --fx-front-rgb:53 202 238; --fx-back-rgb:103 74 180; --fx-edge-a-rgb:0 188 235; --fx-edge-b-rgb:77 139 214;
 }
 [data-theme=nebula]{
@@ -113,7 +113,7 @@
  --ring:var(--signal),var(--aura) 20%,var(--signal-hi) 40%,var(--flare) 58%,var(--signal-mid) 78%,var(--signal);
  --ring-speed:16s;
  --title-glow:0 0 22px rgb(var(--signal-mid-rgb)/.42);
- --grain-opacity:.06; --spot-strength:.14;
+ --grain-opacity:.06;
  --fx-front-rgb:255 122 217; --fx-back-rgb:157 139 255; --fx-edge-a-rgb:199 125 255; --fx-edge-b-rgb:255 122 217;
 }
 [data-theme=monolith]{
@@ -136,7 +136,7 @@
  --ring:transparent 0 68%,rgb(var(--signal-hi-rgb)/.08) 76%,rgb(var(--signal-hi-rgb)/.9) 93%,var(--flare) 97%,transparent 100%;
  --ring-speed:7s;
  --title-glow:0 0 0 transparent;
- --grain-opacity:.07; --spot-strength:.08;
+ --grain-opacity:.07;
  --fx-front-rgb:244 245 248; --fx-back-rgb:169 184 255; --fx-edge-a-rgb:228 231 238; --fx-edge-b-rgb:167 174 189;
 }
 [data-theme=voltage]{
@@ -159,7 +159,7 @@
  --ring:var(--signal) 0 10%,transparent 10% 33%,var(--flare) 33% 39%,transparent 39% 66%,var(--aura) 66% 72%,transparent 72% 100%;
  --ring-speed:5s;
  --title-glow:0 0 20px rgb(var(--signal-rgb)/.5);
- --grain-opacity:.05; --spot-strength:.12;
+ --grain-opacity:.05;
  --fx-front-rgb:245 230 61; --fx-back-rgb:46 230 255; --fx-edge-a-rgb:245 230 61; --fx-edge-b-rgb:46 230 255;
 }
 [data-theme=phosphor]{
@@ -182,7 +182,7 @@
  --ring:transparent 0 58%,rgb(var(--signal-rgb)/.16) 76%,var(--signal) 92%,var(--signal-hi) 95%,var(--flare) 97.5%,transparent 100%;
  --ring-speed:9s;
  --title-glow:0 0 22px rgb(var(--signal-rgb)/.45);
- --grain-opacity:.06; --spot-strength:.12;
+ --grain-opacity:.06;
  --fx-front-rgb:61 252 143; --fx-back-rgb:25 120 70; --fx-edge-a-rgb:61 252 143; --fx-edge-b-rgb:198 255 77;
 }
 *{box-sizing:border-box}
@@ -1277,10 +1277,7 @@ body.spectrumApp :is(.sessionStart,.toast,.capReview,.agentDiscovery,.previewSta
 @media(prefers-reduced-motion:reduce){.pageSignalField{transition:none}body.spectrumApp .tbtn{transition:none}body.spectrumApp:after,body.spectrumApp .top:before,body.spectrumApp .spectrumPageHead:after,body.spectrumApp .top .tab.on:after,.themeOption,body.spectrumApp .spectrumPageHeadFrame:before,body.spectrumApp .spectrumPageHeadFrame:after,body.spectrumApp .spectrumPageHead h1{animation:none;transition:none}}
 /* spectrum-motion-v1: purposeful motion and material detail shared by every theme */
 html:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(--grain);background-size:180px 180px;opacity:var(--grain-opacity);mix-blend-mode:overlay}
-@property --spot{syntax:"<number>";inherits:false;initial-value:0}
-body.spectrumApp .card{--spot-x:50%;--spot-y:0;background:radial-gradient(420px circle at var(--spot-x) var(--spot-y),rgb(var(--signal-hi-rgb)/calc(var(--spot)*var(--spot-strength))),rgb(var(--flare-rgb)/calc(var(--spot)*var(--spot-strength)*.4)) 38%,transparent 66%),var(--spectrum-card)}
-body.spectrumApp .card:not(.currentSessionCard):not(.budgetConfig){transition:--spot var(--dur-ui) var(--ease-out),border-color .16s,box-shadow .16s}
-body.spectrumApp .card.isSpotlit{--spot:1}
+body.spectrumApp .card:not(.currentSessionCard):not(.budgetConfig){transition:border-color .16s,box-shadow .16s}
 body.spectrumApp :is(.tbtn,.seg button,.themeOption){transition:border-color .16s,background .16s,box-shadow .16s,color .16s,transform var(--dur-press) var(--ease-out)}
 body.spectrumApp :is(.tbtn,.seg button,.themeOption):active:not(:disabled){transform:scale(.97)}
 body.spectrumApp .top .tab:active{transform:scale(.98)}
@@ -7096,7 +7093,6 @@ const chartResizeObserver=new ResizeObserver(()=>{
 });
 Object.values(PIXEL_CHARTS).flat().forEach(id=>{const svg=$(id);if(svg)chartResizeObserver.observe(svg);});
 // spectrum-motion-v1: motion that explains a change, never on poll redraws or keyboard-only paths.
-const finePointerQuery=window.matchMedia('(hover: hover) and (pointer: fine)');
 const motionAllowed=()=>!pageSignalReducedMotionQuery.matches&&!document.hidden;
 const CHART_REVEAL_IDS=Object.values(PIXEL_CHARTS).flat();
 const chartsRevealedThisVisit=new Set();
@@ -7170,25 +7166,6 @@ const readoutObserver=new MutationObserver(records=>{
 });
 document.querySelectorAll(READOUT_SELECTOR).forEach(element=>readoutText.set(element,element.textContent));
 readoutObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
-let spotlitCard=null,spotlightFrame=0,spotlightEvent=null;
-function clearCardSpotlight(){spotlitCard?.classList.remove('isSpotlit');spotlitCard=null;}
-document.addEventListener('pointermove',event=>{
- if(!finePointerQuery.matches||pageSignalReducedMotionQuery.matches)return;
- spotlightEvent=event;
- if(spotlightFrame)return;
- spotlightFrame=requestAnimationFrame(()=>{
-  spotlightFrame=0;
-  const card=spotlightEvent.target.closest?.('body.spectrumApp .card')||null;
-  if(card!==spotlitCard){clearCardSpotlight();spotlitCard=card;card?.classList.add('isSpotlit');}
-  if(!card)return;
-  const box=card.getBoundingClientRect();
-  card.style.setProperty('--spot-x',`${Math.round(spotlightEvent.clientX-box.left)}px`);
-  card.style.setProperty('--spot-y',`${Math.round(spotlightEvent.clientY-box.top)}px`);
- });
-},{passive:true});
-document.addEventListener('pointerout',event=>{if(!event.relatedTarget)clearCardSpotlight();});
-window.addEventListener('scroll',clearCardSpotlight,{passive:true});
-pageSignalReducedMotionQuery.addEventListener?.('change',clearCardSpotlight);
 window.addEventListener('resize',()=>{
  clearTimeout(spendResizeTimer);
  spendResizeTimer=setTimeout(()=>{
