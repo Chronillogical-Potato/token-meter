@@ -135,13 +135,13 @@ That system now spans the whole dashboard. Every top-level route uses the same l
 
 Five dark themes share every component, layout, and token name; only token values differ. The choice is a browser display preference (`localStorage` `tm_theme`), applied before first paint by the `theme-boot` script in `<head>`, and changed from Settings → Appearance (`#settings-appearance`) or the ⌘K palette (`Theme · …`). Unknown or missing values fall back to Classic. Appearance is the first Settings section. Other tabs follow a change through the `storage` event.
 
-| Theme | Character | Signal → mid → hi | Aura | Corners | Texture | Header ring | Glow |
-|---|---|---|---|---|---|---|---|
-| **Classic** (default) | The original cyan instrument field | `#00bceb` → `#1ba0e1` → `#7fdbf2` | `#c7a7ff` violet | 8/12px | 44px grid | cyan-to-violet arc, 20s | .8 |
-| **Nebula** | Ultraviolet glass with ion-cyan highlights | `#9d8bff` → `#c77dff` → `#7ef3ff` | `#ff7ad9` magenta | 10/14px | sparse star dust | full iridescent ring, 16s | 1 |
-| **Monolith** | Graphite and platinum, sharp and quiet | `#e4e7ee` → `#a7aebd` → `#fff` | `#a9b8ff` periwinkle | 4/6px | 6px dot matrix | single radar sweep, 7s | .3 |
-| **Voltage** | Volt yellow on carbon with cyan sparks | `#f5e63d` → `#ffd23f` → `#fff27d` | `#2ee6ff` cyan | 2/3px | CRT scanlines | hard yellow and cyan arcs, 5s | .85 |
-| **Phosphor** | Terminal green with falling-code rain | `#3dfc8f` → `#19d97a` → `#b8ffd2` | `#c6ff4d` lime | 4/6px | 14px column rules | green comet, 9s | .9 |
+| Theme | Character | Signal → mid → hi | Aura | Flare | Corners | Texture | Header ring | Glow |
+|---|---|---|---|---|---|---|---|---|
+| **Classic** (default) | The original cyan instrument field | `#00bceb` → `#1ba0e1` → `#7fdbf2` | `#c7a7ff` violet | `#6d7bff` indigo | 8/12px | 44px grid | cyan, ice, indigo, violet arc, 20s | .8 |
+| **Nebula** | Ultraviolet glass with ion-cyan and mint highlights | `#9d8bff` → `#c77dff` → `#7ef3ff` | `#ff7ad9` magenta | `#64ffda` aqua-mint | 10/14px | sparse star dust | full iridescent ring, 16s | 1 |
+| **Monolith** | Graphite and platinum with one vermilion tip | `#e4e7ee` → `#a7aebd` → `#fff` | `#a9b8ff` periwinkle | `#ff6a3d` vermilion | 4/6px | 6px dot matrix | single radar sweep with a vermilion tip, 7s | .3 |
+| **Voltage** | Volt yellow on carbon with cyan and magenta sparks | `#f5e63d` → `#ffd23f` → `#fff27d` | `#2ee6ff` cyan | `#ff3df2` magenta | 2/3px | CRT scanlines | three hard CMY arcs, 5s | .85 |
+| **Phosphor** | Terminal green with falling-code rain | `#3dfc8f` → `#19d97a` → `#b8ffd2` | `#c6ff4d` lime | `#4dd2ff` ice blue | 4/6px | 14px column rules | green comet with an ice head, 9s | .9 |
 
 **Randomize daily** (`tm_theme=random`, last in the picker and ⌘K) resolves to one theme per local calendar day in the `theme-boot` script (`window.tokenMeterTheme.resolve`), so it applies before first paint, never repeats the previous day's theme, and an open page re-checks every minute to roll over at midnight. Phosphor's signal sits close to the semantic good green; good states keep their own token and label.
 
@@ -160,6 +160,7 @@ The palette is one Token Meter system per theme. Signal-to-signal-hi is the comm
 - **Signal mid:** The middle of active-control and data gradients.
 - **Signal hi:** The luminous readout and gradient endpoint used in shared headers, active controls, route titles, and the Sessions context horizon.
 - **Aura:** A restrained atmospheric accent used inside spectrum gradients and the foil hairline, never as a dominant action color.
+- **Flare:** Each theme's third, contrasting accent (`--flare`). Decorative only: header ring, foil hairline, one page-atmosphere glow, the card spotlight tail, and the theme swatch. Never a data series, state, or provider color.
 
 ### Tertiary
 
@@ -175,6 +176,16 @@ The palette is one Token Meter system per theme. Signal-to-signal-hi is the comm
 **The Shared Spectrum Rule.** Page atmosphere, headers, cards, controls, active states, and focus treatments come from the shared spectrum tokens. Routes must not fork these primitives or add per-route atmosphere variables. A theme changes token values, never rules.
 
 **The Signature Rule.** These treatments carry the futuristic identity and stay shared: the iridescent `--spectrum-foil` hairline on the rail and route headers; the rotating conic `--ring` around each route header (`.spectrumPageHeadFrame` pseudo-elements, animated through the registered `--ring-angle` property at `--ring-speed`, with a blurred glow copy scaled by `--glow`); the `--spectrum-glow` halo plus one-shot ion sheen on the active navigation item; and the shimmering signal-hi gradient route title with its `--title-glow`. Themes vary them only through those tokens. Ambient motion (atmosphere drift, foil drift, ring, title shimmer, sheen) stops under `prefers-reduced-motion`.
+
+**The Purposeful Motion Rule.** Motion explains a change or confirms an action, following the open-slide `review-animations` standards. Tokens: `--ease-out` (entering, pressing), `--ease-in-out` (on-screen movement), `--dur-press` 160ms, `--dur-ui` 240ms, `--dur-enter` 320ms, `--dur-data` 480ms. The shared behaviors are:
+- **Readouts count to their new value.** When a `.metric` value, a Session KPI, the budget spend, or the Efficiency headline changes by at least 1%, it counts from the old value to the new one, at most once per readout every 10s, so the size of a real change is visible without live ticks animating constantly. Only same-format numbers (optional `$`, `<`, `≈`, or `~` prefix) on persistent elements count. A placeholder such as `—` switches instantly, so unavailable evidence never shows a counted-up zero. Readouts inside `aria-live`, hidden readouts, and rebuilt markup update instantly.
+- **Charts reveal left to right** (a `clip-path` sweep) once when the active route changes, never on poll, resize, or same-route redraws.
+- **Views stagger in** (45ms steps, at most 6) the first time each route opens in a page session.
+- **Theme picks grow from the pointer.** Choosing a theme with the pointer reveals it as a circle from the pressed option. Keyboard and ⌘K picks keep the plain crossfade.
+- **Presses scale** to `.97` (rail items `.98`) on `:active`.
+- **Cards carry a pointer spotlight** (`--spot-strength` per theme), only for a fine hover pointer; it clears on scroll. Card hover border and shadow ease over 160ms.
+
+Under `prefers-reduced-motion`, the count-up, sweep, stagger, reveal, press scale, and spotlight are all removed, and values change instantly. A static film-grain layer (`--grain`, `--grain-opacity` per theme) adds material without motion.
 
 **The Color Dosage Rule.** Signal, signal-hi, aura, and restrained orange may own large atmospheric regions, but working cards stay quieter so selected controls, evidence, and semantic states remain the first things a user reads.
 

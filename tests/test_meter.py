@@ -19827,6 +19827,38 @@ class DashboardThemeTests(unittest.TestCase):
         for token in ("--fx-front-rgb", "--fx-back-rgb", "--fx-edge-a-rgb", "--fx-edge-b-rgb"):
             self.assertIn(f'"{token}"', effects)
 
+    def motion_source(self, start, end):
+        return self.page[self.page.index(start):self.page.index(end)]
+
+    def test_readouts_count_only_meaningful_numeric_changes(self):
+        source = self.motion_source("const READOUT_PATTERN=", "// Readouts count toward")
+        script = (
+            "let clock=0;const performance={now:()=>clock};const frames=[];const requestAnimationFrame=cb=>frames.push(cb);"
+            "const cssVar=()=>'480ms';" + source +
+            "const el={textContent:''};const ran=(a,b)=>{frames.length=0;tweenReadout(el,a,b);return frames.length>0;};"
+            "const out={placeholder:ran('—','$4.20'),word:ran('Sonnet 3.7','Sonnet 4.5'),suffix:ran('12K','3M'),"
+            "tiny:ran('$100.00','$100.40'),real:ran('$100.00','$140.00')};clock=2000;out.quiet=ran('$140.00','$200.00');"
+            "clock=20000;out.later=ran('$140.00','$200.00');"
+            "const other={textContent:''};frames.length=0;tweenReadout(other,'$1,000','$2,000');clock=50000;frames.shift()(clock);out.final=other.textContent;"
+            "console.log(JSON.stringify(out));"
+        )
+        result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(result, {"placeholder": False, "word": False, "suffix": False, "tiny": False, "real": True,
+                                  "quiet": False, "later": True, "final": "$2,000"})
+
+    def test_chart_reveal_runs_once_per_route_change(self):
+        source = self.motion_source("const chartsRevealedThisVisit=", "const READOUT_SELECTOR=")
+        script = (
+            "let animations=0;const svg={id:'iochart',childElementCount:3,getClientRects:()=>[1],animate(){animations++;}};"
+            "const $=()=>svg;const motionAllowed=()=>true;const cssVar=()=>'ease';const CHART_REVEAL_IDS=['iochart'];"
+            "class MutationObserver{observe(){}}" + source +
+            "const session={dataset:{entered:'1'},children:[]},spend={dataset:{entered:'1'},children:[]};"
+            "playRouteMotion(session);playRouteMotion(session);revealChart(svg);playRouteMotion(spend);playRouteMotion(session);"
+            "console.log(animations);"
+        )
+        result = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout.strip()
+        self.assertEqual(result, "3")
+
 
 if __name__ == "__main__":
     unittest.main()
