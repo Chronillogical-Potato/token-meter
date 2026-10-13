@@ -19905,6 +19905,12 @@ class DashboardThemeTests(unittest.TestCase):
         self.assertEqual(result, {"placeholder": False, "word": False, "suffix": False, "tiny": False, "real": True,
                                   "quiet": False, "later": True, "final": "$2,000"})
 
+    def test_no_glow_follows_the_cursor(self):
+        # A highlight moving behind text under the pointer made cards hard to read, so cards stay still.
+        self.assertNotIn("isSpotlit", self.page)
+        self.assertNotIn("--spot", self.page)
+        self.assertNotIn("spotlight", self.page.lower().replace("spotlights", ""))
+
     def test_chart_reveal_runs_once_per_route_change(self):
         source = self.motion_source("const chartsRevealedThisVisit=", "const READOUT_SELECTOR=")
         script = (
