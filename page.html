@@ -2630,7 +2630,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
      <label class="filterControl logSearchControl"><span>Search</span><input class=searchbox id=g-search type=search placeholder="Title, project, or model"></label>
      <label class=filterControl><span>App</span><select class=filterSelect id=g-app aria-label="App filter"><option value="">All apps</option></select></label>
      <label class=filterControl><span>Projects</span><select class=filterSelect id=g-project aria-label="Projects filter"><option value="">All projects</option></select></label>
-     <label class=filterControl><span>Time range</span><select class=filterSelect id=g-time aria-label="Time range filter"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7d>7 days</option><option value=30d>30 days</option><option value=90d>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
+     <label class=filterControl><span>Time range</span><select class=filterSelect id=g-time aria-label="Time range filter"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7d>7 days</option><option value=30d selected>30 days</option><option value=90d>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
      <div class=logsToolbarRow>
      <div class="filterControl filterSort filterChildren"><span>Subagent runs</span><div class="seg sortseg" id=g-children aria-label="Subagent run visibility">
       <button type=button aria-pressed=true data-gchildren=hide class=on title="Hide subagent runs as rows. Their spend is still counted in totals and shown under each parent session.">Under parent</button>
@@ -2681,7 +2681,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <label class="filterControl logSearchControl"><span>Search</span><input class=searchbox id=subagent-filter-search type=search placeholder="Role, nickname, model, or project"></label>
       <label class=filterControl><span>App</span><select class=filterSelect id=subagent-filter-app><option value="">All apps</option></select></label>
       <label class=filterControl><span>Project</span><select class=filterSelect id=subagent-filter-project><option value="">All projects</option></select></label>
-      <label class=filterControl><span>Time range</span><select class=filterSelect id=subagent-filter-time><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7d>7 days</option><option value=30d>30 days</option><option value=90d>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
+      <label class=filterControl><span>Time range</span><select class=filterSelect id=subagent-filter-time><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7d>7 days</option><option value=30d selected>30 days</option><option value=90d>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
       <button class=subagentFilterMore id=subagent-filter-more type=button aria-expanded=false aria-controls=subagent-filter-advanced>More filters <span id=subagent-filter-more-count></span></button>
      </div>
      <div class=subagentFilterAdvanced id=subagent-filter-advanced hidden>
@@ -2827,7 +2827,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	    <div class=spectrumPageHeadCopy><h1>Spend</h1><p class=spectrumPageSubtitle>Estimated agent spend over time.</p></div>
 	   </div>
 	   <div class=spectrumPageActions><div class=spendRangeControls>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=s-range aria-label="Spend history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option><option value=custom>Custom</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=s-range aria-label="Spend history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30 selected>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option><option value=custom>Custom</option></select></label>
 	    <div class=spendCustom id=s-custom hidden><label><span>From</span><input id=s-from type=date></label><label><span>To</span><input id=s-to type=date></label><span id=s-range-error role=status aria-live=polite></span></div>
 	   </div></div>
 	  </div>
@@ -2943,7 +2943,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   <div class=spectrumPageActions><div class=modelControls>
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=e-project aria-label="Efficiency project filter"><option value="">All projects</option></select></label>
 	    <div class=filterControl><span>Models</span><details class=modelPicker id=e-model-picker><summary aria-label="Choose models for efficiency"><span id=e-model-summary>All models</span></summary><div class=modelPickerMenu id=e-model-options role=group aria-label="Models for efficiency"></div></details></div>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=e-range aria-label="Efficiency history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>7 days</option><option value=30>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=e-range aria-label="Efficiency history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30 selected>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option></select></label>
 	   </div></div>
 	  </div>
 	  <div class=efficiencyHero aria-label="Mechanical efficiency">
@@ -2967,7 +2967,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	   </div>
 	   <div class=spectrumPageActions><div class="modelControls deliveryControls">
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=d-project aria-label="Git project filter"><option value="">All projects</option></select></label>
-	    <label class=filterControl><span>History</span><select class=filterSelect id=d-range aria-label="Git history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7 selected>7 days</option><option value=30>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option></select></label>
+	    <label class=filterControl><span>History</span><select class=filterSelect id=d-range aria-label="Git history range"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30 selected>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option></select></label>
 	   </div></div>
 	  </div>
 	  <section class="card deliveryOverview" aria-label="Git overview">
@@ -3220,7 +3220,8 @@ const TOKENOMICS_SEARCH_URL='https://www.google.com/search?q=site%3Asplunk.com+t
 const DELIVERY_RANGES=['today','yesterday','7','30','90','month','last_month'];
 const TIME_FILTER_WINDOWS=['today','yesterday','7d','30d','90d','month','last_month','all'];
 const TIME_FILTER_LABELS={today:'Today',yesterday:'Yesterday','7d':'7 days','30d':'30 days','90d':'90 days',month:'Month','last_month':'Last month'};
-function normalizeTimeFilterWindow(value){return value==='24h'?'today':TIME_FILTER_WINDOWS.includes(value)?value:'all';}
+const DEFAULT_TIME_FILTER_WINDOW='30d';
+function normalizeTimeFilterWindow(value){return value==='24h'?'today':TIME_FILTER_WINDOWS.includes(value)?value:DEFAULT_TIME_FILTER_WINDOW;}
 function timeFilterBounds(window,nowMs=Date.now()){
  const now=new Date(nowMs),stamp=(month,day)=>new Date(now.getFullYear(),month,day).getTime()/1000;
  if(window==='today')return {start:stamp(now.getMonth(),now.getDate()),end:0};
@@ -3231,8 +3232,8 @@ function timeFilterBounds(window,nowMs=Date.now()){
  return {start:seconds?nowMs/1000-seconds:0,end:0};
 }
 const DELIVERY_EVIDENCE_FILTERS=['all','comparable','spend_only','git_only','unavailable'];
-let deliveryRange=localStorage.getItem('tm_delivery_range')||'7';
-if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='7';localStorage.setItem('tm_delivery_range',deliveryRange);}
+let deliveryRange=localStorage.getItem('tm_delivery_range')||'30';
+if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='30';localStorage.setItem('tm_delivery_range',deliveryRange);}
 let deliveryProject=localStorage.getItem('tm_delivery_project')||'';
 let deliveryPayload=null,deliveryRequest=0,deliverySelectedDay='',deliveryLastLoadedAt=0;
 let deliverySort={key:'covered_cost',direction:'desc'};
@@ -5069,7 +5070,7 @@ if(['claude_code','claude_desktop'].includes(globalApp)){
  localStorage.setItem('tm_global_app',globalApp);
 }
 let globalProject=localStorage.getItem('tm_global_project')||'';
-let globalTime=localStorage.getItem('tm_global_time')||'all';
+let globalTime=localStorage.getItem('tm_global_time')||DEFAULT_TIME_FILTER_WINDOW;
 let globalShowChildren=localStorage.getItem('tm_global_children')==='show';
 let allSessionInventory=null,allSessionInventoryAt=0,allSessionsRequest=null,renderedAllSessions=new Map(),renderedAllSessionActions={},forceAllSessionRowRefresh=false;
 let childSessionMap=new Map();
@@ -5090,7 +5091,7 @@ let subagentFilters={
  model:localStorage.getItem('tm_subagent_filter_model')||'',
  status:localStorage.getItem('tm_subagent_filter_status')||'all',
  signal:localStorage.getItem('tm_subagent_filter_signal')||'all',
- window:localStorage.getItem('tm_subagent_filter_time')||'all',
+ window:localStorage.getItem('tm_subagent_filter_time')||DEFAULT_TIME_FILTER_WINDOW,
  sort:localStorage.getItem('tm_subagent_filter_sort')||'recent',
 };
 if(subagentFilters.sort==='elapsed'){
@@ -5198,7 +5199,7 @@ globalProject=migrateStoredProjectFilters('tm_global_project');
 modelProject=migrateStoredProjectFilters('tm_model_project');
 modelFilters=loadModelFilters(modelProject);
 if(!['recent','cost','tokens','executions','wait'].includes(globalSort)) globalSort='recent';
-if(globalTime!==normalizeTimeFilterWindow(globalTime)){globalTime=normalizeTimeFilterWindow(globalTime);if(globalTime==='all')localStorage.removeItem('tm_global_time');else localStorage.setItem('tm_global_time',globalTime);}
+if(globalTime!==normalizeTimeFilterWindow(globalTime)){globalTime=normalizeTimeFilterWindow(globalTime);if(globalTime===DEFAULT_TIME_FILTER_WINDOW)localStorage.removeItem('tm_global_time');else localStorage.setItem('tm_global_time',globalTime);}
 if(!MODEL_RANGES.includes(modelRange)){modelRange='30';localStorage.setItem('tm_model_range',modelRange);}
 if(!['speed','wait','avg_input','avg_output'].includes(modelTrendMetric))modelTrendMetric='speed';
 $('m-range').value=modelRange;
@@ -5340,7 +5341,7 @@ $('g-search').value=globalSearch;
 $('g-time').value=globalTime;
 paintGlobalChildren();
 function paintGlobalFilters(){
- const disabled=!(globalSearch.trim()||globalApp||globalProject||globalTime!=='all');
+ const disabled=!(globalSearch.trim()||globalApp||globalProject||globalTime!==DEFAULT_TIME_FILTER_WINDOW);
  if($('g-clear').disabled!==disabled)$('g-clear').disabled=disabled;
 }
 $('g-search').addEventListener('input',e=>{ globalSearch=e.target.value; localStorage.setItem('tm_global_search',globalSearch); paintGlobalFilters(); if(LATEST) renderAllSessions(LATEST.xsession); });
@@ -5348,8 +5349,8 @@ $('g-app').addEventListener('change',e=>{ globalApp=e.target.value; localStorage
 $('g-project').addEventListener('change',e=>{ globalProject=e.target.value; localStorage.setItem('tm_global_project',globalProject); paintGlobalFilters(); if(LATEST) renderAllSessions(LATEST.xsession); });
 $('g-time').addEventListener('change',e=>{ globalTime=e.target.value; localStorage.setItem('tm_global_time',globalTime); paintGlobalFilters(); if(LATEST) renderAllSessions(LATEST.xsession); });
 $('g-clear').onclick=()=>{
- globalSearch='';globalApp='';globalProject='';globalTime='all';
- $('g-search').value='';$('g-app').value='';$('g-project').value='';$('g-time').value='all';
+ globalSearch='';globalApp='';globalProject='';globalTime=DEFAULT_TIME_FILTER_WINDOW;
+ $('g-search').value='';$('g-app').value='';$('g-project').value='';$('g-time').value=DEFAULT_TIME_FILTER_WINDOW;
  ['tm_global_search','tm_global_app','tm_global_project','tm_global_time'].forEach(key=>localStorage.removeItem(key));
  paintGlobalFilters();
  if(LATEST)renderAllSessions(LATEST.xsession);
@@ -5360,7 +5361,7 @@ $('g-active-filters').onclick=event=>{
  if(key==='search'){globalSearch='';$('g-search').value='';localStorage.removeItem('tm_global_search');}
  if(key==='app'){globalApp='';$('g-app').value='';localStorage.removeItem('tm_global_app');}
  if(key==='project'){globalProject='';$('g-project').value='';localStorage.removeItem('tm_global_project');}
- if(key==='time'){globalTime='all';$('g-time').value='all';localStorage.removeItem('tm_global_time');}
+ if(key==='time'){globalTime=DEFAULT_TIME_FILTER_WINDOW;$('g-time').value=DEFAULT_TIME_FILTER_WINDOW;localStorage.removeItem('tm_global_time');}
  paintGlobalFilters();
  if(LATEST)renderAllSessions(LATEST.xsession);
 };
@@ -6833,11 +6834,11 @@ function spendScatterRows(rows,metric){
   return active!==null&&active>0&&value!==null&&value>=0;
  });
 }
-function normalizeSpendRangeChoice(value){return ['today','yesterday','7','30','90','month','last_month','all','custom'].includes(value)?value:'7';}
+function normalizeSpendRangeChoice(value){return ['today','yesterday','7','30','90','month','last_month','all','custom'].includes(value)?value:'30';}
 // spend-range-logic-end
 const SPEND_RANGE_KEY='tm_spend_range_v1';
 const SPEND_SCATTER_METRIC_KEY='tm_spend_scatter_metric_v1';
-let spendRangeChoice='7',spendCustomFrom='',spendCustomTo='',spendFocusDay='',spendInspectDay='',spendCurrentRows=[],spendCurrentWindow=null,spendCurrentSource=[],spendResizeTimer=0,spendLogsRequestKey='',spendLogsRenderedRange='',spendLogsRequestSeq=0,spendInsightPayload=null,spendInsightRenderKey='',spendScatterMetric=localStorage.getItem(SPEND_SCATTER_METRIC_KEY)==='input'?'input':'cost';
+let spendRangeChoice='30',spendCustomFrom='',spendCustomTo='',spendFocusDay='',spendInspectDay='',spendCurrentRows=[],spendCurrentWindow=null,spendCurrentSource=[],spendResizeTimer=0,spendLogsRequestKey='',spendLogsRenderedRange='',spendLogsRequestSeq=0,spendInsightPayload=null,spendInsightRenderKey='',spendScatterMetric=localStorage.getItem(SPEND_SCATTER_METRIC_KEY)==='input'?'input':'cost';
 try{
  const saved=JSON.parse(localStorage.getItem(SPEND_RANGE_KEY)||'{}');
  spendRangeChoice=normalizeSpendRangeChoice(saved.range);
@@ -7059,7 +7060,7 @@ function renderSpend(xs){
  const earliest=availableDays[0]||today;
  let window=spendRangeWindow(spendRangeChoice,spendCustomFrom,spendCustomTo,new Date(),earliest);
  const savedCustomInvalid=spendRangeChoice==='custom'&&(!window.valid||window.start<earliest||window.end>today);
- if(savedCustomInvalid){spendRangeChoice='7';window=spendRangeWindow('7');persistSpendRange();}
+ if(savedCustomInvalid){spendRangeChoice='30';window=spendRangeWindow('30');persistSpendRange();}
  spendCurrentSource=source;spendCurrentWindow=window;spendCurrentRows=spendCalendarRows(source,window);
  $('s-range').value=spendRangeChoice;
  $('s-custom').hidden=spendRangeChoice!=='custom';
@@ -7099,7 +7100,7 @@ $('s-range').onchange=event=>{
  const range=normalizeSpendRangeChoice(event.target.value);
  $('s-range-error').textContent='';['s-from','s-to'].forEach(id=>$(id).setAttribute('aria-invalid','false'));
  if(range==='custom'){
-  const fallback=spendCurrentWindow?.valid?spendCurrentWindow:spendRangeWindow('7');
+  const fallback=spendCurrentWindow?.valid?spendCurrentWindow:spendRangeWindow('30');
   if(!spendCustomFrom)spendCustomFrom=fallback.start;if(!spendCustomTo)spendCustomTo=fallback.end;
  }
  spendRangeChoice=range;persistSpendRange();if(LATEST)renderSpend(LATEST.xsession);
@@ -7685,7 +7686,7 @@ $('d-day-next').addEventListener('click',()=>selectAdjacentDeliveryDay(1));
 $('d-day-close').addEventListener('click',dismissGitChartInspector);
 $('d-chart-hits').addEventListener('pointerleave',event=>{if(event.pointerType!=='touch')hideDeliveryChartTip();});
 $('d-project').addEventListener('change',event=>{deliveryProject=event.target.value;deliverySelectedDay='';deliveryEvidenceFilter='all';localStorage.setItem('tm_delivery_project',deliveryProject);loadDelivery();});
-$('d-range').addEventListener('change',event=>{deliveryRange=DELIVERY_RANGES.includes(event.target.value)?event.target.value:'7';deliverySelectedDay='';localStorage.setItem('tm_delivery_range',deliveryRange);loadDelivery();});
+$('d-range').addEventListener('change',event=>{deliveryRange=DELIVERY_RANGES.includes(event.target.value)?event.target.value:'30';deliverySelectedDay='';localStorage.setItem('tm_delivery_range',deliveryRange);loadDelivery();});
 $('d-project-table').querySelector('thead').addEventListener('click',event=>{
  const button=event.target.closest('[data-delivery-sort]');if(!button)return;
  const key=button.dataset.deliverySort;deliverySort=deliverySort.key===key?{key,direction:deliverySort.direction==='asc'?'desc':'asc'}:{key,direction:key==='project'?'asc':'desc'};renderDeliveryTable(deliveryPayload?.project_rows||[]);
@@ -7728,8 +7729,8 @@ function saveActiveEfficiencyFilters(){
 }
 let efficiencyProject=migrateStoredProjectFilters('tm_efficiency_project');
 let efficiencyFilters=loadEfficiencyFilters(efficiencyProject);
-let efficiencyRange=localStorage.getItem('tm_efficiency_range')||'7';
-if(!EFFICIENCY_RANGES.includes(efficiencyRange))efficiencyRange='7';
+let efficiencyRange=localStorage.getItem('tm_efficiency_range')||'30';
+if(!EFFICIENCY_RANGES.includes(efficiencyRange))efficiencyRange='30';
 let efficiencySort={key:'cost',direction:'desc'};
 let activeEfficiencyStats=null,activeEfficiencyScope='',activeEfficiencyGeneration=0;
 let efficiencyProjectRequest=0,efficiencyProjectLoadingKey='';
@@ -8078,7 +8079,7 @@ function rerenderActiveEfficiency(){
  else renderActiveEfficiency();
 }
 $('e-range').value=efficiencyRange;
-$('e-range').onchange=event=>{efficiencyRange=EFFICIENCY_RANGES.includes(event.target.value)?event.target.value:'7';localStorage.setItem('tm_efficiency_range',efficiencyRange);if(LATEST)renderActiveEfficiency();};
+$('e-range').onchange=event=>{efficiencyRange=EFFICIENCY_RANGES.includes(event.target.value)?event.target.value:'30';localStorage.setItem('tm_efficiency_range',efficiencyRange);if(LATEST)renderActiveEfficiency();};
 $('e-project').addEventListener('change',event=>{efficiencyProject=event.target.value;efficiencyFilters=loadEfficiencyFilters(efficiencyProject);if(efficiencyProject)localStorage.setItem('tm_efficiency_project',efficiencyProject);else localStorage.removeItem('tm_efficiency_project');efficiencyProjectRequest++;efficiencyProjectLoadingKey='';renderActiveEfficiency();});
 $('e-model-options').addEventListener('change',event=>{const input=event.target.closest('input[data-efficiency-model-choice]');if(!input)return;if(input.dataset.efficiencyModelChoice==='all')efficiencyFilters=[];else if(input.checked)efficiencyFilters=[...new Set([...efficiencyFilters,input.value])];else efficiencyFilters=efficiencyFilters.filter(id=>id!==input.value);saveActiveEfficiencyFilters();rerenderActiveEfficiency();});
 $('e-model-picker').addEventListener('keydown',event=>{if(event.key==='Escape')$('e-model-picker').removeAttribute('open');});
@@ -8826,7 +8827,7 @@ function subagentActiveFilterItems(filters){
  if(filters.kind)items.push({key:'kind',label:'Kind',value:filters.kind});
  if(filters.runtime)items.push({key:'runtime',label:'App',value:appFilterLabel({provider:filters.runtime})});
  if(filters.project)items.push({key:'project',label:'Project',value:projectFilterLabel(filters.project)});
- if(filters.window!=='all')items.push({key:'window',label:'Time',value:TIME_FILTER_LABELS[filters.window]||filters.window});
+ if(filters.window!==DEFAULT_TIME_FILTER_WINDOW)items.push({key:'window',label:'Time',value:TIME_FILTER_LABELS[filters.window]||filters.window});
  if(filters.model)items.push({key:'model',label:'Model',value:filters.model});
  if(filters.status!=='all')items.push({key:'status',label:'Status',value:filters.status});
  if(filters.signal!=='all')items.push({key:'signal',label:'Signal',value:filters.signal==='attention'?'Cost/retry signal':String(filters.signal).replaceAll('_',' ')});
@@ -9276,7 +9277,7 @@ const subagentFilterBindings={
  'subagent-filter-sort':['sort','tm_subagent_filter_sort'],
 };
 const subagentFilterStorage={query:'tm_subagent_filter_search',role:'tm_subagent_filter_role',kind:'tm_subagent_filter_kind',runtime:'tm_subagent_filter_app',project:'tm_subagent_filter_project',model:'tm_subagent_filter_model',status:'tm_subagent_filter_status',signal:'tm_subagent_filter_signal',window:'tm_subagent_filter_time',sort:'tm_subagent_filter_sort'};
-const subagentFilterDefaults={query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'};
+const subagentFilterDefaults={query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:DEFAULT_TIME_FILTER_WINDOW,sort:'recent'};
 function persistSubagentFilter(key){
  const storage=subagentFilterStorage[key],value=subagentFilters[key],fallback=subagentFilterDefaults[key];
  if(!storage)return;
@@ -9459,7 +9460,7 @@ function renderAllSessions(xs){
   globalSearch.trim()&&['search',`Search: “${globalSearch.trim()}”`],
   globalApp&&['app',`App: ${appLabel}`],
   globalProject&&['project',`Project: ${projectFilterLabel(globalProject)}`],
-  globalTime!=='all'&&['time',timeLabels[globalTime]||globalTime],
+  globalTime!==DEFAULT_TIME_FILTER_WINDOW&&['time',timeLabels[globalTime]||globalTime],
  ].filter(Boolean);
  const hideActiveFilters=!activeFilters.length;
  if($('g-active-filters').hidden!==hideActiveFilters)$('g-active-filters').hidden=hideActiveFilters;

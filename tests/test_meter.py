@@ -6869,7 +6869,8 @@ function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0
 const appFilterGroup=s=>s.provider,projectFilterValue=p=>p||'';
 eval(['timeFilterBounds','agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','dateKeyAgo','calendarMonthWindow','monthToDateWindow','modelRangeWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
 eval(page.slice(page.indexOf('function allSessionsView('),page.indexOf('function allSessionsCountText(')));
-const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const DEFAULT_TIME_FILTER_WINDOW='30d';
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:DEFAULT_TIME_FILTER_WINDOW,sort:'recent'}};
 const now=new Date(2026,9,5,12).getTime(),at=(...parts)=>new Date(...parts).getTime()/1000;
 const bounds=timeFilterBounds('last_month',now);
 const stamps={{current:at(2026,9,1,0,0,1),lastStart:at(2026,8,1),lastEnd:at(2026,8,30,23,59,59),prior:at(2026,7,31,23,59,59)}};
@@ -6894,7 +6895,7 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(payload["rolling"], 0)
         self.assertEqual(self.page.count(
             "<option value=today>Today</option><option value=yesterday>Yesterday</option>"
-            "<option value=7d>7 days</option><option value=30d>30 days</option>"
+            "<option value=7d>7 days</option><option value=30d selected>30 days</option>"
             "<option value=90d>90 days</option><option value=month>Month</option>"
             "<option value=last_month>Last month</option><option value=all>All history</option></select>"
         ), 2)
@@ -6910,7 +6911,7 @@ const appFilterGroup=s=>s.provider,projectFilterValue=p=>p||'';
 eval(page.slice(page.indexOf('const TIME_FILTER_WINDOWS='),page.indexOf('const DELIVERY_EVIDENCE_FILTERS=')).replace(/^const /gm,'var '));
 eval(['agentIdentityPresentation','filterSubagentInventory','childRootId','localDateKey','dateKeyAgo','calendarMonthWindow','monthToDateWindow','modelRangeWindow','subagentRoleKey','subagentRoleDayRows','normalizedSubagentNavigationState'].map(extract).join('\\n'));
 eval(page.slice(page.indexOf('function allSessionsView('),page.indexOf('function allSessionsCountText(')));
-const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:DEFAULT_TIME_FILTER_WINDOW,sort:'recent'}};
 const now=new Date(2026,9,5,12).getTime(),at=(...parts)=>new Date(...parts).getTime()/1000;
 const stamps={{today:at(2026,9,5,0,0,1),yesterdayStart:at(2026,9,4),yesterdayEnd:at(2026,9,4,23,59,59),monthStart:at(2026,9,1),lastMonth:at(2026,8,30,23,59,59)}};
 const inventory=Object.entries(stamps).map(([id,last])=>({{id,root_session_id:'root',runtime:'codex',label:id,activity_state:'complete',last_activity_at:last,attention:[]}}));
@@ -6944,7 +6945,7 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(result["month"]["agents"], ["monthStart", "today", "yesterdayEnd", "yesterdayStart"])
         self.assertEqual(result["month"]["roleDays"], ["2026-10-01", "2026-10-04", "2026-10-05"])
         self.assertEqual(payload["migrated"], "today")
-        self.assertEqual(payload["invalid"], "all")
+        self.assertEqual(payload["invalid"], "30d")
         self.assertEqual(payload["restored"], "today")
         self.assertEqual(payload["restoredMonth"], "month")
         self.assertEqual(payload["labels"]["month"], "Month")
@@ -7069,10 +7070,11 @@ function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0
 const stored=new Map([['tm_subagent_filter_sort','elapsed']]),writes=[];
 const localStorage={{getItem:key=>stored.get(key)??null,setItem:(key,value)=>{{stored.set(key,String(value));writes.push([key,String(value)]);}}}};
 let subagentFilters;
+const DEFAULT_TIME_FILTER_WINDOW='30d';
 const initStart=page.indexOf('let subagentFilters={{');
 const initEnd=page.indexOf('const SUBAGENT_PAGE_SIZE',initStart);
 eval(page.slice(initStart,initEnd).replace('let subagentFilters=','subagentFilters='));
-const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:'all',sort:'recent'}};
+const subagentFilterDefaults={{query:'',role:'',kind:'',runtime:'',project:'',model:'',status:'all',signal:'all',window:DEFAULT_TIME_FILTER_WINDOW,sort:'recent'}};
 eval(extract('normalizedSubagentNavigationState'));
 eval(extract('subagentActiveFilterItems'));
 const restored=normalizedSubagentNavigationState('sessions',{{sort:'elapsed'}});
@@ -8720,7 +8722,7 @@ console.log(JSON.stringify({
         self.assertIn('id=e-reasoning-change', self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_efficiency_charts_smooth_daily_segments_and_default_to_seven_days(self):
+    def test_efficiency_charts_smooth_daily_segments_and_default_to_thirty_days(self):
         match = re.search(
             r"function efficiencyChartSmoothPath\(.*?\n\}", self.page, re.DOTALL,
         )
@@ -8743,9 +8745,11 @@ console.log(JSON.stringify({
             "smooth": "M0.0 50.0 C3.3 43.3 6.7 36.7 10.0 30.0 C13.3 23.3 16.7 16.7 20.0 10.0",
             "pair": "M0.0 50.0 L10.0 30.0",
         })
-        self.assertIn("let efficiencyRange=localStorage.getItem('tm_efficiency_range')||'7';", self.page)
-        self.assertIn("if(!EFFICIENCY_RANGES.includes(efficiencyRange))efficiencyRange='7';", self.page)
-        self.assertIn('<option value=7 selected>7 days</option>', self.page)
+        self.assertIn("let efficiencyRange=localStorage.getItem('tm_efficiency_range')||'30';", self.page)
+        self.assertIn("if(!EFFICIENCY_RANGES.includes(efficiencyRange))efficiencyRange='30';", self.page)
+        efficiency_range = self.page.split('id=e-range aria-label="Efficiency history range">', 1)[1].split("</select>", 1)[0]
+        self.assertIn('<option value=30 selected>30 days</option>', efficiency_range)
+        self.assertNotIn('<option value=7 selected>', efficiency_range)
         self.assertIn(
             "renderTrendDelta('e-reasoning-change',reasoningDelta,'down',!comparison);",
             self.page,
@@ -9724,7 +9728,8 @@ console.log(JSON.stringify(groups.map(group => colors.get(group.key))));
             "const MODEL_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
             "const EFFICIENCY_RANGES=['today','yesterday','7','30','90','month','last_month','all'];",
             "const DELIVERY_RANGES=['today','yesterday','7','30','90','month','last_month'];",
-            "if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='7';localStorage.setItem('tm_delivery_range',deliveryRange);}",
+            "let deliveryRange=localStorage.getItem('tm_delivery_range')||'30';",
+            "if(!DELIVERY_RANGES.includes(deliveryRange)){deliveryRange='30';localStorage.setItem('tm_delivery_range',deliveryRange);}",
             "if(!MODEL_RANGES.includes(modelRange))",
             "function modelRangeWindow(range,now=new Date())",
             "if(range==='today'||range==='yesterday')",
@@ -10313,7 +10318,7 @@ console.log(JSON.stringify({
             "// spend-range-logic-start",
             "const SPEND_RUNTIME_COLORS={claude:'var(--provider-claude)',codex:'var(--provider-codex)',cursor:'var(--provider-cursor)',opencode:'var(--provider-opencode)',kiro:'var(--provider-kiro)',unknown:'var(--provider-other)'};",
             "function spendRangeWindow(range,from='',to='',now=new Date(),earliest='')",
-            "<select class=filterSelect id=s-range aria-label=\"Spend history range\"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option><option value=custom>Custom</option></select>",
+            "<select class=filterSelect id=s-range aria-label=\"Spend history range\"><option value=today>Today</option><option value=yesterday>Yesterday</option><option value=7>7 days</option><option value=30 selected>30 days</option><option value=90>90 days</option><option value=month>Month</option><option value=last_month>Last month</option><option value=all>All history</option><option value=custom>Custom</option></select>",
             "$('s-range').value=spendRangeChoice;",
             "$('s-range').onchange=event=>{",
             "function normalizeSpendRangeChoice(value)",
@@ -10383,7 +10388,7 @@ console.log(JSON.stringify({
         })
         self.assertEqual(
             payload["savedRanges"],
-            ["today", "yesterday", "7", "30", "90", "month", "last_month", "all", "custom", "7"],
+            ["today", "yesterday", "7", "30", "90", "month", "last_month", "all", "custom", "30"],
         )
         self.assertEqual(payload["yesterday"], {
             "valid": True, "start": "2026-08-11", "end": "2026-08-11",
@@ -10935,7 +10940,10 @@ console.log(JSON.stringify({
         self.assertIn("tm_global_time", self.page)
         self.assertIn("renderAllSessionStats(view.statsRows)", self.page)
         self.assertIn("session.model_stats", self.page)
-        self.assertIn("globalSearch='';globalApp='';globalProject='';globalTime='all'", self.page)
+        self.assertIn("let globalTime=localStorage.getItem('tm_global_time')||DEFAULT_TIME_FILTER_WINDOW;", self.page)
+        self.assertIn("globalSearch='';globalApp='';globalProject='';globalTime=DEFAULT_TIME_FILTER_WINDOW", self.page)
+        self.assertIn("if(key==='time'){globalTime=DEFAULT_TIME_FILTER_WINDOW;", self.page)
+        self.assertIn("globalTime!==DEFAULT_TIME_FILTER_WINDOW&&['time',", self.page)
         self.assertIn("['tm_global_search','tm_global_app','tm_global_project','tm_global_time']", self.page)
         self.assertIn("fetch('/logs',{cache:'no-store'})", self.page)
         self.assertIn("allSessionInventory?mergeAllSessionInventory(allSessionInventory,xs.sessions)", self.page)

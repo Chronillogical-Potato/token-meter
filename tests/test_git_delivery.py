@@ -1511,6 +1511,8 @@ class GitDashboardContractTests(unittest.TestCase):
         )
         git_range = git_page.split('id=d-range aria-label="Git history range">', 1)[1].split("</select>", 1)[0]
         self.assertNotIn("<option value=all>", git_range)
+        self.assertIn("<option value=30 selected>30 days</option>", git_range)
+        self.assertNotIn("<option value=7 selected>", git_range)
         self.assertIn(
             "<option value=90>90 days</option><option value=month>Month</option>"
             "<option value=last_month>Last month</option></select>",
