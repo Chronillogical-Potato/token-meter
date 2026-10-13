@@ -7094,6 +7094,51 @@ process.stdout.write(JSON.stringify({{saved:subagentFilters.sort,stored:stored.g
         })
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_subagent_time_filter_defaults_to_thirty_days_and_labels_all_history(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(page.slice(page.indexOf('const TIME_FILTER_WINDOWS='),page.indexOf('function normalizeTimeFilterWindow(')).replace(/^const /gm,'var '));
+const initStart=page.indexOf('let subagentFilters={{'),initEnd=page.indexOf('const SUBAGENT_PAGE_SIZE',initStart);
+const defaultsLine=page.slice(page.indexOf('const subagentFilterDefaults='),page.indexOf('function persistSubagentFilter(')).replace(/^const /,'var ');
+const persistSource=extract('persistSubagentFilter'),chipsSource=extract('subagentActiveFilterItems');
+function load(entries){{
+ const stored=new Map(entries);
+ const localStorage={{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,String(value)),removeItem:key=>stored.delete(key)}};
+ let subagentFilters;
+ eval(page.slice(initStart,initEnd).replace('let subagentFilters=','subagentFilters='));
+ eval(defaultsLine);
+ const subagentFilterStorage={{window:'tm_subagent_filter_time'}};
+ eval(persistSource);
+ const loaded=subagentFilters.window;
+ subagentFilters.window='all';persistSubagentFilter('window');const keptAll=stored.get('tm_subagent_filter_time')??null;
+ subagentFilters.window='30d';persistSubagentFilter('window');const atDefault=stored.get('tm_subagent_filter_time')??null;
+ return {{loaded,keptAll,atDefault,defaults:subagentFilterDefaults}};
+}}
+const fresh=load([]),bogus=load([['tm_subagent_filter_time','bogus']]),saved=load([['tm_subagent_filter_time','all']]);
+const subagentFilterDefaults=fresh.defaults;
+const appFilterLabel=row=>row.provider,projectFilterLabel=value=>value;
+eval(chipsSource);
+const chip=window=>subagentActiveFilterItems({{...subagentFilterDefaults,window}}).find(item=>item.key==='window')||null;
+process.stdout.write(JSON.stringify({{
+ fresh:fresh.loaded,bogus:bogus.loaded,saved:saved.loaded,keptAll:fresh.keptAll,atDefault:fresh.atDefault,
+ defaultChip:chip('30d'),allChip:chip('all'),sevenChip:chip('7d'),
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        self.assertEqual(payload["fresh"], "30d")
+        self.assertEqual(payload["bogus"], "30d")
+        self.assertEqual(payload["saved"], "all")
+        self.assertEqual(payload["keptAll"], "all")
+        self.assertIsNone(payload["atDefault"])
+        self.assertIsNone(payload["defaultChip"])
+        self.assertEqual(payload["allChip"], {"key": "window", "label": "Time", "value": "All history"})
+        self.assertEqual(payload["sevenChip"], {"key": "window", "label": "Time", "value": "7 days"})
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_subagent_summary_tags_toggle_incomplete_and_attention_filters(self):
         script = f"""
 const fs=require('fs');

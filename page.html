@@ -3219,7 +3219,7 @@ const $=id=>document.getElementById(id);
 const TOKENOMICS_SEARCH_URL='https://www.google.com/search?q=site%3Asplunk.com+tokenomics';
 const DELIVERY_RANGES=['today','yesterday','7','30','90','month','last_month'];
 const TIME_FILTER_WINDOWS=['today','yesterday','7d','30d','90d','month','last_month','all'];
-const TIME_FILTER_LABELS={today:'Today',yesterday:'Yesterday','7d':'7 days','30d':'30 days','90d':'90 days',month:'Month','last_month':'Last month'};
+const TIME_FILTER_LABELS={today:'Today',yesterday:'Yesterday','7d':'7 days','30d':'30 days','90d':'90 days',month:'Month','last_month':'Last month',all:'All history'};
 const DEFAULT_TIME_FILTER_WINDOW='30d';
 function normalizeTimeFilterWindow(value){return value==='24h'?'today':TIME_FILTER_WINDOWS.includes(value)?value:DEFAULT_TIME_FILTER_WINDOW;}
 function timeFilterBounds(window,nowMs=Date.now()){
@@ -5101,6 +5101,10 @@ if(subagentFilters.sort==='elapsed'){
 if(subagentFilters.window==='24h'){
  subagentFilters.window='today';
  localStorage.setItem('tm_subagent_filter_time','today');
+}
+if(!TIME_FILTER_WINDOWS.includes(subagentFilters.window)){
+ subagentFilters.window=DEFAULT_TIME_FILTER_WINDOW;
+ localStorage.removeItem('tm_subagent_filter_time');
 }
 const SUBAGENT_PAGE_SIZE=50;
 let subagentVisibleLimit=SUBAGENT_PAGE_SIZE,selectedSubagentId='',expandedSubagentRoot=null;
