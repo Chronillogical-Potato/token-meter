@@ -7070,7 +7070,7 @@ function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0
 const stored=new Map([['tm_subagent_filter_sort','elapsed']]),writes=[];
 const localStorage={{getItem:key=>stored.get(key)??null,setItem:(key,value)=>{{stored.set(key,String(value));writes.push([key,String(value)]);}}}};
 let subagentFilters;
-const DEFAULT_TIME_FILTER_WINDOW='30d';
+eval(page.slice(page.indexOf('const TIME_FILTER_WINDOWS='),page.indexOf('function normalizeTimeFilterWindow(')).replace(/^const /gm,'var '));
 const initStart=page.indexOf('let subagentFilters={{');
 const initEnd=page.indexOf('const SUBAGENT_PAGE_SIZE',initStart);
 eval(page.slice(initStart,initEnd).replace('let subagentFilters=','subagentFilters='));
