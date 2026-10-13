@@ -221,7 +221,7 @@ The global dashboard pairs a centered content field of up to 1320px with a stick
 
 Sessions opens with one layered spectrum field header, then a two-column instrument grid with a 12px gap. On detail, the working chart and decision instrument form an asymmetric two-column layout that tightens at the 1024-pixel laptop target. Supporting KPIs form an attached ledger with three columns at that laptop target.
 
-The rail keeps frequent monitoring routes, including Efficiency, near the top and anchors Learn and Settings as a separated bottom group. The brand and navigation remain the rail's only persistent content; configuration and connection-status controls do not live there. At laptop widths the rail contracts to icon-only navigation while retaining accessible names and shortcut hints. The supported desktop shell does not convert into mobile top navigation.
+The rail keeps frequent monitoring routes, including Efficiency, near the top and anchors Learn and Settings as a separated bottom group. The brand and navigation remain the rail's only persistent content; configuration and connection-status controls do not live there. At laptop widths the rail contracts to icon-only navigation while retaining accessible names and hover labels. The supported desktop shell does not convert into mobile top navigation.
 
 ### Named Rules
 

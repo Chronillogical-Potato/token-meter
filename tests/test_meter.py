@@ -10751,11 +10751,10 @@ console.log(JSON.stringify({
         self.assertEqual(positions, sorted(positions))
         for marker in (
             "id=command-palette", "id=command-search",
-            "const NAV_COMMANDS=[", "directKey:'Digit1'", "directKey:'Digit9'",
+            "const NAV_COMMANDS=[",
             "key==='k'", "event.key==='Escape'", "event.key==='ArrowDown'",
             "event.key==='Enter'",
             "class=tabs aria-label=\"Primary navigation\"",
-            "button.dataset.label} · Shortcut: Option+${shortcut}",
             "button.setAttribute('aria-current','page')",
         ):
             self.assertIn(marker, self.page)
@@ -10777,29 +10776,22 @@ console.log(JSON.stringify({
         self.assertNotIn("id=command-alt-key", self.page)
         self.assertNotIn("class=commandShortcut", self.page)
 
-    def test_top_level_shortcuts_follow_visible_rail_order(self):
-        expected = [
-            ("session", "1"), ("daily", "2"), ("models", "3"),
-            ("subagents", "4"), ("efficiency", "5"), ("git", "6"),
-            ("learn", "7"), ("capabilities", "8"), ("settings", "9"),
-        ]
-        for tab_id, digit in expected:
+    def test_top_level_pages_have_no_numbered_shortcuts(self):
+        for tab_id in (
+            "session", "daily", "models", "subagents", "efficiency",
+            "git", "learn", "capabilities", "settings",
+        ):
             match = re.search(rf'<button[^>]+id=tab-{tab_id}[^>]*>.*?</button>', self.page)
             self.assertIsNotNone(match, tab_id)
             button = match.group(0)
-            self.assertIn(f'aria-keyshortcuts="Alt+{digit}"', button)
-            self.assertIn(f'Shortcut: Option+{digit}', button)
-            self.assertIn(f'<span class=tabShortcut aria-hidden=true>{digit}</span>', button)
-        commands = self.page.split("const NAV_COMMANDS=[", 1)[1].split("];", 1)[0]
-        for command_id, digit in (
-            ("sessions", "1"), ("spend", "2"), ("models", "3"),
-            ("subagents", "4"), ("efficiency", "5"), ("git", "6"),
-            ("learn", "7"), ("capabilities", "8"), ("settings", "9"),
-        ):
-            self.assertRegex(
-                commands,
-                rf"id:'{command_id}'.*?directKey:'Digit{digit}'.*?glyph:'{digit}'",
-            )
+            self.assertNotIn("aria-keyshortcuts", button)
+            self.assertNotIn("Shortcut", button)
+            self.assertNotIn("tabShortcut", button)
+        for marker in ("directKey", "tabShortcut", "Shortcut: Option+", "event.code"):
+            self.assertNotIn(marker, self.page)
+        perf = Path(__file__).resolve().parents[1].joinpath("performance.html").read_text(encoding="utf-8")
+        for marker in ("aria-keyshortcuts", "data-shortcut-digit", "railShortcut", "Shortcut: Option+", "event.code"):
+            self.assertNotIn(marker, perf)
 
     def test_tools_is_in_the_secondary_rail_above_settings(self):
         secondary = self.page.split("<div class=navSecondary>", 1)[1].split(
@@ -10877,13 +10869,12 @@ console.log(JSON.stringify({
             "complete?'Replay onboarding':'Resume onboarding'",
             "action:'onboarding'",
             "command.action==='onboarding'",
-            "function runNavigationCommand(command,{source='palette'}={})",
+            "function runNavigationCommand(command)",
             "function openOnboardingLesson(id)",
             "function finishOnboardingLesson()",
             "if(id)commitOnboardingSteps([id]);",
             "setTimeout(()=>openOnboardingLesson(step.id),0)",
             "if(lessonDialog.open&&event.key==='Escape')",
-            "runNavigationCommand(command,{source:'shortcut'})",
         ):
             self.assertIn(marker, self.page)
         resume = self.page.split("function resumeOrRestartOnboarding(){", 1)[1].split(
@@ -12066,8 +12057,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
 
     def test_collapsed_navigation_keeps_session_scope_labels_visible(self):
         self.assertIn(
-            "body.spectrumApp .top .brandCopy,body.spectrumApp .top .tabLabel,"
-            "body.spectrumApp .top .tabShortcut{display:none}",
+            "body.spectrumApp .top .brandCopy,body.spectrumApp .top .tabLabel{display:none}",
             self.page,
         )
         self.assertIn("body.spectrumApp .top .brandCopy{display:grid}", self.page)
@@ -12483,7 +12473,7 @@ console.log(JSON.stringify({history,html,firstRunHtml}));
         for marker in (
             "$('tab-session').onclick=()=>{window.scrollTo(0,0);openCurrentSessions();};",
             "label:'Sessions'",
-            "action:'sessions',directKey:'Digit1'",
+            "action:'sessions'}",
             "setHashRoute('sessions',{replace:true,apply:false})",
             "const CURRENT_SESSION_ORDER_KEY='tm_current_session_order_v1'",
             "const CURRENT_SESSION_ORDER_MIGRATION_KEY='tm_current_session_newest_first_v1'",

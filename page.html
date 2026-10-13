@@ -81,7 +81,7 @@
  --bg2:#0d1117; --bg2-rgb:13 17 23; --panel:#111820; --panel-rgb:17 24 32; --panel2:#17212b; --panel2-rgb:23 33 43; --panel3:#202b36;
  --line-rgb:177 228 241;
  --fg:#f6f8fb; --soft:#cbd9e4; --soft-rgb:203 217 228; --dim:#a8b3c1; --faint:#8693a6;
- --on-accent:#062430; --on-accent-rgb:6 36 48; --on-accent-deep:#061018;
+ --on-accent:#062430; --on-accent-deep:#061018;
  --reason:#4ec6ee; --output:#7fdbf2; --retrieval:#19b3e6; --toolcall:#0aa4d4;
  --c-input:#00bceb; --c-output:#64d8ff; --c-cost:#c7a7ff; --c-cost-rgb:199 167 255;
  --chart-axis:#636d7b; --chart-label:#a8b3c1;
@@ -104,7 +104,7 @@
  --bg2:#0c0a22; --bg2-rgb:12 10 34; --panel:#13102c; --panel-rgb:19 16 44; --panel2:#1b1739; --panel2-rgb:27 23 57; --panel3:#252046;
  --line-rgb:190 180 255;
  --fg:#f4f2ff; --soft:#d3cdf2; --soft-rgb:211 205 242; --dim:#afa9d4; --faint:#9089bd;
- --on-accent:#0d0726; --on-accent-rgb:13 7 38; --on-accent-deep:#07031a;
+ --on-accent:#0d0726; --on-accent-deep:#07031a;
  --reason:#8fd8ff; --output:#c9bcff; --retrieval:#6fb6ff; --toolcall:#8a7dff;
  --c-input:#7ef3ff; --c-output:#b6a6ff; --c-cost:#ff8ad8; --c-cost-rgb:255 138 216;
  --chart-axis:#6c6890; --chart-label:#afa9d4;
@@ -127,7 +127,7 @@
  --bg2:#0f0f11; --bg2-rgb:15 15 17; --panel:#151517; --panel-rgb:21 21 23; --panel2:#1c1c1f; --panel2-rgb:28 28 31; --panel3:#26262a;
  --line-rgb:232 234 240;
  --fg:#f5f5f7; --soft:#d5d6db; --soft-rgb:213 214 219; --dim:#abadb5; --faint:#909299;
- --on-accent:#0a0a0c; --on-accent-rgb:10 10 12; --on-accent-deep:#050506;
+ --on-accent:#0a0a0c; --on-accent-deep:#050506;
  --reason:#c3cad8; --output:#a9b8ff; --retrieval:#dfe3ec; --toolcall:#8e95a6;
  --c-input:#e4e7ee; --c-output:#a9b8ff; --c-cost:#c7a7ff; --c-cost-rgb:199 167 255;
  --chart-axis:#5f6068; --chart-label:#abadb5;
@@ -150,7 +150,7 @@
  --bg2:#100f0b; --bg2-rgb:16 15 11; --panel:#16150f; --panel-rgb:22 21 15; --panel2:#1e1c14; --panel2-rgb:30 28 20; --panel3:#28261b;
  --line-rgb:255 244 150;
  --fg:#f8f6ea; --soft:#ddd9c4; --soft-rgb:221 217 196; --dim:#b6b19a; --faint:#99947d;
- --on-accent:#141200; --on-accent-rgb:20 18 0; --on-accent-deep:#0a0900;
+ --on-accent:#141200; --on-accent-deep:#0a0900;
  --reason:#fff27d; --output:#2ee6ff; --retrieval:#ffe68a; --toolcall:#c8bb2a;
  --c-input:#f5e63d; --c-output:#2ee6ff; --c-cost:#ff6fd8; --c-cost-rgb:255 111 216;
  --chart-axis:#6c6956; --chart-label:#b6b19a;
@@ -173,7 +173,7 @@
  --bg2:#07100a; --bg2-rgb:7 16 10; --panel:#0b170f; --panel-rgb:11 23 15; --panel2:#102016; --panel2-rgb:16 32 22; --panel3:#172b1e;
  --line-rgb:140 255 190;
  --fg:#effff4; --soft:#c9e8d4; --soft-rgb:201 232 212; --dim:#a2c4ae; --faint:#86aa93;
- --on-accent:#021a0c; --on-accent-rgb:2 26 12; --on-accent-deep:#010d06;
+ --on-accent:#021a0c; --on-accent-deep:#010d06;
  --reason:#b8ffd2; --output:#c6ff4d; --retrieval:#7dffb6; --toolcall:#19d97a;
  --c-input:#3dfc8f; --c-output:#c6ff4d; --c-cost:#c7a7ff; --c-cost-rgb:199 167 255;
  --chart-axis:#4f6b59; --chart-label:#a2c4ae;
@@ -1229,14 +1229,12 @@ body.spectrumApp .top .tabs{display:flex;min-width:0;max-width:100%;overflow:vis
 body.spectrumApp .top .tabs::-webkit-scrollbar{display:none}
 .navPrimary,.navSecondary{display:flex;flex-direction:column;gap:4px}
 .navSecondary{margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
-body.spectrumApp .top .tab{display:grid;width:100%;min-height:42px;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;text-align:left}
+body.spectrumApp .top .tab{display:grid;width:100%;min-height:42px;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:10px;padding:8px 10px;text-align:left}
 .tabIcon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tabLabel{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.tabShortcut{color:var(--faint);font:var(--fw-bold) var(--fs-11)/1 var(--font-mono);font-variant-numeric:tabular-nums}
-body.spectrumApp .top .tab.on .tabShortcut{color:rgb(var(--on-accent-rgb)/.66)}
 body.spectrumApp .top>.spacer{display:none}
-@media(max-width:1180px){body.spectrumApp .wrap{--navigation-rail-width:68px;column-gap:16px;padding-right:18px;padding-left:18px}body.spectrumApp .top{padding:10px 8px}body.spectrumApp .top .brand{justify-content:center;padding-right:0;padding-left:0}.logo,.logo img{width:50px}body.spectrumApp .top .brandCopy,body.spectrumApp .top .tabLabel,body.spectrumApp .top .tabShortcut{display:none}body.spectrumApp .top .tab{display:grid;grid-template-columns:1fr;place-items:center;padding:8px}}
-@media(max-width:760px){body.spectrumApp .wrap{display:block;max-width:1320px;padding:12px 14px 64px}body.spectrumApp .wrap>:not(.top){min-width:0}body.spectrumApp .top{position:sticky;top:0;display:grid;height:auto;min-height:0;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;margin:0 0 14px;padding:8px 0 10px;border:0;border-bottom:1px solid var(--spectrum-border);border-radius:0;background:radial-gradient(ellipse 62% 90% at 5% 0,rgb(var(--signal-rgb)/.16),transparent 70%),linear-gradient(180deg,var(--bg),var(--bg-lift));box-shadow:0 10px 26px rgb(var(--shade-rgb)/.28)}body.spectrumApp .top:before{inset:auto 0 0}body.spectrumApp .top .brand{grid-column:1;grid-row:1;justify-content:flex-start;padding:0}.logo,.logo img{width:58px}body.spectrumApp .top .brandCopy{display:grid}body.spectrumApp .top .tabs{grid-column:1/-1;grid-row:2;min-width:0;width:100%;overflow-x:auto;flex:none;flex-direction:row;gap:3px;padding:8px 0 0;border-top:1px solid var(--line)}.navPrimary,.navSecondary{display:contents}body.spectrumApp .top .tab{display:flex;width:auto;min-height:38px;grid-template-columns:none;gap:6px;padding:8px 10px;white-space:nowrap}body.spectrumApp .top .tabLabel{display:inline}body.spectrumApp .top .tabShortcut{display:none}}
+@media(max-width:1180px){body.spectrumApp .wrap{--navigation-rail-width:68px;column-gap:16px;padding-right:18px;padding-left:18px}body.spectrumApp .top{padding:10px 8px}body.spectrumApp .top .brand{justify-content:center;padding-right:0;padding-left:0}.logo,.logo img{width:50px}body.spectrumApp .top .brandCopy,body.spectrumApp .top .tabLabel{display:none}body.spectrumApp .top .tab{display:grid;grid-template-columns:1fr;place-items:center;padding:8px}}
+@media(max-width:760px){body.spectrumApp .wrap{display:block;max-width:1320px;padding:12px 14px 64px}body.spectrumApp .wrap>:not(.top){min-width:0}body.spectrumApp .top{position:sticky;top:0;display:grid;height:auto;min-height:0;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;margin:0 0 14px;padding:8px 0 10px;border:0;border-bottom:1px solid var(--spectrum-border);border-radius:0;background:radial-gradient(ellipse 62% 90% at 5% 0,rgb(var(--signal-rgb)/.16),transparent 70%),linear-gradient(180deg,var(--bg),var(--bg-lift));box-shadow:0 10px 26px rgb(var(--shade-rgb)/.28)}body.spectrumApp .top:before{inset:auto 0 0}body.spectrumApp .top .brand{grid-column:1;grid-row:1;justify-content:flex-start;padding:0}.logo,.logo img{width:58px}body.spectrumApp .top .brandCopy{display:grid}body.spectrumApp .top .tabs{grid-column:1/-1;grid-row:2;min-width:0;width:100%;overflow-x:auto;flex:none;flex-direction:row;gap:3px;padding:8px 0 0;border-top:1px solid var(--line)}.navPrimary,.navSecondary{display:contents}body.spectrumApp .top .tab{display:flex;width:auto;min-height:38px;grid-template-columns:none;gap:6px;padding:8px 10px;white-space:nowrap}body.spectrumApp .top .tabLabel{display:inline}}
 @media(max-width:760px){#view-models{overflow-x:clip}}
 @media(max-width:520px){.brandName{font-size:var(--fs-14)}}
 body.spectrumApp .seg{border-color:var(--spectrum-border);background:var(--spectrum-control);box-shadow:inset 0 1px 0 rgb(var(--tint-rgb)/.055),0 6px 18px rgb(var(--shade-rgb)/.1)}
@@ -2398,19 +2396,19 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class=brand><div class=logo role=img aria-label=Splunk><img src="/assets/brand/logo-splunk-acc-rgb-w.png" alt=""></div><span class=brandCopy><span class=brandName>Token Meter</span></span></div>
 	  <nav class=tabs aria-label="Primary navigation">
 	   <div class=navPrimary>
-	   <button class="tab on" id=tab-session data-label=Sessions aria-label=Sessions aria-keyshortcuts="Alt+1" title="Sessions · Shortcut: Option+1"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Sessions</span><span class=tabShortcut aria-hidden=true>1</span></button>
-	   <button class=tab id=tab-daily data-label=Spend aria-label=Spend aria-keyshortcuts="Alt+2" title="Spend · Shortcut: Option+2"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 17h7"/></svg><span class=tabLabel>Spend</span><span class=tabShortcut aria-hidden=true>2</span></button>
-	   <button class=tab id=tab-models data-label=Models aria-label=Models aria-keyshortcuts="Alt+3" title="Models · Shortcut: Option+3"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 18l5-5 4 2 7-8"/><path d="M16 7h4v4M4 20h16"/></svg><span class=tabLabel>Models</span><span class=tabShortcut aria-hidden=true>3</span></button>
-	   <button class=tab id=tab-subagents data-label=Subagents aria-label=Subagents aria-keyshortcuts="Alt+4" title="Subagents · Shortcut: Option+4"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><circle cx="12" cy="7" r="3"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M12 10v3M6 15v-2h12v2"/></svg><span class=tabLabel>Subagents</span><span class=tabShortcut aria-hidden=true>4</span></button>
-	   <button class=tab id=tab-efficiency data-label=Efficiency aria-label=Efficiency aria-keyshortcuts="Alt+5" title="Efficiency · Shortcut: Option+5"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3 19h18"/></svg><span class=tabLabel>Efficiency</span><span class=tabShortcut aria-hidden=true>5</span></button>
-	   <button class=tab id=tab-git data-label=Git aria-label=Git aria-keyshortcuts="Alt+6" title="Git · Shortcut: Option+6"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5M4 20h16"/></svg><span class=tabLabel>Git</span><span class=tabShortcut aria-hidden=true>6</span></button>
+	   <button class="tab on" id=tab-session data-label=Sessions aria-label=Sessions title=Sessions><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 5v4M14 10v4M18 15v4"/></svg><span class=tabLabel>Sessions</span></button>
+	   <button class=tab id=tab-daily data-label=Spend aria-label=Spend title=Spend><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 17h7"/></svg><span class=tabLabel>Spend</span></button>
+	   <button class=tab id=tab-models data-label=Models aria-label=Models title=Models><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 18l5-5 4 2 7-8"/><path d="M16 7h4v4M4 20h16"/></svg><span class=tabLabel>Models</span></button>
+	   <button class=tab id=tab-subagents data-label=Subagents aria-label=Subagents title=Subagents><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><circle cx="12" cy="7" r="3"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M12 10v3M6 15v-2h12v2"/></svg><span class=tabLabel>Subagents</span></button>
+	   <button class=tab id=tab-efficiency data-label=Efficiency aria-label=Efficiency title=Efficiency><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3 19h18"/></svg><span class=tabLabel>Efficiency</span></button>
+	   <button class=tab id=tab-git data-label=Git aria-label=Git title=Git><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5M4 20h16"/></svg><span class=tabLabel>Git</span></button>
 	   <a class=tab id=tab-performance href=/performance data-label=Performance aria-label=Performance title=Performance><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 15v-3M12 15V9M16 15v-5M8 18h8"/></svg><span class=tabLabel>Performance</span></a>
 	   </div>
 	   <div class=navSecondary>
 	   <button class=tab id=tab-read data-label=Read aria-label="Read about Enterprise Tokenomics" title="Read about Enterprise Tokenomics · Opens a Splunk search in a new tab"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg><span class=tabLabel>Read</span></button>
-	   <button class=tab id=tab-learn data-label=Learn aria-label=Learn aria-keyshortcuts="Alt+7" title="Learn · Shortcut: Option+7"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"/></svg><span class=tabLabel>Learn</span><span class=tabShortcut aria-hidden=true>7</span></button>
-	   <button class=tab id=tab-capabilities data-label=Tools aria-label=Tools aria-keyshortcuts="Alt+8" title="Tools · Shortcut: Option+8"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 6a4 4 0 0 0-5 5L4 16l4 4 5-5a4 4 0 0 0 5-5l-3 3-3-3z"/></svg><span class=tabLabel>Tools</span><span class=tabShortcut aria-hidden=true>8</span></button>
-	   <button class=tab id=tab-settings data-label=Settings aria-label=Settings aria-keyshortcuts="Alt+9" title="Settings · Shortcut: Option+9"><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h10M18 7h2M4 17h3M11 17h9M14 4v6M7 14v6"/></svg><span class=tabLabel>Settings</span><span class=tabShortcut aria-hidden=true>9</span></button>
+	   <button class=tab id=tab-learn data-label=Learn aria-label=Learn title=Learn><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"/></svg><span class=tabLabel>Learn</span></button>
+	   <button class=tab id=tab-capabilities data-label=Tools aria-label=Tools title=Tools><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M14 6a4 4 0 0 0-5 5L4 16l4 4 5-5a4 4 0 0 0 5-5l-3 3-3-3z"/></svg><span class=tabLabel>Tools</span></button>
+	   <button class=tab id=tab-settings data-label=Settings aria-label=Settings title=Settings><svg class=tabIcon viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h10M18 7h2M4 17h3M11 17h9M14 4v6M7 14v6"/></svg><span class=tabLabel>Settings</span></button>
 	   </div>
 	  </nav>
   <div class=spacer></div>
@@ -3757,17 +3755,17 @@ window.addEventListener('storage',event=>{if(event.key===THEME_STORAGE_KEY)setTh
 setInterval(()=>{if(themePreference===THEME_RANDOM.id)setTheme(themePreference,{persist:false});},60000);
 
 const NAV_COMMANDS=[
- {id:'sessions',label:'Sessions',description:'Choose a recently active local session',section:'Navigate',action:'sessions',directKey:'Digit1',glyph:'1'},
+ {id:'sessions',label:'Sessions',description:'Choose a recently active local session',section:'Navigate',action:'sessions'},
  {id:'all-sessions',label:'All sessions',description:'Search, filter, and open recorded session history',aliases:'logs',section:'Navigate',route:'sessions-all',glyph:'All'},
  {id:'compare-sessions',label:'Compare sessions',description:'Put selected sessions side by side with insights',aliases:'diff same prompt runs',section:'Navigate',route:'sessions-compare',glyph:'A|B'},
- {id:'spend',label:'Spend',description:'Review spend across days and runtimes',section:'Navigate',route:'spend',directKey:'Digit2',glyph:'2'},
- {id:'models',label:'Models',description:'Compare model spend, speed, and cache efficiency',section:'Navigate',route:'models',directKey:'Digit3',glyph:'3'},
- {id:'subagents',label:'Subagents',description:'Track custom-agent spend and inspect child runs',section:'Navigate',route:'subagents',directKey:'Digit4',glyph:'4'},
- {id:'efficiency',label:'Efficiency',description:'Review token efficiency overall and by model runtime',section:'Navigate',route:'efficiency',directKey:'Digit5',glyph:'5'},
- {id:'git',label:'Git',description:'Compare locally observed pushed code with covered AI spend',section:'Navigate',route:'git',directKey:'Digit6',glyph:'6'},
- {id:'learn',label:'Learn',description:'Open the recommended review workflow',section:'Navigate',route:'learn',directKey:'Digit7',glyph:'7'},
- {id:'capabilities',label:'Tools',description:'Inspect tools, MCPs, and optional skill packs',section:'Navigate',route:'capabilities',directKey:'Digit8',glyph:'8'},
- {id:'settings',label:'Settings',description:'Configure pricing, analytics, connections, and updates',section:'Navigate',route:'settings',directKey:'Digit9',glyph:'9'},
+ {id:'spend',label:'Spend',description:'Review spend across days and runtimes',section:'Navigate',route:'spend'},
+ {id:'models',label:'Models',description:'Compare model spend, speed, and cache efficiency',section:'Navigate',route:'models'},
+ {id:'subagents',label:'Subagents',description:'Track custom-agent spend and inspect child runs',section:'Navigate',route:'subagents'},
+ {id:'efficiency',label:'Efficiency',description:'Review token efficiency overall and by model runtime',section:'Navigate',route:'efficiency'},
+ {id:'git',label:'Git',description:'Compare locally observed pushed code with covered AI spend',section:'Navigate',route:'git'},
+ {id:'learn',label:'Learn',description:'Open the recommended review workflow',section:'Navigate',route:'learn'},
+ {id:'capabilities',label:'Tools',description:'Inspect tools, MCPs, and optional skill packs',section:'Navigate',route:'capabilities'},
+ {id:'settings',label:'Settings',description:'Configure pricing, analytics, connections, and updates',section:'Navigate',route:'settings'},
  {id:'spend-budgets',label:'Spend · Monthly budget',description:'Set runtime budgets and track their monthly total',section:'Navigate',route:'spend-budgets',glyph:'$'},
  {id:'session-run',label:'Session · Run',description:'Review cost, context, and pace for the selected session',section:'Selected session',route:'summary',action:'selected-session',glyph:'R'},
  {id:'appearance',label:'Settings · Appearance',description:'Choose the dashboard theme',aliases:'theme colors look',section:'Appearance',route:'settings-appearance',glyph:'◐'},
@@ -3811,7 +3809,7 @@ function openCommandPalette(){
  return true;
 }
 function closeCommandPalette(){if($('command-palette').open)$('command-palette').close();}
-function runNavigationCommand(command,{source='palette'}={}){
+function runNavigationCommand(command){
  if(!command)return;
  closeCommandPalette();
  if(command.action==='onboarding'){resumeOrRestartOnboarding();return;}
@@ -3821,10 +3819,6 @@ function runNavigationCommand(command,{source='palette'}={}){
  if(command.latest)goToLatestSession();
  else openTopLevelRoute(command.route);
 }
-[...document.querySelectorAll('.top .tab[aria-keyshortcuts]')].forEach(button=>{
- const shortcut=button.getAttribute('aria-keyshortcuts')?.match(/Alt\+(\d+)/)?.[1];
- if(shortcut)button.title=`${button.dataset.label} · Shortcut: Option+${shortcut}`;
-});
 $('command-search').addEventListener('input',event=>renderCommandPalette(event.target.value));
 $('command-list').onclick=event=>{const item=event.target.closest('[data-command-index]');if(item)runNavigationCommand(visibleCommands[Number(item.dataset.commandIndex)]);};
 $('command-palette').addEventListener('click',event=>{if(event.target===$('command-palette'))closeCommandPalette();});
@@ -3851,12 +3845,6 @@ document.addEventListener('keydown',event=>{
   else if(event.key==='ArrowUp'){event.preventDefault();setCommandIndex(commandIndex-1);}
   else if(event.key==='Enter'&&!event.isComposing){event.preventDefault();runNavigationCommand(visibleCommands[commandIndex]);}
   return;
- }
- const target=event.target,editing=target instanceof HTMLElement&&(target.matches('input,textarea,select')||target.isContentEditable);
- if(editing)return;
- if(event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey){
-  const command=NAV_COMMANDS.find(item=>item.directKey===event.code);
-  if(command){event.preventDefault();runNavigationCommand(command,{source:'shortcut'});}
  }
 });
 
