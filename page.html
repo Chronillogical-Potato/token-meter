@@ -22,6 +22,8 @@
  --coord:var(--signal-mid); --c-cache-read:#66d990; --c-cache-write:#ffb457; --c-context:var(--fg); --c-deleted:#5c7d92;
  --chart-cost-fill:rgb(var(--c-cost-rgb)/.24); --chart-grid:rgb(var(--signal-rgb)/.16);
  --chart-tip:var(--bg-deep); --chart-tip-head:rgb(var(--signal-rgb)/.16); --chart-tip-line:rgb(var(--tint-rgb)/.42);
+ /* == Ordered (Bayer 4x4) dither masks: 50% coverage in 2px cells; color comes from the masked fill == */
+ --dither-50:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='2' height='2'/%3E%3Crect x='2' y='2' width='2' height='2'/%3E%3C/svg%3E");
  /* == Provider identity: one color per runtime for cards, Spend, badges, budgets, and model families == */
  --provider-claude:#e3825c; --provider-claude-rgb:227 130 92;
  --provider-codex:#6f9cff; --provider-codex-rgb:111 156 255;
@@ -87,8 +89,8 @@
  --page-texture:linear-gradient(rgb(var(--tint-rgb)/.03) 1px,transparent 1px),linear-gradient(90deg,rgb(var(--tint-rgb)/.022) 1px,transparent 1px);
  --page-texture-size:44px 44px;
  --radius-2xs:2px; --radius-xs:4px; --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
- --ring:var(--signal),var(--signal-hi) 20%,var(--flare) 38%,var(--aura) 52%,transparent 64% 86%,var(--signal);
- --ring-speed:20s;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.4) 25%,var(--signal-hi) 50%,rgb(var(--signal-rgb)/.4) 75%,var(--signal);
+ --ring-speed:60s;
  --title-glow:0 0 18px rgb(var(--signal-rgb)/.28);
  --grain-opacity:.05; --spot-strength:.11;
  --fx-front-rgb:53 202 238; --fx-back-rgb:103 74 180; --fx-edge-a-rgb:0 188 235; --fx-edge-b-rgb:77 139 214;
@@ -110,8 +112,8 @@
  --page-texture:radial-gradient(circle at 20% 30%,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1.6px),radial-gradient(circle at 70% 80%,rgb(var(--signal-hi-rgb)/.06) 0 1px,transparent 1.6px);
  --page-texture-size:97px 89px,61px 53px;
  --radius-2xs:2px; --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
- --ring:var(--signal),var(--aura) 20%,var(--signal-hi) 40%,var(--flare) 58%,var(--signal-mid) 78%,var(--signal);
- --ring-speed:16s;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.4) 25%,var(--signal-hi) 50%,rgb(var(--signal-rgb)/.4) 75%,var(--signal);
+ --ring-speed:48s;
  --title-glow:0 0 22px rgb(var(--signal-mid-rgb)/.42);
  --grain-opacity:.06; --spot-strength:.14;
  --fx-front-rgb:255 122 217; --fx-back-rgb:157 139 255; --fx-edge-a-rgb:199 125 255; --fx-edge-b-rgb:255 122 217;
@@ -133,8 +135,8 @@
  --page-texture:radial-gradient(circle,rgb(var(--tint-rgb)/.055) 0 .8px,transparent 1.2px);
  --page-texture-size:6px 6px;
  --radius-2xs:1px; --radius-xs:2px; --radius-sm:3px; --radius-md:4px; --radius-lg:6px;
- --ring:transparent 0 68%,rgb(var(--signal-hi-rgb)/.08) 76%,rgb(var(--signal-hi-rgb)/.9) 93%,var(--flare) 97%,transparent 100%;
- --ring-speed:7s;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.4) 25%,var(--signal-hi) 50%,rgb(var(--signal-rgb)/.4) 75%,var(--signal);
+ --ring-speed:24s;
  --title-glow:0 0 0 transparent;
  --grain-opacity:.07; --spot-strength:.08;
  --fx-front-rgb:244 245 248; --fx-back-rgb:169 184 255; --fx-edge-a-rgb:228 231 238; --fx-edge-b-rgb:167 174 189;
@@ -156,8 +158,8 @@
  --page-texture:repeating-linear-gradient(0deg,rgb(var(--tint-rgb)/.026) 0 1px,transparent 1px 3px);
  --page-texture-size:auto;
  --radius-2xs:0; --radius-xs:1px; --radius-sm:2px; --radius-md:2px; --radius-lg:3px;
- --ring:var(--signal) 0 10%,transparent 10% 33%,var(--flare) 33% 39%,transparent 39% 66%,var(--aura) 66% 72%,transparent 72% 100%;
- --ring-speed:5s;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.4) 25%,var(--signal-hi) 50%,rgb(var(--signal-rgb)/.4) 75%,var(--signal);
+ --ring-speed:18s;
  --title-glow:0 0 20px rgb(var(--signal-rgb)/.5);
  --grain-opacity:.05; --spot-strength:.12;
  --fx-front-rgb:245 230 61; --fx-back-rgb:46 230 255; --fx-edge-a-rgb:245 230 61; --fx-edge-b-rgb:46 230 255;
@@ -179,8 +181,8 @@
  --page-texture:repeating-linear-gradient(90deg,rgb(var(--signal-rgb)/.026) 0 1px,transparent 1px 14px);
  --page-texture-size:auto;
  --radius-2xs:1px; --radius-xs:2px; --radius-sm:4px; --radius-md:4px; --radius-lg:6px;
- --ring:transparent 0 58%,rgb(var(--signal-rgb)/.16) 76%,var(--signal) 92%,var(--signal-hi) 95%,var(--flare) 97.5%,transparent 100%;
- --ring-speed:9s;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.4) 25%,var(--signal-hi) 50%,rgb(var(--signal-rgb)/.4) 75%,var(--signal);
+ --ring-speed:30s;
  --title-glow:0 0 22px rgb(var(--signal-rgb)/.45);
  --grain-opacity:.06; --spot-strength:.12;
  --fx-front-rgb:61 252 143; --fx-back-rgb:25 120 70; --fx-edge-a-rgb:61 252 143; --fx-edge-b-rgb:198 255 77;
@@ -237,8 +239,8 @@ html{scrollbar-color:rgb(var(--signal-rgb)/.32) transparent}
 .sessionDesktopLink[hidden]{display:none}
 .currentSessionSlot{position:relative;display:flex;min-width:0}
 .currentSessionSlot>.currentSessionCard{flex:1 1 auto}
-.currentSessionSlot[data-desktop] .currentSessionCaps{padding-right:32px}
-.currentSessionDesktop{position:absolute;right:14px;bottom:11px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line2);border-radius:var(--radius-sm);background:rgb(var(--bg-rgb)/.62);color:var(--dim);transition:color .16s,border-color .16s,background .16s}
+.currentSessionSlot[data-desktop] .currentSessionTop{padding-right:36px}
+.currentSessionDesktop{position:absolute;top:14px;right:14px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line2);border-radius:var(--radius-sm);background:rgb(var(--bg-rgb)/.62);color:var(--dim);transition:color .16s,border-color .16s,background .16s}
 .currentSessionDesktop:hover{color:var(--fg);border-color:var(--line3);background:rgb(var(--tint-rgb)/.07)}
 .currentSessionDesktop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .currentSessionDesktop svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
@@ -562,7 +564,6 @@ select option:checked{background-color:var(--panel3)}
 .efficiencyHero{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .efficiencyHeadline{position:relative;min-height:184px;padding:14px 16px 12px;overflow:hidden}
 .efficiencyHeadline:after{content:"";position:absolute;right:-54px;bottom:-88px;width:210px;height:210px;border-radius:var(--radius-round);background:radial-gradient(circle,rgb(var(--signal-rgb)/.15),transparent 68%);pointer-events:none}
-.efficiencyHeadline.reasoning:after{background:radial-gradient(circle,rgb(var(--aura-rgb)/.17),transparent 68%)}
 .efficiencyEyebrow{color:var(--dim);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.06em;text-transform:uppercase}
 .efficiencyValueRow,.efficiencySupportValueRow{min-width:0}
 .efficiencyValueRow{margin-top:6px}
@@ -570,7 +571,6 @@ select option:checked{background-color:var(--panel3)}
 .efficiencyCoverage{position:relative;z-index:1;margin-top:4px;color:var(--faint);font-size:var(--fs-11)}
 .efficiencyChartWrap{position:relative;z-index:2;margin-top:8px}
 .efficiencyChart{display:block;width:100%;height:64px;margin:0;color:var(--signal-hi);overflow:visible;cursor:crosshair}
-.efficiencyHeadline.reasoning .efficiencyChart{color:var(--aura)}
 .efficiencyChartGrid{stroke:rgb(var(--tint-rgb)/.07);stroke-width:1}
 .efficiencyChartLine{fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
 .efficiencyChartArea{fill:currentColor;opacity:.08}
@@ -795,6 +795,16 @@ select option:checked{background-color:var(--panel3)}
 :where(.trendDelta[data-tone=improving]>strong){color:var(--good)}
 :where(.trendDelta[data-tone=degrading]>strong){color:var(--bad)}
 :where(.trendDelta[data-direction=""]>strong){color:var(--faint);font-family:var(--font-sans);font-size:var(--fs-12);font-weight:var(--fw-bold)}
+:where(.readoutScale){--scale-tone:var(--signal);position:relative;display:block;height:8px;margin-top:8px;border-radius:var(--radius-2xs);background:rgb(var(--tint-rgb)/.06)}
+:where(.readoutScale)[hidden]{display:none}
+:where(.readoutScale[data-tone=high]){--scale-tone:var(--warn)}
+:where(.readoutScale>.readoutScaleFill){position:absolute;inset:0 auto 0 0;width:var(--at,0%);border-radius:inherit;background:var(--scale-tone);-webkit-mask:var(--dither-50) 0 0/4px 4px;mask:var(--dither-50) 0 0/4px 4px;transition:width var(--dur-data) var(--ease-out)}
+:where(.readoutScale>.readoutScaleTypical){position:absolute;top:-3px;bottom:-3px;left:var(--typ,50%);width:2px;border-radius:var(--radius-2xs);background:var(--soft);transform:translateX(-50%)}
+:where(.readoutScale>.readoutScaleMark){position:absolute;top:-2px;bottom:-2px;left:var(--at,0%);width:4px;border-radius:var(--radius-2xs);background:var(--scale-tone);box-shadow:0 0 10px var(--scale-tone);transform:translateX(-50%);transition:left var(--dur-data) var(--ease-out)}
+:where(.readoutCaption){display:block;margin-top:6px;color:var(--soft);font-size:var(--fs-12);font-weight:var(--fw-medium);line-height:1.35}
+:where(.readoutCaption)[hidden]{display:none}
+:where(.readoutCaption)::before{content:"› ";color:var(--signal);font-family:var(--font-mono);font-weight:var(--fw-heavy)}
+@media(prefers-reduced-motion:reduce){:where(.readoutScale>i){transition:none}}
 .badge.codex{color:var(--provider-codex);border-color:rgb(var(--provider-codex-rgb)/.42);background:rgb(var(--provider-codex-rgb)/.08)}
 .badge.claude{color:var(--provider-claude);border-color:rgb(var(--provider-claude-rgb)/.42);background:rgb(var(--provider-claude-rgb)/.08)}
 .badge.cursor{color:var(--provider-cursor);border-color:rgb(var(--provider-cursor-rgb)/.44);background:rgb(var(--provider-cursor-rgb)/.08)}
@@ -953,14 +963,16 @@ select option:checked{background-color:var(--panel3)}
 .currentSessionIdentity{margin-top:18px;min-width:0}
 .currentSessionIdentity h3{margin:0;font-size:var(--fs-20);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .currentSessionIdentity p{margin:4px 0 0;color:var(--faint);font:var(--fs-11)/1.25 var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.currentSessionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.currentSessionMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
 .currentSessionMetric{min-width:0}
 .currentSessionMetric span{font-size:var(--fs-11)}
 .currentSessionMetric b{margin-top:6px;font-size:var(--fs-18);line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .currentSessionMetric b.mono{font-size:var(--fs-18);letter-spacing:-.015em}
-.currentSessionFoot{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:16px;color:var(--faint);font-size:var(--fs-11)}
 .currentSessionMove{display:inline-flex;align-items:center;gap:4px}
-.currentSessionCaps{margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.currentSessionCaps{display:block;margin-top:6px;overflow:hidden;color:var(--faint);font-size:var(--fs-11);text-overflow:ellipsis;white-space:nowrap}
+.currentSessionProject{flex:0 1 auto;color:var(--faint);font-family:var(--font-mono);font-size:var(--fs-11);font-weight:var(--fw-medium);letter-spacing:0}
+.currentSessionProject:before{content:"·";margin-right:8px}
+.currentSessionTopMeta{display:inline-flex;flex:0 0 auto;align-items:center;gap:12px;color:var(--faint);font-size:var(--fs-11)}
 .currentSessionMove b{color:var(--harness);font-size:var(--fs-13);letter-spacing:-2px}
 .currentSessionOrderStatus{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .currentSessionsEmpty{padding:32px 20px;text-align:center}
@@ -1169,7 +1181,6 @@ select option:checked{background-color:var(--panel3)}
 .currentSessionMetrics{gap:12px;margin-top:14px;padding-top:12px}
 .currentSessionMetric b{margin-top:4px;font-size:var(--fs-18)}
 .currentSessionMetric b.mono{font-size:var(--fs-18)}
-.currentSessionFoot{padding-top:12px}
 .currentSessionContextValue{display:flex;align-items:flex-end;gap:8px;min-width:0}
 .currentSessionContextValue b{flex:0 0 auto}
 .currentSessionContextUnavailable{display:block;min-width:0;margin:0 0 2px;color:var(--faint);font:var(--fw-bold) var(--fs-11)/1.1 var(--font-mono);letter-spacing:.02em;white-space:nowrap}
@@ -1196,7 +1207,7 @@ select option:checked{background-color:var(--panel3)}
 @media(max-width:520px){.budgetRuntimeHead{display:none}.budgetRuntime{grid-template-columns:minmax(0,1fr) minmax(100px,108px);grid-template-areas:"name input" "value input";padding:8px 0}.budgetRuntime:first-child{padding-top:8px}.budgetRuntimeValue{justify-items:start}.budgetRuntimeInput span{display:block}}
 @media(max-width:520px){.budgetSpendValue{font-size:var(--fs-readout-xl)}}
 @media(max-width:520px){.previewStartStrip{grid-template-columns:1fr;gap:4px}.previewTokenSlot .legend{gap:8px}}
-@media(max-width:700px){.currentSessionGrid{grid-template-columns:1fr;gap:8px}.currentSessionCard{min-height:184px;padding:14px 14px 12px}.currentSessionIdentity{margin-top:12px}.currentSessionIdentity h3{font-size:var(--fs-18)}.currentSessionMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px;padding-top:10px}.currentSessionMetric b,.currentSessionMetric b.mono{font-size:var(--fs-16);letter-spacing:-.025em}.currentSessionFoot{padding-top:10px}.currentSessionContextValue{gap:4px}.currentSessionContextSpark{min-width:24px;max-width:58px;height:17px}.currentSessionCard.dropBefore{box-shadow:inset 0 4px 0 var(--harness),var(--shadow)}.currentSessionCard.dropAfter{box-shadow:inset 0 -4px 0 var(--harness),var(--shadow)}}
+@media(max-width:700px){.currentSessionGrid{grid-template-columns:1fr;gap:8px}.currentSessionCard{min-height:184px;padding:14px 14px 12px}.currentSessionIdentity{margin-top:12px}.currentSessionIdentity h3{font-size:var(--fs-18)}.currentSessionMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px;padding-top:10px}.currentSessionMetric b,.currentSessionMetric b.mono{font-size:var(--fs-16);letter-spacing:-.025em}.currentSessionContextValue{gap:4px}.currentSessionContextSpark{min-width:24px;max-width:58px;height:17px}.currentSessionCard.dropBefore{box-shadow:inset 0 4px 0 var(--harness),var(--shadow)}.currentSessionCard.dropAfter{box-shadow:inset 0 -4px 0 var(--harness),var(--shadow)}}
 @media(max-width:700px){.currentSessionMetric b,.currentSessionMetric b.mono{font-size:var(--fs-18)}.currentSessionContextSpark{height:19px}}
 /* shared-spectrum-system-v1 */
 /* spectrum-professional-finish-v2 */
@@ -1329,7 +1340,7 @@ body.sessionRoute #view-session .currentSessionRuntimeFilters,body.sessionRoute 
 body.sessionRoute #view-session .currentSessionRuntimeFilters[hidden],body.sessionRoute #view-session .currentSessionActivityFilters[hidden]{display:none}
 body.sessionRoute #view-session .currentSessionRuntimeFilters button,body.sessionRoute #view-session .currentSessionActivityFilters button{min-height:30px;padding:6px 10px;white-space:nowrap}
 body.sessionRoute #view-session .currentSessionGrid{gap:12px}
-body.sessionRoute #view-session .currentSessionCard{isolation:isolate;min-height:226px;padding:18px 20px 16px;border-color:rgb(var(--signal-rgb)/.16);border-radius:var(--radius-md);background:radial-gradient(circle at 92% 8%,rgb(var(--signal-hi-rgb)/.1),transparent 28%),radial-gradient(circle at 8% 100%,rgb(var(--aura-rgb)/.07),transparent 34%),linear-gradient(145deg,rgb(var(--panel2-rgb)/.98),rgb(var(--bg2-rgb)/.99));box-shadow:var(--shadow-soft);transition:transform .18s cubic-bezier(.16,1,.3,1),border-color .18s,box-shadow .18s,opacity .18s}
+body.sessionRoute #view-session .currentSessionCard{isolation:isolate;min-height:0;padding:18px 20px 16px;border-color:rgb(var(--signal-rgb)/.16);border-radius:var(--radius-md);background:radial-gradient(circle at 92% 8%,rgb(var(--signal-hi-rgb)/.1),transparent 28%),radial-gradient(circle at 8% 100%,rgb(var(--aura-rgb)/.07),transparent 34%),linear-gradient(145deg,rgb(var(--panel2-rgb)/.98),rgb(var(--bg2-rgb)/.99));box-shadow:var(--shadow-soft);transition:transform .18s cubic-bezier(.16,1,.3,1),border-color .18s,box-shadow .18s,opacity .18s}
 body.sessionRoute #view-session .currentSessionCard:before{content:none}
 body.sessionRoute #view-session .currentSessionCard.activity-working{border-color:rgb(var(--signal-rgb)/.42);background:radial-gradient(circle at 88% 4%,rgb(var(--signal-rgb)/.18),transparent 34%),linear-gradient(135deg,rgb(var(--signal-deep-rgb)/.98),rgb(var(--bg-lift-rgb)/.99) 56%,rgb(var(--bg2-rgb)/.99))}
 body.sessionRoute #view-session .currentSessionCard.is-arriving{animation:currentSessionArrive .82s var(--spectrum-ease) both}
@@ -1339,12 +1350,17 @@ body.sessionRoute #view-session .currentSessionCard:focus-visible{outline:2px so
 body.sessionRoute #view-session .currentSessionIdentity{position:relative;z-index:1;margin-top:20px}
 body.sessionRoute #view-session .currentSessionIdentity h3{font-family:var(--font-display);font-size:var(--fs-22);font-stretch:91%;font-weight:var(--fw-semibold);letter-spacing:-.025em}
 body.sessionRoute #view-session .currentSessionIdentity p{margin-top:6px;color:var(--faint);font-size:var(--fs-11)}
-body.sessionRoute #view-session .currentSessionMetrics{grid-template-columns:1.02fr .9fr 1.18fr 1fr;gap:0;margin-top:24px;padding-top:18px;border-top:1px solid rgb(var(--signal-rgb)/.13)}
+body.sessionRoute #view-session .currentSessionMetrics{grid-template-columns:.9fr 1.2fr 1fr;gap:0;margin-top:14px;padding-top:14px;border-top:1px solid rgb(var(--signal-rgb)/.13)}
 body.sessionRoute #view-session .currentSessionMetric{padding:0 14px;border-left:1px solid rgb(var(--tint-rgb)/.08)}
 body.sessionRoute #view-session .currentSessionMetric:first-child{padding-left:0;border-left:0}
 body.sessionRoute #view-session .currentSessionMetric:last-child{padding-right:0}
 body.sessionRoute #view-session .currentSessionMetric span{color:var(--faint);font-size:var(--fs-11);letter-spacing:.04em}
 body.sessionRoute #view-session .currentSessionMetric b,body.sessionRoute #view-session .currentSessionMetric b.mono{margin-top:6px;color:var(--fg);font-size:var(--fs-readout-sm);font-weight:var(--fw-bold)}
+body.sessionRoute #view-session .currentSessionHero{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end;gap:8px 24px;margin-top:16px}
+body.sessionRoute #view-session .currentSessionHeroCompare{min-width:0;padding-bottom:4px}
+body.sessionRoute #view-session .currentSessionHeroLabel{display:block;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.04em;text-transform:uppercase}
+body.sessionRoute #view-session .currentSessionHeroValue{display:block;margin-top:4px;color:var(--fg);font-family:var(--font-sans);font-size:var(--fs-readout-lg);font-weight:var(--fw-bold);line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums;white-space:nowrap}
+body.sessionRoute #view-session .currentSessionHero .readoutScale{max-width:280px;margin-top:0}
 body.sessionRoute #view-session .currentSessionContextSpark{--context-tone:var(--session-signal);max-width:98px;height:24px}
 body.sessionRoute #view-session .currentSessionContextBaseline{stroke:rgb(var(--signal-rgb)/.12)}
 body.sessionRoute #view-session .currentSessionContextBar{fill:var(--session-signal);opacity:.52}
@@ -1425,7 +1441,6 @@ body.sessionRoute #view-session.sessionDetail .previewRunBudgetSlot .sessionBudg
 body.sessionRoute #view-session.sessionDetail .previewTokenSlot .bar{border-color:rgb(var(--signal-rgb)/.16);background:rgb(var(--bg-rgb)/.7)}
 body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:var(--session-signal-hi);text-shadow:none}
 @media(max-width:900px){body.sessionRoute #view-session .logsSummary .logKpis{grid-template-columns:repeat(3,minmax(0,1fr))}body.sessionRoute #view-session .logsSummary .logStat:nth-child(4){border-left:0}body.sessionRoute #view-session .logsSummary .logStat:nth-child(n+4){margin-top:8px;padding-top:12px;border-top:1px solid rgb(var(--tint-rgb)/.08)}}
-@media(max-width:1100px){body.sessionRoute #view-session .currentSessionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}body.sessionRoute #view-session .currentSessionMetric:nth-child(n+3){margin-top:12px;padding-top:12px;border-top:1px solid rgb(var(--signal-rgb)/.12)}body.sessionRoute #view-session .currentSessionMetric:nth-child(3){padding-left:0;border-left:0}body.sessionRoute #view-session .currentSessionMetric:nth-child(2){padding-right:0}body.sessionRoute #view-session .currentSessionMetric:nth-child(4){padding-right:0}}
 @media(max-width:700px){body.sessionRoute #view-session .currentSessionMetric{padding:0 8px}body.sessionRoute #view-session .currentSessionMetric b,body.sessionRoute #view-session .currentSessionMetric b.mono{font-size:var(--fs-18)}}
 @media(max-width:520px){body.sessionRoute #view-session .sessionFlowStatus{padding:4px 8px;font-size:var(--fs-11)}body.sessionRoute #view-session .currentDaySummary{grid-template-columns:1fr;gap:10px;padding:10px 12px}body.sessionRoute #view-session .currentDayReadouts{grid-template-columns:repeat(2,minmax(0,1fr))}body.sessionRoute #view-session .currentDayMetric{padding:0 10px}body.sessionRoute #view-session .currentDayMetric:nth-child(3){grid-column:1/-1;margin-top:8px;padding:8px 10px 0;border-top:1px solid rgb(var(--signal-rgb)/.12);border-left:0}body.sessionRoute #view-session .currentDayActions{display:grid;grid-template-columns:1fr}body.sessionRoute #view-session :is(.currentDayMonth,.currentDayLearn){width:100%}body.sessionRoute #view-session .currentSessionsHead{display:grid;grid-template-columns:minmax(0,1fr) auto}body.sessionRoute #view-session .currentSessionRuntimeFilters{width:100%;max-width:none}body.sessionRoute #view-session .currentSessionCard{min-height:224px;padding:16px 14px 12px}body.sessionRoute #view-session .currentSessionIdentity h3{display:-webkit-box;min-height:44px;overflow:hidden;font-size:var(--fs-20);line-height:1.16;white-space:normal;-webkit-box-orient:vertical;-webkit-line-clamp:2}body.sessionRoute #view-session .currentSessionMetrics{margin-top:16px}body.sessionRoute #view-session .currentSessionMetric{padding-right:10px}body.sessionRoute #view-session .currentSessionMetric b,body.sessionRoute #view-session .currentSessionMetric b.mono{font-size:var(--fs-18)}body.sessionRoute #view-session .currentSessionsArrivalMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}body.sessionRoute #view-session.sessionDetail .previewCost{font-size:var(--fs-36)}}
 @media(max-width:520px){body.sessionRoute #view-session .allSessionsHead{display:block}body.sessionRoute #view-session .allSessionsHint{display:block;margin-top:6px}body.sessionRoute #view-session .logsSummary .logKpis{grid-template-columns:1fr}body.sessionRoute #view-session .logsSummary .logStat,body.sessionRoute #view-session .logsSummary .logStat:nth-child(4){margin-top:0;padding:10px 12px;border-top:1px solid rgb(var(--tint-rgb)/.08);border-left:0}body.sessionRoute #view-session .logsSummary .logStat:first-child{border-top:0}}
@@ -3345,6 +3360,46 @@ function waitFmt(seconds){
  if(hours<48)return hours+'h '+String(rem).padStart(2,'0')+'m';
  const days=Math.floor(hours/24);
  return days+'d '+String(hours%24).padStart(2,'0')+'h';
+}
+// Readouts pair one number with a reference point and a plain-language reading.
+function typicalComparison(value,typical){
+ value=Number(value);typical=Number(typical);
+ if(!Number.isFinite(value)||!Number.isFinite(typical)||typical<=0)return {ratio:null,band:''};
+ const ratio=value/typical;
+ return {ratio,band:value<=0?'none':ratio>=1.15?'above':ratio<=.85?'below':'near'};
+}
+function typicalCaption(value,typical,noun,typicalText){
+ const {ratio,band}=typicalComparison(value,typical);
+ if(!band)return '';
+ if(band==='none')return `Nothing yet · ${noun} is ${typicalText}`;
+ if(band==='above')return `${ratio>=10?Math.round(ratio):ratio.toFixed(1)}× ${noun} of ${typicalText}`;
+ if(band==='below')return `${Math.round((1-ratio)*100)}% below ${noun} of ${typicalText}`;
+ return `In line with ${noun} of ${typicalText}`;
+}
+function readoutScaleHtml({value,typical,high=0,label='',toned=true}){
+ const {ratio,band}=typicalComparison(value,typical);
+ if(!band)return '';
+ const top=Math.max(Number(high)||0,Number(value)*1.1,Number(typical)*2);
+ const at=Math.min(100,Math.max(0,Number(value)/top*100)),typ=Math.min(100,Number(typical)/top*100);
+ const tone=toned&&ratio>=1.5?'high':'';
+ return `<span class=readoutScale role=img aria-label="${esc(label)}" data-tone="${tone}" style="--at:${at.toFixed(1)}%;--typ:${typ.toFixed(1)}%"><i class=readoutScaleFill></i><i class=readoutScaleTypical></i><i class=readoutScaleMark></i></span>`;
+}
+const medianOf=values=>{const sorted=values.filter(Number.isFinite).sort((a,b)=>a-b);if(!sorted.length)return null;const mid=sorted.length>>1;return sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;};
+// Baselines come from up to 30 prior active days; today is excluded so it is compared, not averaged in.
+function dailyBaseline(days,todayKey=localDayKey()){
+ const start=new Date(`${todayKey}T12:00:00`);start.setDate(start.getDate()-30);
+ const startKey=localDayKey(start);
+ const prior=(Array.isArray(days)?days:[]).filter(row=>row?.day&&row.day<todayKey&&row.day>=startKey&&Number(row.sessions)>0);
+ const costRows=prior.filter(row=>metricAvailable(row,'cost')&&!metricPartial(row,'cost'));
+ const costs=costRows.map(row=>Number(row.cost)||0),sessions=prior.map(row=>Number(row.sessions)||0);
+ const costSessions=costRows.reduce((total,row)=>total+(Number(row.sessions)||0),0);
+ return {
+  days:prior.length,
+  typicalCost:medianOf(costs),highCost:costs.length?Math.max(...costs):0,
+  typicalSessions:medianOf(sessions),highSessions:sessions.length?Math.max(...sessions):0,
+  sessionCost:costSessions?costs.reduce((a,b)=>a+b,0)/costSessions:null,
+  estimated:costRows.some(row=>hasLocalEstimate(row)),
+ };
 }
 function idleLabel(seconds){
  seconds=Math.max(0,Math.round(seconds||0));
@@ -9972,6 +10027,8 @@ function renderCurrentSessions(state=LATEST){
  renderCurrentSessionActivityFilters(filterView.activitySelection);
  const rows=filterView.rows,count=rows.length;
  const arrivingIds=new Set(flow.arriving);
+ const baseline=dailyBaseline(state?.xsession?.daily),sessionTypical=baseline.sessionCost;
+ const sessionTypicalText=sessionTypical>0?money(sessionTypical)+(baseline.estimated?' est':''):'';
  const focusedId=document.activeElement?.closest?.('[data-current-session-id]')?.dataset.currentSessionId||'';
  $('current-session-count-label').textContent=filterView.countLabel;
  const currentGrid=$('current-session-grid'),interactingCurrentSessionCard=currentGrid.querySelector('.currentSessionSlot:hover,.currentSessionCard:focus,.currentSessionDesktop:focus');
@@ -9996,11 +10053,14 @@ function renderCurrentSessions(state=LATEST){
   const speed=speedAvailable?`${speedFmt(throughput.output_tps)} tok/s${row.token_estimate?' est':''}`:'--';
   const contextSpark=currentSessionContextSparkline(row);
   const outputDollarDescription=row.output_per_dollar==null?'Output per dollar unavailable.':`${compactNumber(row.output_per_dollar)} output tokens per covered dollar.`;
-  const cardDescription=`${contextSpark.summary} ${outputDollarDescription}${costPartial?' Cost is a lower bound: some runs in this session family have no cost evidence.':''} Drag to reorder. Press ⌥ and an arrow key to move.`;
+  const costComparable=costAvailable&&!costPartial&&sessionTypical>0;
+  const heroCaption=costComparable?typicalCaption(Number(row.cost)||0,sessionTypical,'your average session',sessionTypicalText):'';
+  const heroScale=costComparable?readoutScaleHtml({value:Number(row.cost)||0,typical:sessionTypical,label:`${money(row.cost)} against an average session of ${sessionTypicalText}`}):'';
+  const cardDescription=`${heroCaption?heroCaption+'. ':''}${contextSpark.summary} ${outputDollarDescription}${costPartial?' Cost is a lower bound: some runs in this session family have no cost evidence.':''} Drag to reorder. Press ⌥ and an arrow key to move.`;
   const arriving=arrivingIds.has(String(row.id))?' is-arriving':'';
   const desktop=desktopSessionTarget(row);
   const desktopLink=desktop?`<a class=currentSessionDesktop href="${esc(desktop.href)}" draggable=false title="${esc(desktop.title)}" aria-label="${esc(`${desktop.label}: ${sessionName}`)}"><svg viewBox="0 0 16 16" aria-hidden=true><path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg></a>`:'';
-  return `<div class=currentSessionSlot${desktop?' data-desktop':''}><button class="card currentSessionCard provider-${esc(provider)} activity-${activity}${arriving}${costAvailable?'':' fieldtip'}" style="--harness:${esc(runtimeHarness(row))}" type=button draggable=true data-current-session-id="${esc(row.id)}" aria-label="${esc(`Open ${sessionName}`)}" aria-description="${esc(cardDescription)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown" ${costTipAttrs}><div class=currentSessionTop><div class=currentSessionRuntime>${runtimeMarkSvg(row)}<span>${esc(runtimeLine)}</span></div><div class="currentSessionStatus ${activity}">${activityLabel}</div></div><div class=currentSessionIdentity><h3>${esc(sessionName)}</h3><p>${esc(row.project||'No project')}</p></div><div class=currentSessionMetrics><div class="currentSessionMetric metric"><span>${costLabel}</span><b class=mono>${cost}</b></div><div class="currentSessionMetric metric"><span>Output / $</span><b class=mono>${esc(outputPerDollar)}</b></div><div class="currentSessionMetric metric"><span>Context in use</span><div class=currentSessionContextValue><b class=mono>${esc(context)}</b>${contextSpark.html}</div></div><div class="currentSessionMetric metric"><span>Speed</span><b class=mono>${esc(speed)}</b></div></div><div class=currentSessionFoot><span class=currentSessionMove><svg class=currentSessionGrip viewBox="0 0 12 16" aria-hidden=true><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="8" r="1.2"/><circle cx="9" cy="8" r="1.2"/><circle cx="3" cy="13" r="1.2"/><circle cx="9" cy="13" r="1.2"/></svg>${currentSessionAge(row)}</span><span class="currentSessionCaps mono" title="${esc(CAPABILITY_SUMMARY_TIP)}">${esc(capabilitySummaryText(row.capabilities))}</span></div></button>${desktopLink}</div>`;
+  return `<div class=currentSessionSlot${desktop?' data-desktop':''}><button class="card currentSessionCard provider-${esc(provider)} activity-${activity}${arriving}${costAvailable?'':' fieldtip'}" style="--harness:${esc(runtimeHarness(row))}" type=button draggable=true data-current-session-id="${esc(row.id)}" aria-label="${esc(`Open ${sessionName}`)}" aria-description="${esc(cardDescription)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown" ${costTipAttrs}><div class=currentSessionTop><div class=currentSessionRuntime>${runtimeMarkSvg(row)}<span>${esc(runtimeLine)}</span><span class=currentSessionProject>${esc(row.project||'No project')}</span></div><div class=currentSessionTopMeta><span class=currentSessionMove><svg class=currentSessionGrip viewBox="0 0 12 16" aria-hidden=true><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="8" r="1.2"/><circle cx="9" cy="8" r="1.2"/><circle cx="3" cy="13" r="1.2"/><circle cx="9" cy="13" r="1.2"/></svg>${currentSessionAge(row)}</span><div class="currentSessionStatus ${activity}">${activityLabel}</div></div></div><div class=currentSessionIdentity><h3>${esc(sessionName)}</h3><span class="currentSessionCaps mono" title="${esc(CAPABILITY_SUMMARY_TIP)}">${esc(capabilitySummaryText(row.capabilities))}</span></div><div class=currentSessionHero><div class=currentSessionHeroCost><span class=currentSessionHeroLabel>${costLabel}</span><b class="currentSessionHeroValue mono">${cost}</b></div><div class=currentSessionHeroCompare>${heroScale}${heroCaption?`<span class=readoutCaption>${esc(heroCaption)}</span>`:''}</div></div><div class=currentSessionMetrics><div class="currentSessionMetric metric"><span>Output / $</span><b class=mono>${esc(outputPerDollar)}</b></div><div class="currentSessionMetric metric"><span>Context in use</span><div class=currentSessionContextValue><b class=mono>${esc(context)}</b>${contextSpark.html}</div></div><div class="currentSessionMetric metric"><span>Speed</span><b class=mono>${esc(speed)}</b></div></div></button>${desktopLink}</div>`;
  }).join(''):(filterView.activitySelection==='all'?currentSessionsEmptyHtml(state?.xsession):currentSessionsFilteredEmptyHtml(filterView.activitySelection));
  if(focusedId)requestAnimationFrame(()=>focusCurrentSessionCard(focusedId));
 }

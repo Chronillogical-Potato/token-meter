@@ -466,6 +466,19 @@ Components own identity (color, type, tracking, surface), not layout.
 | Chart tooltip | `.chartTip` | Floating surface: signal edge, radius, dark gradient, shadow, no pointer events | Any content |
 | Status pill | `.chip`, plus `.tone-warn` | Pill shape, border, fill, secondary text; warn tone for attention | Short text |
 | Trend delta | `.trendDelta` inside `.valueWithDelta`, rendered by `renderTrendDelta()` | Rise or fall to the right of a number: a 20px mono arrow and percent over a 12px `vs prior …` label. `data-tone` is `improving` (good) or `degrading` (bad), or neutral when empty. It wraps beneath the number only when the column is too narrow | `<div class=valueWithDelta><div class=v>…</div><div class=trendDelta><strong>↑ 8.5%</strong><span>vs prior 30 days</span></div></div>` |
+| Reference scale | `.readoutScale`, rendered by `readoutScaleHtml()` | Where one value sits against a typical value: an 8px track, a dithered fill and marker up to the value, and a tick at the typical value. The scale runs from 0 to at least twice the typical value. `data-tone=high` (1.5× typical or more) switches the tone to `--warn`; pass `toned:false` for counts where more is not a concern | `<span class=readoutScale role=img aria-label="…" style="--at:62%;--typ:40%"><i class=readoutScaleFill></i><i class=readoutScaleTypical></i><i class=readoutScaleMark></i></span>` |
+| Reading caption | `.readoutCaption`, text from `typicalCaption()` | One plain-language line under a number, prefixed with a signal `›`, such as `2.1× your typical day of $2.30` | `<span class=readoutCaption>…</span>` |
+
+**Readable numbers.** A block leads with one main number. When the page
+already has history to compare against, it adds a `.readoutScale` and a
+`.readoutCaption`, and the remaining numbers sit in smaller secondary rows.
+Current-session cards follow this: cost leads, compared with your average
+session, and output per dollar, context, and speed follow in a smaller row.
+Baselines come from `dailyBaseline()`, which reads up to 30 prior active days.
+An average session is the total covered cost divided by the sessions on those
+days. Today is never part of its own baseline. Partial or unavailable cost
+shows no comparison at all; it never falls back to zero. The scale fill uses
+`--dither-50`, a Bayer 4×4 mask with 2px cells, over a solid tone.
 
 Every per-metric period comparison on the dashboard uses `.trendDelta` to the
 right of its value, never a boxed badge. A summary sentence, such as the Git
@@ -475,7 +488,7 @@ never scored as better or worse.
 
 `.chip` is the original base pill and keeps normal specificity, so its
 `.tone-warn` modifier reliably beats single-class screen rules. The other
-three components are zero-specificity.
+components are zero-specificity.
 
 To add one: write its rules as `:where(.name …)`, add the name to
 `ZERO_SPECIFICITY_COMPONENTS` in the contract test, use it in markup, and

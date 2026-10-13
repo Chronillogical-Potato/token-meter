@@ -364,7 +364,7 @@ LEGACY_UNREFERENCED_CLASSES = {
     "separator", "spark",
 }
 UNREFERENCED_CLASS_ALLOWLIST = RUNTIME_BUILT_CLASSES | LEGACY_UNREFERENCED_CLASSES
-ZERO_SPECIFICITY_COMPONENTS = ("emptyState", "metric", "chartTip", "trendDelta", "valueWithDelta")
+ZERO_SPECIFICITY_COMPONENTS = ("emptyState", "metric", "chartTip", "trendDelta", "valueWithDelta", "readoutScale", "readoutCaption")
 
 
 class ComponentTest(unittest.TestCase):

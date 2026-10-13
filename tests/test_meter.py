@@ -11246,9 +11246,9 @@ console.log(JSON.stringify({
             "const outputPerDollar=row.output_per_dollar==null?'--':compactNumber(row.output_per_dollar)+(estimate||row.token_estimate?' est':'');",
             self.page,
         )
-        self.assertIn(".currentSessionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))", self.page)
+        self.assertIn(".currentSessionMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))", self.page)
         self.assertIn(
-            "body.sessionRoute #view-session .currentSessionMetrics{grid-template-columns:1.02fr .9fr 1.18fr 1fr;gap:0;margin-top:24px;padding-top:18px",
+            "body.sessionRoute #view-session .currentSessionMetrics{grid-template-columns:.9fr 1.2fr 1fr;gap:0;margin-top:14px;padding-top:14px",
             self.page,
         )
         self.assertIn(
@@ -12104,6 +12104,65 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
         self.assertIn(".currentDayMetric:nth-child(3){grid-column:1/-1", self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_readouts_compare_against_prior_days_and_never_invent_baselines(self):
+        functions = []
+        for name in ("localDayKey", "typicalComparison", "typicalCaption", "readoutScaleHtml", "dailyBaseline"):
+            match = re.search(rf"^function {name}\(.*?^\}}\n", self.page, re.MULTILINE | re.DOTALL)
+            self.assertIsNotNone(match, f"dashboard needs {name}")
+            functions.append(match.group(0))
+        medians = re.search(r"^const medianOf=.*$", self.page, re.MULTILINE)
+        self.assertIsNotNone(medians)
+        script = """
+const esc=s=>String(s??'');
+const money=n=>'$'+Number(n||0).toFixed(2);
+const pct=n=>Math.round((n||0)*100)+'%';
+const waitFmt=n=>Math.round(n)+'s';
+const metricAvailable=(row,metric)=>row?.availability?.[metric]!==false;
+const metricPartial=(row,metric)=>row?.coverage?.[metric]?.complete===false;
+const hasLocalEstimate=row=>row?.usage_basis==='local_estimate';
+""" + medians.group(0) + "\n" + "".join(functions) + """
+const days=[
+ {day:'2026-10-13',sessions:9,cost:50},
+ {day:'2026-10-12',sessions:2,cost:2},
+ {day:'2026-10-11',sessions:4,cost:4},
+ {day:'2026-10-10',sessions:6,cost:6,coverage:{cost:{complete:false}}},
+ {day:'2026-10-09',sessions:0,cost:0},
+ {day:'2026-08-01',sessions:30,cost:900},
+];
+const baseline=dailyBaseline(days,'2026-10-13');
+console.log(JSON.stringify({
+ baseline,
+ empty:dailyBaseline([], '2026-10-13'),
+ above:typicalCaption(6,2,'your typical day','$2.00'),
+ below:typicalCaption(1,4,'your typical day','$4.00'),
+ near:typicalCaption(2.1,2,'your typical day','$2.00'),
+ none:typicalCaption(0,2,'your typical day','$2.00'),
+ missing:typicalCaption(3,null,'your typical day',''),
+ scale:readoutScaleHtml({value:6,typical:2,label:'x'}),
+ calm:readoutScaleHtml({value:6,typical:2,toned:false}),
+ noScale:readoutScaleHtml({value:6,typical:0}),
+}));
+"""
+        result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        # Today, the partial-cost day, idle days, and days older than 30 days stay out of the baseline.
+        self.assertEqual(result["baseline"]["days"], 3)
+        self.assertEqual(result["baseline"]["typicalCost"], 3)
+        self.assertEqual(result["baseline"]["highCost"], 4)
+        self.assertEqual(result["baseline"]["typicalSessions"], 4)
+        self.assertEqual(result["baseline"]["sessionCost"], 1)
+        self.assertIsNone(result["empty"]["typicalCost"])
+        self.assertIsNone(result["empty"]["sessionCost"])
+        self.assertEqual(result["above"], "3.0× your typical day of $2.00")
+        self.assertEqual(result["below"], "75% below your typical day of $4.00")
+        self.assertEqual(result["near"], "In line with your typical day of $2.00")
+        self.assertEqual(result["none"], "Nothing yet · your typical day is $2.00")
+        self.assertEqual(result["missing"], "")
+        self.assertIn('data-tone="high"', result["scale"])
+        self.assertIn("--at:90.9%;--typ:30.3%", result["scale"])
+        self.assertIn('data-tone=""', result["calm"])
+        self.assertEqual(result["noScale"], "")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_sessions_month_spend_action_selects_and_persists_month_before_routing(self):
         match = re.search(
             r"^function persistSpendRange\(\)[^\n]*\n"
@@ -12260,7 +12319,7 @@ console.log(JSON.stringify({history,html,firstRunHtml}));
             ">Context in use</div><div class=\"v mono\" id=ov-context>",
             ">Context in use</div><div class=\"v mono\" id=preview-context>",
             "cacheSavingsAvailable?money(cache.saved||s.cache_saved||0):'--'",
-            "const cardDescription=`${contextSpark.summary}",
+            "const cardDescription=`${heroCaption?heroCaption+'. ':''}${contextSpark.summary}",
         ):
             self.assertIn(marker, self.page)
         self.assertNotIn("const values=windowSize?plotted.map(value=>value/windowSize):plotted", self.page)
