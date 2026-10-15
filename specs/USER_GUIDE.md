@@ -103,28 +103,29 @@ and select it from **Sessions**.
 
 ### Welcome and Learn
 
-The first time the dashboard opens, a full-page welcome tour walks through 13
-short slides in four chapters:
+The first time the dashboard opens, a full-page welcome tour explains how AI
+usage turns into cost in 14 short slides, in four chapters:
 
-1. **Why:** usage is not value, and how token prices work.
-2. **How it works:** the companion and the dashboard, reading the traces your
-   agents already wrote, whether you can trust the number, and privacy.
-3. **Your questions:** what you are spending, where it goes, and whether it is
-   paying off.
-4. **Do better:** five levers, changing one thing at a time, asking your agent
-   through the Token Meter MCP, and three steps to get started.
+1. **The basics:** you pay for the words the AI reads and writes, not every
+   word costs the same, and long chats get pricier every turn.
+2. **Token Meter at a glance:** the live cost while you work, your month and
+   budget, and why your data stays on your computer.
+3. **Finding waste:** one model taking most of the bill, work per dollar,
+   unused tools, and small helper tasks (subagents).
+4. **Do better:** five habits, changing one thing and comparing, asking your AI
+   agent about spending, and three steps to get started.
+
+Each slide shows a real piece of the dashboard filled with simple example
+numbers, marked **Example**, so they are never mistaken for yours. Numbered
+markers on the picture match a short numbered list beside it. Each slide
+explains one idea, and most link to the page where you can see your own
+numbers.
 
 A chapter rail on the left shows where you are; click any slide to jump to it.
 Use **→** and **←** to page, **Skip chapter** to move to the next chapter, and
 **Open …** buttons to go to the page a slide describes. Close the tour with the
 ✕ button, **Esc**, or **Skip tour**; it does not open by itself again. If you
 used the earlier getting-started checklist, it does not open automatically.
-
-Each slide shows a small preview built from your own local data, labeled
-**Yours**. Before any session has tokens, previews show sample values marked
-**Example**. Some slides also show numbers from the Token Meter talk, labeled
-**From the talk**: they come from one engineer's laptop, estimated at public list
-prices, and are there to explain the idea, not to describe your usage.
 
 **Learn** shows the same slides as an inline deck and remembers the slide you
 were on. **Play as full screen** opens the tour at that slide. Reopen the tour

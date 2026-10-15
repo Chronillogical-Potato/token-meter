@@ -8833,39 +8833,7 @@ process.stdout.write(JSON.stringify(results));
             self.page,
         )
 
-    @unittest.skipUnless(shutil.which("node"), "Node.js is required for Learn evidence verification")
-    def test_learn_price_fallback_uses_the_model_runtime_provider(self):
-        script = f"""
-const fs=require('fs');
-const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
-function block(start){{let i=page.indexOf(start);if(i<0)throw Error(start);let open=page.indexOf(start.endsWith('[')?'[':'{{',i),depth=0,close=start.endsWith('[')?']':'}}',o=page[open];for(let j=open;j<page.length;j++){{if(page[j]===o)depth++;else if(page[j]===close&&--depth===0)return page.slice(i,j+1);}}}}
-eval(block('const TOKEN_TYPES=[').replace(/^const /,'var '));
-eval(page.slice(page.indexOf('const HIGH_EFFORTS='),page.indexOf(';',page.indexOf('const HIGH_EFFORTS='))+1).replace(/^const /,'var '));
-eval(page.match(/^const finiteOrNull=.*$/m)[0].replace(/^const /,'var '));
-eval(block('function learnEvidence('));
-const learnOutputTrend=()=>null,localDateKey=()=>'2026-10-15';
-const currentSessionModelName=value=>String(value||'');
-const budgetMonthLabel=value=>String(value||'');
-const runtimeId=()=>'',runtimeLabel=()=>'';
-const prices=(read,out)=>({{cache_read:read,input:read*20,cache_write:read*25,output:out}});
-const state={{total_tokens:0,xsession:{{
- model_pricing:{{unit:'per 1M tokens',models:[
-  {{provider:'codex',model:'shared-model',prices:prices(0.5,40)}},
-  {{provider:'claude',model:'shared-model',prices:prices(0.2,20)}},
- ]}},
- model_mix:[{{id:'shared-model::Claude Code',model:'shared-model',runtime:'Claude Code',providers:['claude'],cost:10,tokens:5}}],
-}}}};
-const evidence=learnEvidence(state);
-const unmatched=learnEvidence({{total_tokens:0,xsession:{{...state.xsession,model_mix:[{{model:'shared-model',runtime:'Hermes',providers:['hermes'],cost:3}}]}}}});
-process.stdout.write(JSON.stringify({{output:evidence.price&&evidence.price.rows.find(row=>row.key==='output').price,unmatched:unmatched.price}}));
-"""
-        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
-        self.assertEqual(completed.returncode, 0, completed.stderr)
-        payload = json.loads(completed.stdout)
-        self.assertEqual(payload["output"], 20)
-        self.assertIsNone(payload["unmatched"])
-
-    def test_review_fixes_keep_focus_targets_timestamps_and_runtime_scoped_prices(self):
+    def test_review_fixes_keep_focus_targets_and_timestamps(self):
         # The inventory heading receives programmatic focus, so it must be focusable.
         self.assertIn("<h2 id=c-inventory-title tabindex=-1>All capabilities</h2>", self.page)
         self.assertIn("$('c-inventory-title').focus(", self.page)
@@ -8875,9 +8843,6 @@ process.stdout.write(JSON.stringify({{output:evidence.price&&evidence.price.rows
             self.page,
         )
         self.assertIn("$('preview-started-at').textContent=(dt12(timing.start_local)||'--').replace(' ','\\n');", self.page)
-        # Learn's price fallback matches the model within its runtime only.
-        self.assertIn("row.model===mix.model&&(mix.providers||[]).includes(row.provider)&&priced(row)", self.page)
-        self.assertIn("row.model===topModel.model&&(topModel.providers||[]).includes(row.provider)&&priced(row)", self.page)
         # The welcome tour opened from the palette returns focus to where the palette opened.
         self.assertIn("const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(null,{returnFocus});", self.page)
         self.assertNotIn("WELCOME_PANELS[2].title=", self.page)
@@ -10684,7 +10649,7 @@ console.log(JSON.stringify(out));
         self.assertLess(self.page.index("id=tab-session"), self.page.index("id=tab-daily"))
         self.assertIn("id=s-range", self.page)
         self.assertNotIn("id=learn-glossary", self.page)
-        self.assertIn("Change one thing, then measure", self.page)
+        self.assertIn("Change one thing, then compare.", self.page)
         self.assertIn("if(h==='daily')setHashRoute('spend',{replace:true,apply:false})", self.page)
         self.assertIn("if(h==='spend'||h==='daily'||h==='spend-budgets'||h==='settings-budgets'||h==='budgets')", self.page)
         self.assertIn("if(h==='learn'||h==='learn-agent-access')", self.page)
@@ -11318,7 +11283,7 @@ console.log(JSON.stringify({
         ):
             self.assertNotIn(removed, settings)
         self.assertNotIn('href="#learn-agent-access"', settings)
-        self.assertIn("<p class=miniPreviewNote id=${host}-agent-access>", self.page)
+        self.assertIn("frame:{kind:'agent',anchor:'agent-access'", self.page)
         self.assertIn("Connections stay local and read-only.", settings)
         self.assertNotIn("Language signals", settings)
         self.assertIn(
@@ -11435,40 +11400,32 @@ console.log(JSON.stringify({
             self.assertNotIn(retired, self.page)
 
     def _tour_script(self, body):
-        """Runs the tour's DOM-free block (storage, evidence, slide markup) in Node with the page's own formatters."""
+        """Runs the tour's DOM-free block (storage, slide copy, frame markup) in Node with the page's own formatters."""
         page_path = json.dumps(str(Path(meter.__file__).with_name('page.html')))
         return f"""
 const fs=require('fs');
 const page=fs.readFileSync({page_path},'utf8');
 const helpers=page.match(/^const (f|compactNumber|money|wholeMoney|pct|countWord|esc)=.*$/gm).join('\\n').replace(/^const /gm,'var ');
 eval(helpers);
-var LATEST=null,RUNTIME_CATALOG={{claude:{{label:'Claude'}},codex:{{label:'Codex'}}}};
-var runtimeId=s=>String(s?.provider||'unknown-runtime'),runtimeLabel=s=>String(s?.label||s?.provider||''),currentSessionModelName=v=>String(v||'');
-var budgetMonthLabel=m=>m?'October 2026':'This month',appBadgeClass=s=>`app-${{s.provider}}`,runtimeBadgeContent=(s,label)=>label;
-var localDateKey=d=>`${{d.getFullYear()}}-${{String(d.getMonth()+1).padStart(2,'0')}}-${{String(d.getDate()).padStart(2,'0')}}`;
-var learnOutputTrend=xs=>xs?.model_stats?.trend||null;
+var LATEST=null;Object.defineProperty(globalThis,'navigator',{{value:{{platform:'',userAgent:''}},configurable:true,writable:true}});
+var providerColor=id=>`var(--provider-${{id}})`,runtimeMarkSvg=()=>'<svg class=runtimeMark></svg>',compareColor=i=>['var(--c-a)','var(--c-b)'][i%2];
+var modelRankedColors=groups=>new Map(groups.map((group,index)=>[group.key,`shade-${{index}}`]));
 var stored=new Map(),blocked={{read:false,write:false}};
 var localStorage={{getItem:key=>{{if(blocked.read)throw Error('blocked');return stored.get(key)??null;}},setItem:(key,value)=>{{if(blocked.write)throw Error('quota');stored.set(key,String(value));}}}};
 const start=page.indexOf('// deck-pure-start'),end=page.indexOf('// deck-pure-end');
 if(start<0||end<0)throw Error('missing deck-pure block');
 eval(page.slice(start,end).replace(/^const /gm,'var '));
 const richState={{
- total_tokens:82702828,total_cost:38.59,turns:703,subagent_turns:566,provider:'claude',primary_model:'claude-opus-5-5',source:{{provider:'claude',label:'Claude'}},
- availability:{{cost:true,tokens:true,cache:true}},context:{{latest:112214,peak:325998,window:0}},timing:{{duration_available:true,duration:'1h 38m'}},
- capabilities:{{skills:{{loaded:77,used:4}}}},
- tokens:{{input:1431,cache_write:2376040,cache_read:79788174,output:537183}},cost:{{input:.0057,cache_write:11.88,cache_read:15.96,output:10.74}},
+ total_tokens:82702828,total_cost:38.59,turns:703,provider:'claude',primary_model:'claude-opus-5-5',
+ context:{{latest:112214,peak:325998,window:200000,latest_pct:.56}},
  xsession:{{
-  total_sessions:2179,providers:[{{provider:'claude',sessions:900}},{{provider:'codex',sessions:1279}}],
-  model_mix:[{{model:'gpt-5.6-sol',runtime:'Codex',providers:['codex'],cost:4278}},{{model:'claude-opus-5-5',runtime:'Claude-3P',providers:['claude'],cost:1781}}],
-  model_pricing:{{unit:'per 1M tokens',models:[{{provider:'claude',model:'claude-opus-5-5',prices:{{cache_read:.5,input:5,cache_write:6.25,output:25}}}}]}},
-  model_stats:{{first_day:'2026-06-13',models:[],trend:{{week:4400,delta:{{text:'↓ 30.3% vs prior 7 days',direction:'down'}},months:[{{label:'Jun',value:4183}},{{label:'Oct',value:6492,partial:true}}]}}}},
-  provenance:{{reported_sessions:1638,estimated_sessions:40,unavailable_sessions:1}},
-  capabilities:{{summary:{{definitions:{{definition_tokens:120000,unused_eager_definition_tokens:83907}},skills:{{enabled:210,used:75}}}}}},
+  total_sessions:2179,model_mix:[{{model:'gpt-5.6-sol',runtime:'Codex',providers:['codex'],cost:4278}}],
+  capabilities:{{summary:{{definitions:{{definition_tokens:120000,unused_eager_definition_tokens:83907}}}}}},
   agent_usage:{{totals:{{agents:646,cost_covered_agents:640,known_cost:1001.45}}}},
-  budget:{{month:'2026-10',configured:true,budget:8940,spend:1792.7,percent:.2,projection_ready:true,projected_spend:3704.9,lower_bound:true,state:'on_track'}},
+  budget:{{month:'2026-10',configured:true,budget:8940,spend:1792.7,percent:.2,projection_ready:true,projected_spend:3704.9,state:'on_track'}},
  }},
 }};
-const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,changed_lines:24000,comparable_changed_lines:21000}}}};
+const frameSlides=DECK_SLIDES.map((slide,index)=>({{slide,index}})).filter(row=>row.slide.frame);
 {body}
 """
 
@@ -11480,80 +11437,122 @@ const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,
         return json.loads(completed.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_tour_registry_has_thirteen_slides_in_four_chapters(self):
+    def test_tour_registry_has_fourteen_concept_slides_in_four_chapters(self):
         payload = self._run_tour("""
 process.stdout.write(JSON.stringify({
  chapters:DECK_CHAPTERS.map(c=>c.title),
  slides:DECK_SLIDES.map(s=>[s.chapter,s.id]),
- complete:DECK_SLIDES.every(s=>['rail','kicker','title','takeaway'].every(k=>typeof s[k]==='string'&&s[k].trim())&&(s.body===undefined||typeof s.body==='string'&&s.body.trim())&&typeof s.preview==='function'),
+ complete:DECK_SLIDES.every(s=>['rail','kicker','title'].every(k=>typeof s[k]==='string'&&s[k].trim())&&(s.body===undefined||typeof s.body==='string'&&s.body.trim())&&(!!s.frame!==(typeof s.visual==='function'))),
+ frames:DECK_SLIDES.filter(s=>s.frame).every(s=>typeof s.frame.html==='function'&&s.frame.html.length===0&&s.frame.label&&s.frame.alt&&Array.isArray(s.frame.legend)),
  time:[deckTimeLeft(0),deckTimeLeft(6),deckTimeLeft(10),deckTimeLeft(12)],
 }));
 """)
-        self.assertEqual(payload["chapters"], ["Why", "How it works", "Your questions", "Do better"])
+        self.assertEqual(payload["chapters"], ["The basics", "Token Meter at a glance", "Finding waste", "Do better"])
         self.assertEqual(payload["slides"], [
-            ["why", "value"], ["why", "money"],
-            ["how", "glance"], ["how", "traces"], ["how", "trust"], ["how", "privacy"],
-            ["questions", "spending"], ["questions", "where"], ["questions", "working"],
-            ["better", "levers"], ["better", "loop"], ["better", "agent"], ["better", "start"],
+            ["basics", "tokens"], ["basics", "prices"], ["basics", "context"],
+            ["glance", "glance"], ["glance", "month"], ["glance", "privacy"],
+            ["waste", "models"], ["waste", "efficiency"], ["waste", "tools"], ["waste", "helpers"],
+            ["better", "habits"], ["better", "compare"], ["better", "agent"], ["better", "start"],
         ])
-        self.assertTrue(payload["complete"])
-        self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "under a minute left", "under a minute left"])
-
-    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_tour_keeps_talk_definitions_and_caveats_visible(self):
-        payload = self._run_tour("""
-const ev=learnEvidence(richState,richGit),noExcluded=learnEvidence({...richState,xsession:{...richState.xsession,provenance:{reported_sessions:10,estimated_sessions:0,unavailable_sessions:0}}},richGit);
-const levers=deckPreviewHtml(9,ev,'welcome');
-process.stdout.write(JSON.stringify({
- shorts:LEVERS.map(lever=>levers.includes(`<small aria-hidden=true>${esc(lever.talk.short)}</small>`)),
- note:TALK_NOTE,
- trust:deckPreviewHtml(4,noExcluded,'welcome').includes('never $0'),
- trustText:deckPreviewHtml(4,ev,'welcome'),privacy:deckPreviewHtml(5,ev,'welcome'),
- agentBody:DECK_SLIDES.find(slide=>slide.id==='agent').body,
-}));
-""")
-        self.assertEqual(payload["shorts"], [True] * 5, "each talk number shows what it measured")
-        self.assertIn("estimated", payload["note"])
-        self.assertTrue(payload["trust"], "the unknown-model rule stays visible with no excluded sessions")
-        self.assertIn("when logged", payload["trustText"])
-        self.assertIn("cloud agents", payload["trustText"])
-        self.assertIn("never filenames", payload["privacy"])
-        self.assertIn("credentials", payload["agentBody"])
-        self.assertIn("session-budget changes ask first", payload["agentBody"])
-        tip = "Covered spend: estimated spend from sessions with cost evidence in these projects."
-        for attr in ("data-delivery-model-sort=covered_cost", "data-delivery-sort=covered_cost"):
-            self.assertIn(f'{attr} data-tip="{tip}" aria-description="{tip}">Spend<', self.page)
+        self.assertTrue(payload["complete"], "each slide has copy and exactly one visual: a frame or a list")
+        self.assertTrue(payload["frames"], "frame markup takes no arguments, so no live value can reach it")
+        self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "about 1 min left", "under a minute left"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_tour_copy_stays_within_slide_word_budgets(self):
-        # One idea per slide: the visual carries the number, the copy stays short. Node reports
-        # neither a Mac nor a known platform, so the longest host name is counted.
+        # Less text, more explaining: the frame and its numbered legend carry the idea. Node reports
+        # no known platform here, so the longest companion wording is counted.
         payload = self._run_tour("""
-const words=text=>String(text||'').split(/\\s+/).filter(word=>/[A-Za-z0-9]/.test(word)).length;
+const words=text=>String(text||'').split(/\\s+/).filter(word=>/[A-Za-z0-9$]/.test(word)).length;
 const sentences=text=>String(text||'').split(/[.!?](?:\\s|$)/).filter(part=>part.trim()).length;
 process.stdout.write(JSON.stringify(DECK_SLIDES.map(s=>({id:s.id,title:words(s.title),body:words(s.body),
- bodySentences:sentences(s.body),takeaway:words(s.takeaway),links:(s.links||[]).length}))));
+ bodySentences:sentences(s.body),legend:(s.frame?.legend||[]).map(words),links:(s.links||[]).length,frame:!!s.frame}))));
 """)
+        self.assertEqual(len(payload), 14)
         for row in payload:
             with self.subTest(slide=row["id"]):
                 self.assertLessEqual(row["title"], 8, "headline")
-                self.assertLessEqual(row["body"], 18, "body")
+                self.assertLessEqual(row["body"], 14, "body")
                 self.assertLessEqual(row["bodySentences"], 1, "body is one sentence or none")
-                self.assertLessEqual(row["takeaway"], 10, "takeaway")
                 self.assertLessEqual(row["links"], 1, "at most one action link")
+                if row["frame"]:
+                    self.assertGreaterEqual(len(row["legend"]), 1)
+                    self.assertLessEqual(len(row["legend"]), 3, "at most three legend lines")
+                    for count in row["legend"]:
+                        self.assertLessEqual(count, 12, "legend line")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_frames_are_labeled_examples_with_matching_callouts(self):
+        payload = self._run_tour("""
+process.stdout.write(JSON.stringify(frameSlides.map(({slide,index})=>{
+ const html=deckVisualHtml(index,'learn');
+ const stage=html.split('<div class=conceptFrameStage role=img aria-label="')[1]?.split('<figcaption>')[0]||'';
+ const legend=html.split('<figcaption>')[1]||'';
+ const markers=[...stage.matchAll(/<mark class=frameCallout(?: data-at=\\w+)? aria-hidden=true>(\\d)<\\/mark>/g)].map(m=>Number(m[1]));
+ const keys=[...legend.matchAll(/<li><mark class=frameCallout aria-hidden=true>(\\d)<\\/mark><span>/g)].map(m=>Number(m[1]));
+ return {id:slide.id,figure:html.startsWith('<figure class=conceptFrame')&&html.endsWith('</figure>'),
+  example:(html.match(/<span class=chip>Example<\\/span>/g)||[]).length,
+  head:html.includes('<div class=conceptFrameHead><span>'),alt:/^[^"<>]{12,}"/.test(stage),
+  markers:markers.sort(),keys,orderedList:legend.startsWith('<ol class=frameLegend role=list>'),
+  allMarkersHidden:(html.match(/class=frameCallout/g)||[]).length===(html.match(/class=frameCallout(?: data-at=\\w+)? aria-hidden=true>/g)||[]).length};
+})));
+""")
+        self.assertEqual(len(payload), 12)
+        for row in payload:
+            with self.subTest(frame=row["id"]):
+                self.assertTrue(row["figure"])
+                self.assertEqual(row["example"], 1, "one Example chip per frame, so nobody mistakes it for their numbers")
+                self.assertTrue(row["head"])
+                self.assertTrue(row["alt"], "the frame is one described image for screen readers")
+                self.assertTrue(row["orderedList"], "the legend is an ordered list")
+                self.assertTrue(row["allMarkersHidden"], "markers are visual; the legend carries the words")
+                count = len(row["keys"])
+                self.assertGreaterEqual(count, 1)
+                self.assertLessEqual(count, 3)
+                self.assertEqual(row["keys"], list(range(1, count + 1)))
+                self.assertEqual(row["markers"], list(range(1, count + 1)), "each legend number appears once on the frame")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_frames_never_show_live_numbers_or_talk_comparisons(self):
+        payload = self._run_tour("""
+const facts=[deckFacts({}),deckFacts(richState),deckFacts(null),deckFacts({xsession:{budget:{configured:true,budget:0}}})];
+const all=DECK_SLIDES.map((slide,i)=>facts.map(state=>deckCopyHtml(i,state,'learn')+deckVisualHtml(i,'learn')).join('')).join('');
+process.stdout.write(JSON.stringify({
+ facts,
+ visualsStable:DECK_SLIDES.every((slide,i)=>deckVisualHtml(i,'learn')===deckVisualHtml(i,'learn')),
+ copyStable:DECK_SLIDES.map((slide,i)=>new Set(facts.map(state=>deckCopyHtml(i,state,'learn'))).size),
+ personal:['2,179','2179','1,792','1792','8,940','8940','83,907','83907','38.59','claude-opus-5-5','gpt-5.6-sol'].filter(value=>all.includes(value)),
+ talk:['Yours','From the talk','talkChip','yoursChip','engineer’s laptop','$31.14','6% → 55%','83,907','5.1×'].filter(value=>all.includes(value)),
+}));
+""")
+        self.assertEqual(payload["facts"], [
+            {"budgetConfigured": False}, {"budgetConfigured": True},
+            {"budgetConfigured": False}, {"budgetConfigured": False},
+        ])
+        self.assertTrue(payload["visualsStable"])
+        self.assertEqual(payload["copyStable"], [1] * 13 + [2], "only the last slide's call to action reads live state")
+        self.assertEqual(payload["personal"], [], "frames carry sample values, never the user's numbers")
+        self.assertEqual(payload["talk"], [], "the deck explains concepts; no Yours or From the talk comparisons")
+        for retired in (
+            "learnEvidence", "learnOutputTrend", "figureHtml", "evidenceFigure", "TALK_CHIP", "YOURS_CHIP",
+            "TALK_NOTE", "TALK_OUTPUT_MONTHS", "talkChip", "yoursChip", "leverValue", "miniPreview",
+            "class=takeaway", "WELCOME_HOST", "deckPreviewHtml",
+        ):
+            self.assertNotIn(retired, self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_both_tour_hosts_render_the_same_slides(self):
         payload = self._run_tour("""
-const evidence=[learnEvidence({}),learnEvidence(richState,richGit)];
-const same=DECK_SLIDES.map((slide,i)=>evidence.every(ev=>
- deckCopyHtml(i,ev,'welcome').replaceAll('welcome-','HOST-')===deckCopyHtml(i,ev,'learn').replaceAll('learn-','HOST-')&&
- deckPreviewHtml(i,ev,'welcome').replaceAll('welcome-','HOST-')===deckPreviewHtml(i,ev,'learn').replaceAll('learn-','HOST-')));
-process.stdout.write(JSON.stringify({same,agentNote:deckPreviewHtml(11,evidence[1],'learn').includes('id=learn-agent-access'),
- cta:[deckCopyHtml(12,evidence[0],'welcome').includes('>Set a monthly budget<'),deckCopyHtml(12,evidence[1],'welcome').includes('>Review your budget<')]}));
+const facts=[deckFacts({}),deckFacts(richState)];
+const same=DECK_SLIDES.map((slide,i)=>facts.every(state=>
+ deckCopyHtml(i,state,'welcome').replaceAll('welcome-','HOST-')===deckCopyHtml(i,state,'learn').replaceAll('learn-','HOST-')&&
+ deckVisualHtml(i,'welcome').replaceAll('welcome-','HOST-')===deckVisualHtml(i,'learn').replaceAll('learn-','HOST-')));
+const agent=DECK_SLIDES.findIndex(slide=>slide.id==='agent'),last=DECK_SLIDES.length-1;
+process.stdout.write(JSON.stringify({same,agentAnchor:deckVisualHtml(agent,'learn').includes(' id=learn-agent-access>'),
+ cta:[deckCopyHtml(last,facts[0],'welcome').includes('>Set a monthly budget<'),deckCopyHtml(last,facts[1],'welcome').includes('>Review your budget<')]}));
 """)
-        self.assertEqual(payload["same"], [True] * 13)
-        self.assertTrue(payload["agentNote"])
+        self.assertEqual(payload["same"], [True] * 14)
+        self.assertTrue(payload["agentAnchor"])
         self.assertEqual(payload["cta"], [True, True])
         dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
         learn = self.page.split("<div class=view id=view-learn>", 1)[1].split("<div class=view id=view-capabilities>", 1)[0]
@@ -11561,79 +11560,42 @@ process.stdout.write(JSON.stringify({same,agentNote:deckPreviewHtml(11,evidence[
         self.assertIn('<div class="deck deckInline" id=learn-deck data-deck-host=learn></div>', learn)
         for host in (dialog, learn):
             self.assertNotIn("<h2", host, "slide copy lives in DECK_SLIDES, not in host markup")
-            self.assertNotIn("takeaway", host)
+            self.assertNotIn("conceptFrame", host)
         self.assertIn("function renderWelcome(state=LATEST){paintDeck('welcome',state);}", self.page)
         self.assertIn("if(ensureDeck('learn'))paintDeck('learn',state);", self.page)
+        self.assertIn("paintPreview(`${host}-deck-visual`,deckVisualHtml(current.index,host));", self.page)
         for retired in ("WELCOME_PANELS", "data-welcome-panel", "learnQuestion", "learnBlock", "learn-replay-welcome", "welcomeDot"):
             self.assertNotIn(retired, self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_tour_never_turns_missing_tool_definitions_into_a_measured_zero(self):
+    def test_tour_keeps_privacy_estimate_and_agent_caveats(self):
         payload = self._run_tour("""
-const none=JSON.parse(JSON.stringify(richState));
-none.xsession.capabilities.summary.definitions={definition_tokens:0,eager_definition_tokens:0,deferred_definition_tokens:0,unused_eager_definition_tokens:0};
-const measuredZero=JSON.parse(JSON.stringify(richState));
-measuredZero.xsession.capabilities.summary.definitions={definition_tokens:5000,eager_definition_tokens:5000,deferred_definition_tokens:0,unused_eager_definition_tokens:0};
-const a=learnEvidence(none,richGit),b=learnEvidence(measuredZero,richGit),c=learnEvidence(richState,richGit);
-process.stdout.write(JSON.stringify({none:a.unusedToolTokens,skills:a.skillUse,measured:b.unusedToolTokens,rich:c.unusedToolTokens,
- where:deckPreviewHtml(7,a,'learn').includes('unused tool tokens loaded'),git:c.git}));
+const legend=id=>DECK_SLIDES.find(slide=>slide.id===id).frame.legend.join(' ');
+process.stdout.write(JSON.stringify({tokens:legend('tokens'),privacy:legend('privacy'),agent:legend('agent'),
+ agentBody:DECK_SLIDES.find(slide=>slide.id==='agent').body,glance:DECK_SLIDES.find(slide=>slide.id==='glance').body,
+ places:['mac','windows','linux','other'].map(id=>({mac:'menu bar',windows:'notification area',linux:'tray'}[id]||'menu bar or tray'))}));
 """)
-        self.assertIsNone(payload["none"])
-        self.assertEqual(payload["skills"], {"used": 75, "enabled": 210})
-        self.assertFalse(payload["where"], "no definition evidence must not render as 0 unused tool tokens")
-        self.assertEqual(payload["measured"], 0)
-        self.assertEqual(payload["rich"], 83907)
+        self.assertIn("estimate", payload["tokens"])
+        self.assertIn("not your bill", payload["tokens"])
+        self.assertIn("never changes them", payload["privacy"])
+        self.assertIn("Nothing is uploaded", payload["privacy"])
+        self.assertIn("numbers only, never your prompts or code", payload["agent"])
+        self.assertIn("asks you first before changing a session budget", payload["agent"])
+        self.assertIn("(through MCP)", payload["agentBody"])
+        self.assertEqual(payload["glance"], "The live cost sits in your menu bar or tray.")
+        self.assertIn("const COMPANION_PLACE={mac:'menu bar',windows:'notification area',linux:'tray'}[DECK_PLATFORM]||'menu bar or tray';", self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_tour_escapes_every_interpolated_label(self):
         payload = self._run_tour("""
-var runtimeMarkSvg=()=>'';eval(page.match(/^const runtimeBadgeContent=.*$/m)[0].replace(/^const /,''));
 const bad='<img src=x onerror=alert(1)>';
-const hostile=JSON.parse(JSON.stringify(richState));
-hostile.primary_model=bad;hostile.source={provider:bad,label:bad};hostile.timing.duration=bad;
-hostile.xsession.model_mix[0].model=bad;hostile.xsession.model_mix[0].runtime=bad;
-hostile.xsession.model_pricing.unit=bad;hostile.xsession.model_stats.first_day=bad;hostile.xsession.budget.month=bad;
-hostile.xsession.providers=[{provider:bad,sessions:3}];
-const ev=learnEvidence(hostile,richGit);
-const leaks=DECK_SLIDES.map((slide,i)=>deckCopyHtml(i,ev,'learn')+deckPreviewHtml(i,ev,'learn')).map((html,i)=>html.includes('<img')?i+1:0).filter(Boolean);
-process.stdout.write(JSON.stringify({leaks}));
+const frame=conceptFrameHtml({kind:'x',label:bad,alt:`"${bad}`,legend:[bad,bad],html:()=>''},'learn');
+const habits=HABITS.map(habit=>({...habit}));HABITS.length=0;HABITS.push({icon:'model',title:bad,page:bad,route:'models'});
+const list=habitsListHtml();HABITS.length=0;habits.forEach(habit=>HABITS.push(habit));
+const copy=DECK_SLIDES.map((slide,i)=>deckCopyHtml(i,deckFacts(richState),'learn')+deckVisualHtml(i,'learn')+deckResumeHtml(i,'learn')).join('');
+process.stdout.write(JSON.stringify({frame:frame.includes('<img'),quote:frame.includes('aria-label=""'),list:list.includes('<img'),copy:copy.includes('<img')}));
 """)
-        self.assertEqual(payload["leaks"], [])
-
-    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_talk_numbers_are_labeled_and_never_presented_as_yours(self):
-        payload = self._run_tour("""
-const evidence=[learnEvidence({}),learnEvidence(richState,richGit)];
-const talkParts=html=>[...html.matchAll(/data-source=talk>([\\s\\S]*?)<\\/(?:div|span|td|th)>/g)].map(m=>m[1]);
-const rows=DECK_SLIDES.map((slide,i)=>{
- const html=evidence.map(ev=>deckPreviewHtml(i,ev,'learn'));
- const figures=html.flatMap(h=>[...h.matchAll(/<div class=evidenceFigure(?: data-hero)? data-source=(\\w+)>([\\s\\S]*?)<\\/div>/g)].map(m=>[m[1],m[2]]));
- return {id:slide.id,talk:slide.talk,
-  chips:html.map(h=>(h.match(/class="chip talkChip">From the talk</g)||[]).length),
-  notes:html.map(h=>(h.match(/From the talk:<\\/b> one engineer’s laptop, estimated at list prices\\./g)||[]).length===1),
-  anyNote:html.map(h=>h.includes('engineer’s laptop')),
-  figureCount:html.reduce((sum,h)=>sum+(h.match(/class=evidenceFigure/g)||[]).length,0),matched:figures.length,
-  figuresOk:figures.every(([source,inner])=>source==='talk'?inner.includes('talkChip')&&!inner.includes('yoursChip'):!inner.includes('talkChip')),
-  talkStable:JSON.stringify(talkParts(html[0]))===JSON.stringify(talkParts(html[1])),
-  yoursCount:(html[1].match(/data-source=yours/g)||[]).length};
-});
-process.stdout.write(JSON.stringify(rows));
-""")
-        for row in payload:
-            with self.subTest(slide=row["id"]):
-                if row["talk"]:
-                    self.assertTrue(all(count > 0 for count in row["chips"]))
-                    self.assertEqual(row["notes"], [True, True])
-                    self.assertTrue(row["talkStable"], "talk numbers must not change with the user's data")
-                else:
-                    self.assertEqual(row["chips"], [0, 0])
-                    self.assertEqual(row["anyNote"], [False, False])
-                self.assertTrue(row["figuresOk"])
-                self.assertEqual(row["matched"], row["figureCount"], "every figure is checked for its source chip")
-        by_id = {row["id"]: row for row in payload}
-        for slide in ("value", "money", "where", "working", "levers", "loop"):
-            self.assertTrue(by_id[slide]["talk"])
-            self.assertGreater(by_id[slide]["yoursCount"], 0, "talk slides show the user's own number beside the talk's")
+        self.assertEqual(payload, {"frame": False, "quote": False, "list": False, "copy": False})
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_tour_rail_states_and_skip_chapter_targets(self):
@@ -11647,8 +11609,8 @@ process.stdout.write(JSON.stringify({
  glyphs:[rail.includes('aria-hidden=true>✓</i>'),rail.includes('aria-hidden=true>●</i>'),rail.includes('aria-hidden=true>○</i>')],
 }));
 """)
-        self.assertEqual(payload["skip"], [2, 2, 6, 6, 6, 6, 9, 9, 9, -1, -1, -1, -1])
-        self.assertEqual(payload["steps"], ["done"] * 6 + ["current"] + ["upcoming"] * 6)
+        self.assertEqual(payload["skip"], [3, 3, 3, 6, 6, 6, 10, 10, 10, 10, -1, -1, -1, -1])
+        self.assertEqual(payload["steps"], ["done"] * 6 + ["current"] + ["upcoming"] * 7)
         self.assertEqual(payload["chapters"], ["done", "done", "current", "upcoming"])
         self.assertEqual(payload["current"], 1)
         self.assertEqual(payload["glyphs"], [True, True, True])
@@ -11744,18 +11706,18 @@ deckAction('welcome','back');log.push(deckHosts.welcome.index);
 const recorded=JSON.parse(stored.get(WELCOME_KEY)).last_slide;
 const arrows=[];const key=k=>({{key:k,preventDefault(){{}},target:null}});
 deckKey('welcome',key('ArrowRight'));arrows.push(deckHosts.welcome.index);deckKey('welcome',key('ArrowLeft'));arrows.push(deckHosts.welcome.index);
-showDeckSlide('welcome',12);const doneLabel=[$('welcome-deck-next').textContent,$('welcome-deck-next').className];
+showDeckSlide('welcome',13);const doneLabel=[$('welcome-deck-next').textContent,$('welcome-deck-next').className];
 $('welcome-dialog').open=true;deckAction('welcome','next');
-showDeckSlide('learn',12);const learnLast=$('learn-deck-next').textContent;deckAction('learn','next');
+showDeckSlide('learn',13);const learnLast=$('learn-deck-next').textContent;deckAction('learn','next');
 showDeckSlide('welcome',5,{{offer:true}});const offerFoot=$('welcome-deck-foot').hidden,offerStage=$('welcome-deck-stage').innerHTML;
 deckAction('welcome','restart');
 $('welcome-dialog').open=true;closeWelcome({{route:'settings',target:'agent-access'}});
 process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel,closed,learnAfterLast:deckHosts.learn.index,learnLast,offerFoot,offerResume:offerStage.includes('data-deck-action=resume')&&offerStage.includes('data-deck-action=restart'),afterRestart:[deckHosts.welcome.index,deckHosts.welcome.offer],routes,counter:$('welcome-deck-count').textContent}}));
 """)
-        self.assertEqual(payload["log"], [0, 2, 6, 9, 9, 8])
+        self.assertEqual(payload["log"], [0, 3, 6, 10, 10, 9])
         self.assertTrue(payload["skipDisabled"])
-        self.assertEqual(payload["recorded"], 8)
-        self.assertEqual(payload["arrows"], [9, 8])
+        self.assertEqual(payload["recorded"], 9)
+        self.assertEqual(payload["arrows"], [10, 9])
         self.assertEqual(payload["doneLabel"], ["Done", "tbtn"])
         self.assertEqual(payload["closed"], ["welcome-dialog", "welcome-dialog"])
         self.assertEqual(payload["learnLast"], "Back to start")
@@ -11764,7 +11726,7 @@ process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel
         self.assertTrue(payload["offerResume"])
         self.assertEqual(payload["afterRestart"], [0, False])
         self.assertEqual(payload["routes"], ["settings"])
-        self.assertEqual(payload["counter"], "1 / 13 · about 4 min")
+        self.assertEqual(payload["counter"], "1 / 14 · about 4 min")
 
     def test_welcome_overlay_and_learn_deck_shells(self):
         dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
@@ -11798,7 +11760,6 @@ process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel
         self.assertIn(".welcome{", css)
         self.assertRegex(css, r"@media\(prefers-reduced-motion:reduce\)\{[^\n]*\.deckEnter")
         self.assertIn(".deck{display:grid;grid-template-columns:212px minmax(0,1fr)", css)
-        self.assertIn("const WELCOME_HOST=DECK_PLATFORM==='mac'?'Mac':'machine';", self.page)
         self.assertIn("const TOKENOMICS_URL='https://www.splunk.com/en_us/products/tokenomics.html';", self.page)
         self.assertIn('target=_blank rel="noopener noreferrer">Read about Tokenomics', self.page)
 
@@ -12027,8 +11988,8 @@ process.stdout.write(JSON.stringify({{same,mixed}}));
                        "id=agent-dialog", "/agent-access/status", "/agent-access/toggle",
                        "class=\"card settingsMap\""):
             self.assertIn(marker, self.page)
-        self.assertIn("<p class=miniPreviewNote id=${host}-agent-access>", self.page)
-        self.assertIn("No prompts, messages, reasoning, tool content", self.page)
+        self.assertIn("frame:{kind:'agent',anchor:'agent-access'", self.page)
+        self.assertIn("It gets numbers only, never your prompts or code.", self.page)
         for tool in ("mcp__tokenmeter__check", "mcp__tokenmeter__usage",
                      "mcp__tokenmeter__capabilities"):
             self.assertNotIn(tool, self.page)
