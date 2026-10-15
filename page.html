@@ -9364,7 +9364,7 @@ function modelSmoothPath(points){
  return d;
 }
 function renderModelSpeedChart(groups,ranking,top,rangeWindow){
- const svg=$('m-speedchart-svg'),tip=$('m-speedchart-tip'),VW=Math.max(320,Math.round(svg.clientWidth||1040)),VH=Math.max(160,Math.round(svg.clientHeight||250)),ML=56,MR=18,MT=16,MB=34,PW=VW-ML-MR,PH=VH-MT-MB;svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+ const svg=$('m-speedchart-svg'),tip=$('m-speedchart-tip'),VW=Math.max(320,Math.round(svg.clientWidth||1040)),VH=Math.max(160,Math.round(svg.clientHeight||250)),ML=56,MR=18,MT=30,MB=34,PW=VW-ML-MR,PH=VH-MT-MB;svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
  const timed=ranking.filter(group=>group.window.available),byKey=new Map(timed.map(group=>[group.key,group])),defaults=modelSpeedDefaultKeys(ranking);
  let keys=(modelSpeedSelection||defaults).filter(key=>byKey.has(key)),fallback=false;
  if(modelSpeedSelection&&!keys.length&&defaults.length){keys=defaults;fallback=true;}
