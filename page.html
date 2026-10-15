@@ -3393,12 +3393,13 @@ function dailyBaseline(days,todayKey=localDayKey()){
  const prior=(Array.isArray(days)?days:[]).filter(row=>row?.day&&row.day<todayKey&&row.day>=startKey&&Number(row.sessions)>0);
  const costRows=prior.filter(row=>metricAvailable(row,'cost')&&!metricPartial(row,'cost'));
  const costs=costRows.map(row=>Number(row.cost)||0),sessions=prior.map(row=>Number(row.sessions)||0);
- const costSessions=costRows.reduce((total,row)=>total+(Number(row.sessions)||0),0);
+ // A median of per-day rates keeps one burst of scripted sessions from swamping the baseline.
+ const sessionCosts=costRows.map(row=>(Number(row.cost)||0)/Number(row.sessions));
  return {
   days:prior.length,
   typicalCost:medianOf(costs),highCost:costs.length?Math.max(...costs):0,
   typicalSessions:medianOf(sessions),highSessions:sessions.length?Math.max(...sessions):0,
-  sessionCost:costSessions?costs.reduce((a,b)=>a+b,0)/costSessions:null,
+  sessionCost:medianOf(sessionCosts),
   estimated:costRows.some(row=>hasLocalEstimate(row)),
  };
 }
@@ -10029,8 +10030,8 @@ function renderCurrentSessions(state=LATEST){
   const contextSpark=currentSessionContextSparkline(row);
   const outputDollarDescription=row.output_per_dollar==null?'Output per dollar unavailable.':`${compactNumber(row.output_per_dollar)} output tokens per covered dollar.`;
   const costComparable=costAvailable&&!costPartial&&sessionTypical>0;
-  const heroCaption=costComparable?typicalCaption(Number(row.cost)||0,sessionTypical,'your average session',sessionTypicalText):'';
-  const heroScale=costComparable?readoutScaleHtml({value:Number(row.cost)||0,typical:sessionTypical,label:`${money(row.cost)} against an average session of ${sessionTypicalText}`}):'';
+  const heroCaption=costComparable?typicalCaption(Number(row.cost)||0,sessionTypical,'your typical session',sessionTypicalText):'';
+  const heroScale=costComparable?readoutScaleHtml({value:Number(row.cost)||0,typical:sessionTypical,label:`${money(row.cost)} against a typical session of ${sessionTypicalText}`}):'';
   const cardDescription=`${heroCaption?heroCaption+'. ':''}${contextSpark.summary} ${outputDollarDescription}${costPartial?' Cost is a lower bound: some runs in this session family have no cost evidence.':''} Drag to reorder. Press ⌥ and an arrow key to move.`;
   const arriving=arrivingIds.has(String(row.id))?' is-arriving':'';
   const desktop=desktopSessionTarget(row);

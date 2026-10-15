@@ -12173,8 +12173,14 @@ const days=[
  {day:'2026-08-01',sessions:30,cost:900},
 ];
 const baseline=dailyBaseline(days,'2026-10-13');
+const burst=dailyBaseline([
+ {day:'2026-10-12',sessions:1000,cost:200},
+ {day:'2026-10-11',sessions:10,cost:120},
+ {day:'2026-10-10',sessions:5,cost:50},
+],'2026-10-13');
 console.log(JSON.stringify({
  baseline,
+ burst,
  empty:dailyBaseline([], '2026-10-13'),
  above:typicalCaption(6,2,'your typical day','$2.00'),
  below:typicalCaption(1,4,'your typical day','$4.00'),
@@ -12193,6 +12199,8 @@ console.log(JSON.stringify({
         self.assertEqual(result["baseline"]["highCost"], 4)
         self.assertEqual(result["baseline"]["typicalSessions"], 4)
         self.assertEqual(result["baseline"]["sessionCost"], 1)
+        # A day of many tiny scripted sessions must not swamp the per-session baseline.
+        self.assertEqual(result["burst"]["sessionCost"], 10)
         self.assertIsNone(result["empty"]["typicalCost"])
         self.assertIsNone(result["empty"]["sessionCost"])
         self.assertEqual(result["above"], "3.0× your typical day of $2.00")

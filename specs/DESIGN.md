@@ -472,11 +472,11 @@ Components own identity (color, type, tracking, surface), not layout.
 **Readable numbers.** A block leads with one main number. When the page
 already has history to compare against, it adds a `.readoutScale` and a
 `.readoutCaption`, and the remaining numbers sit in smaller secondary rows.
-Current-session cards follow this: cost leads, compared with your average
+Current-session cards follow this: cost leads, compared with your typical
 session, and output per dollar, context, and speed follow in a smaller row.
 Baselines come from `dailyBaseline()`, which reads up to 30 prior active days.
-An average session is the total covered cost divided by the sessions on those
-days. Today is never part of its own baseline. Partial or unavailable cost
+A typical session is the median of each of those days' covered cost per
+session, so one day of many scripted sessions cannot swamp it. Today is never part of its own baseline. Partial or unavailable cost
 shows no comparison at all; it never falls back to zero. The scale fill uses
 `--dither-50`, a Bayer 4×4 mask with 2px cells, over a solid tone.
 
