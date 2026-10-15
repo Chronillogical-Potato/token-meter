@@ -468,6 +468,10 @@ Components own identity (color, type, tracking, surface), not layout.
 | Trend delta | `.trendDelta` inside `.valueWithDelta`, rendered by `renderTrendDelta()` | Rise or fall to the right of a number: a 20px mono arrow and percent over a 12px `vs prior …` label. `data-tone` is `improving` (good) or `degrading` (bad), or neutral when empty. It wraps beneath the number only when the column is too narrow | `<div class=valueWithDelta><div class=v>…</div><div class=trendDelta><strong>↑ 8.5%</strong><span>vs prior 30 days</span></div></div>` |
 | Reference scale | `.readoutScale`, rendered by `readoutScaleHtml()` | Where one value sits against a typical value: an 8px track, a dithered fill and marker up to the value, and a tick at the typical value. The scale runs from 0 to at least twice the typical value. `data-tone=high` (1.5× typical or more) switches the tone to `--warn`; pass `toned:false` for counts where more is not a concern | `<span class=readoutScale role=img aria-label="…" style="--at:62%;--typ:40%"><i class=readoutScaleFill></i><i class=readoutScaleTypical></i><i class=readoutScaleMark></i></span>` |
 | Reading caption | `.readoutCaption`, text from `typicalCaption()` | One plain-language line under a number, prefixed with a signal `›`, such as `2.1× your typical day of $2.30` | `<span class=readoutCaption>…</span>` |
+| Mini preview | `.miniPreview` | A compact card-surface visual beside explanatory copy (welcome panels, Learn sections): spectrum card surface, `.miniPreviewHead` uppercase label row (an `Example` `.chip` sits at its right edge when values are samples), `.miniPreviewNote` secondary line | `<div class=miniPreview><div class=miniPreviewHead><span>Label</span><span class=chip>Example</span></div>…<p class=miniPreviewNote>…</p></div>` |
+| Mark list | `.markList` | A checklist of what is and is not counted. `data-mark=yes` (good ✓), `no` (bad ✕, dimmed text), or `skip` (neutral –). Each row carries visually hidden state text, so the meaning never relies on color or glyph | `<ul class=markList><li data-mark=yes><i aria-hidden=true>✓</i><span><span class=srOnly>Included: </span>…</span></li></ul>` |
+| Level bar | `.levelBar`, rendered by `levelBarHtml()` | A pill track filled to `--fill` with the active gradient; `data-tone=warn` switches to `--warn`; an optional `<b>` tick at `--mark` (for example, a projection). Fills only from real values, never decoratively | `<span class=levelBar role=img aria-label="…" style="--fill:62%"><i></i></span>` |
+| Takeaway | `.takeaway` | One action line after explanatory copy: signal left rule, faint signal fill, an uppercase `Takeaway` label, then the line | `<div class=takeaway><span>Takeaway</span><b>…</b></div>` |
 
 **Readable numbers.** A block leads with one main number. When the page
 already has history to compare against, it adds a `.readoutScale` and a
@@ -494,6 +498,18 @@ To add one: write its rules as `:where(.name …)`, add the name to
 `ZERO_SPECIFICITY_COMPONENTS` in the contract test, use it in markup, and
 describe it here. For script-rendered components, add one shared render helper
 (like `renderTrendDelta()`) instead of per-screen copies.
+
+### Welcome overlay
+
+The first-launch welcome is a full-viewport modal `<dialog class=welcome>` over
+the shared `--spectrum-page` atmosphere, not a card inside a route. Five panels
+pair a display headline, one or two sentences, and a `.takeaway` on the left
+with a live `.miniPreview` on the right; they stack below 900px. A top-right
+round ✕ button (`aria-label="Close welcome"`), Esc, and **Skip for now** all
+dismiss it. The footer holds Skip, a dot pager, and Back / Next; the final panel
+demotes Done to a secondary button so its own call to action is the only primary.
+Panels rise in once per change and every motion is removed under
+`prefers-reduced-motion`. Learn reuses the same previews and components.
 
 ### Readability floor
 

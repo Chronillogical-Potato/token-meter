@@ -101,6 +101,24 @@ and select it from **Sessions**.
 
 ## Daily Workflows
 
+### Welcome and Learn
+
+The first time the dashboard opens, a full-page welcome walks through five
+short panels: what a session costs, whether the number can be trusted, where
+your data goes, five levers that move the bill, and setting a monthly budget.
+Each panel shows a small preview built from your own local data. Before any
+session has tokens, the previews show example values marked **Example**.
+Close it with the ✕ button, **Esc**, or **Skip for now**; it does not open by
+itself again. Reopen it from **Learn → Replay welcome** or the ⌘K command
+**Open welcome tour**. If you used the earlier getting-started checklist, the
+welcome does not open automatically.
+
+**Learn** is the reference version of the same ideas: why usage is not value,
+where the money goes by token type (list prices and your latest session's share
+of tokens versus cost), what the estimate can and cannot see, the questions each
+page answers, the five levers with your numbers where available, and how to
+test one change at a time.
+
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches
