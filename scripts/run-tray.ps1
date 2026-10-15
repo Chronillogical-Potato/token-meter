@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$SmokeTest,
-    [string]$OpenProbePath = ""
+    [string]$OpenProbePath = "",
+    [switch]$Inline
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,9 +12,26 @@ if ($env:OS -ne "Windows_NT") {
     throw "The Token Meter tray requires Windows."
 }
 
+if (-not $SmokeTest -and -not $Inline) {
+    $Shell = Get-Command powershell.exe -CommandType Application -ErrorAction SilentlyContinue
+    if ($Shell) {
+        Start-Process -FilePath $Shell.Source `
+            -ArgumentList @(
+                "-NoLogo", "-NoProfile", "-STA",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "`"$($MyInvocation.MyCommand.Path)`"",
+                "-Inline"
+            ) `
+            -WindowStyle Hidden
+        exit 0
+    }
+}
+
 Add-Type -TypeDefinition @"
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 
 public static class TokenMeterNativeWindow {
     [DllImport("user32.dll", SetLastError = true)]
@@ -29,6 +47,54 @@ public static class TokenMeterNativeIcon {
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool DestroyIcon(IntPtr handle);
+}
+
+public static class TokenMeterExceptionSuppressor {
+    // A native C# handler so that PipelineStoppedException from a PowerShell
+    // event handler cannot re-trigger during ThreadException handling and crash
+    // the process. A PS scriptblock delegate re-throws when the pipeline is
+    // already stopped; a C# method does not.
+    private static string logPath = "";
+
+    public static void Configure(string path) {
+        logPath = path ?? "";
+    }
+
+    private static string ExceptionType(Exception exception) {
+        string value = exception == null ? "UnknownException" : exception.GetType().Name;
+        if (String.IsNullOrEmpty(value)) value = "UnknownException";
+        if (value.Length > 96) value = value.Substring(0, 96);
+        StringBuilder safe = new StringBuilder(value.Length);
+        foreach (char character in value) {
+            safe.Append(
+                Char.IsLetterOrDigit(character) || character == '.' || character == '_'
+                    ? character
+                    : '_'
+            );
+        }
+        return safe.ToString();
+    }
+
+    private const long MaxLogBytes = 65536;
+
+    public static void Record(Exception exception) {
+        try {
+            if (String.IsNullOrEmpty(logPath)) return;
+            string line = "Token Meter tray UI exception: " + ExceptionType(exception) + "\r\n";
+            FileInfo info = new FileInfo(logPath);
+            if (info.Exists && info.Length + line.Length > MaxLogBytes) {
+                File.WriteAllText(logPath, line, new UTF8Encoding(false));
+            } else {
+                File.AppendAllText(logPath, line, new UTF8Encoding(false));
+            }
+        } catch { }
+    }
+
+    public static void Handle(
+        object sender,
+        System.Threading.ThreadExceptionEventArgs e) {
+        Record(e == null ? null : e.Exception);
+    }
 }
 "@
 
@@ -270,14 +336,230 @@ function Format-MenuStatus($State) {
     return "`$$($Cost.ToString('0.00', [System.Globalization.CultureInfo]::InvariantCulture)) est | $Tokens tokens"
 }
 
+function Load-TraySettings($SettingsPath) {
+    $Defaults = @{ panel_visible = $true; has_panel_position = $false; panel_x = -1; panel_y = -1 }
+    if (-not (Test-Path -LiteralPath $SettingsPath -PathType Leaf)) { return $Defaults }
+    try {
+        $Loaded = Get-Content -LiteralPath $SettingsPath -Raw -ErrorAction Stop | ConvertFrom-Json
+        $Visible = $Loaded.PSObject.Properties["panel_visible"]
+        if ($null -ne $Visible -and $Visible.Value -is [bool]) {
+            $Defaults["panel_visible"] = $Visible.Value
+        }
+        $CoordinatesValid = $true
+        foreach ($Key in @("panel_x", "panel_y")) {
+            $Prop = $Loaded.PSObject.Properties[$Key]
+            $Coordinate = 0
+            if ($null -ne $Prop -and [int]::TryParse(
+                [string]$Prop.Value,
+                [System.Globalization.NumberStyles]::Integer,
+                [System.Globalization.CultureInfo]::InvariantCulture,
+                [ref]$Coordinate
+            )) {
+                $Defaults[$Key] = $Coordinate
+            } else {
+                $CoordinatesValid = $false
+            }
+        }
+        $HasPosition = $Loaded.PSObject.Properties["has_panel_position"]
+        if ($null -ne $HasPosition -and $HasPosition.Value -is [bool]) {
+            $Defaults["has_panel_position"] = $HasPosition.Value -and $CoordinatesValid
+        } elseif ($CoordinatesValid -and -not (
+            $Defaults["panel_x"] -eq -1 -and $Defaults["panel_y"] -eq -1
+        )) {
+            # Migrate the legacy sentinel format without rejecting negative
+            # virtual-desktop coordinates from a display left of or above primary.
+            $Defaults["has_panel_position"] = $true
+        }
+    } catch { }
+    return $Defaults
+}
+
+function Save-TraySettings($SettingsPath, $Settings) {
+    $SettingsParent = Split-Path -Parent $SettingsPath
+    $Temporary = "$SettingsPath.tmp-$PID"
+    try {
+        New-Item -ItemType Directory -Path $SettingsParent -Force | Out-Null
+        [System.IO.File]::WriteAllText(
+            $Temporary,
+            ($Settings | ConvertTo-Json -Compress) + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        Move-Item -LiteralPath $Temporary -Destination $SettingsPath -Force
+    } catch {
+        Remove-Item -LiteralPath $Temporary -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Format-PanelText($State) {
+    if (-not $State -or -not [bool](Get-Value $State "ok" $false)) {
+        return "Token Meter - waiting for server"
+    }
+    $Cost = 0.0
+    $HasCost = [double]::TryParse(
+        [string](Get-Value $State "total_cost" $null),
+        [System.Globalization.NumberStyles]::Any,
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [ref]$Cost
+    )
+    $RawTokens = Get-Value $State "total_tokens" $null
+    $TokenCount = 0.0
+    $HasTokens = [double]::TryParse(
+        [string]$RawTokens,
+        [System.Globalization.NumberStyles]::Any,
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [ref]$TokenCount
+    )
+    $Source = Get-Value $State "source" $null
+    $Provider = [string](Get-Value $Source "provider" "")
+    if (-not $Provider) { $Provider = [string](Get-Value $State "provider" "") }
+    $RuntimeLabel = Get-RuntimeLabel $State $Provider
+    $Model = [string](Get-Value $Source "model" "")
+    if (-not $Model) { $Model = [string](Get-Value $State "model" "") }
+    $Verdict = Get-Value $State "verdict" $null
+    $VerdictLabel = [string](Get-Value $Verdict "label" "")
+    $Parts = [System.Collections.Generic.List[string]]::new()
+    if ($VerdictLabel) { $Parts.Add($VerdictLabel) }
+    if ($RuntimeLabel) { $Parts.Add($RuntimeLabel) }
+    if ($Model) { $Parts.Add($Model) }
+    if ($HasTokens) {
+        $Parts.Add("$(Format-CompactNumber $RawTokens) tokens")
+    } else {
+        $Parts.Add("tokens unavailable")
+    }
+    if ($HasCost) {
+        $Parts.Add("`$$($Cost.ToString('0.00', [System.Globalization.CultureInfo]::InvariantCulture)) est")
+    } else {
+        $Parts.Add("cost unavailable")
+    }
+    return ($Parts -join " | ")
+}
+
+function New-UsagePanel {
+    $Panel = New-Object System.Windows.Forms.Form
+    $Panel.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
+    $Panel.ControlBox = $false
+    $Panel.ShowInTaskbar = $false
+    $Panel.TopMost = $true
+    $Panel.StartPosition = [System.Windows.Forms.FormStartPosition]::Manual
+    $Panel.BackColor = [System.Drawing.Color]::FromArgb(31, 41, 55)
+    $Panel.ClientSize = New-Object System.Drawing.Size(500, 30)
+
+    $Label = New-Object System.Windows.Forms.Label
+    $Label.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Regular)
+    $Label.ForeColor = [System.Drawing.Color]::White
+    $Label.BackColor = $Panel.BackColor
+    $Label.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+    $Label.AutoEllipsis = $true
+    $Label.Text = "Token Meter - waiting for local usage data"
+    $Label.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $Panel.Controls.Add($Label) | Out-Null
+    return $Panel, $Label
+}
+
+function Set-PanelPosition($Panel, $X, $Y, $TargetScreen = $null) {
+    $TargetPoint = New-Object System.Drawing.Point($X, $Y)
+    $Screen = if ($null -eq $TargetScreen) {
+        [System.Windows.Forms.Screen]::FromPoint($TargetPoint)
+    } else {
+        $TargetScreen
+    }
+    $WorkArea = $Screen.WorkingArea
+    $BottomReserve = if ($WorkArea.Bottom -eq $Screen.Bounds.Bottom) { 48 } else { 0 }
+    $ClampedX = [Math]::Max($WorkArea.Left, [Math]::Min($X, $WorkArea.Right - $Panel.Width))
+    $ClampedY = [Math]::Max($WorkArea.Top, [Math]::Min($Y, $WorkArea.Bottom - $Panel.Height - $BottomReserve))
+    $Panel.Location = New-Object System.Drawing.Point($ClampedX, $ClampedY)
+}
+
+function Show-UsagePanel {
+    $SavedX = [int]($script:TraySettings["panel_x"])
+    $SavedY = [int]($script:TraySettings["panel_y"])
+    if ([bool]$script:TraySettings["has_panel_position"]) {
+        Set-PanelPosition $script:UsagePanel $SavedX $SavedY
+    } else {
+        $WorkArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+        Set-PanelPosition $script:UsagePanel ($WorkArea.Right - $script:UsagePanel.Width - 12) ($WorkArea.Bottom - $script:UsagePanel.Height - 48)
+    }
+    if (-not $script:UsagePanel.Visible) { $script:UsagePanel.Show() }
+}
+
+function Set-PanelText([string]$Text) {
+    if ($null -eq $script:UsagePanel -or -not $script:PanelVisible) { return }
+    $script:PanelLabel.Text = $Text
+    try {
+        $Measured = [System.Windows.Forms.TextRenderer]::MeasureText($Text, $script:PanelLabel.Font)
+        $NewWidth  = [Math]::Max(280, [Math]::Min(900, $Measured.Width  + 36))
+        $NewHeight = [Math]::Max(30,  $Measured.Height + 12)
+        $script:UsagePanel.ClientSize = New-Object System.Drawing.Size($NewWidth, $NewHeight)
+        Set-PanelPosition $script:UsagePanel $script:UsagePanel.Left $script:UsagePanel.Top
+    } catch { Write-TrayUiException $_.Exception }
+}
+
+function Refresh-PanelText {
+    $Base = if ($script:CurrentPanelText) { $script:CurrentPanelText } else { "Token Meter - waiting for server" }
+    Set-PanelText "Token Meter | $Base"
+}
+
+function Update-UsagePanel($State) {
+    if ($null -eq $script:UsagePanel -or -not $script:PanelVisible) { return }
+    $script:CurrentPanelText = Format-PanelText $State
+    Refresh-PanelText
+}
+
+function Start-UsagePanelDrag($Sender, $EventArgs) {
+    if ($EventArgs.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
+        $script:UsagePanelDragActive = $true
+        $script:UsagePanelDragCursor = [System.Windows.Forms.Control]::MousePosition
+        $script:UsagePanelDragOrigin = $script:UsagePanel.Location
+        $script:UsagePanel.Capture = $true
+    }
+}
+
+function Move-UsagePanelDrag {
+    if (-not $script:UsagePanelDragActive) { return }
+    $Cursor = [System.Windows.Forms.Control]::MousePosition
+    $CursorScreen = [System.Windows.Forms.Screen]::FromPoint($Cursor)
+    Set-PanelPosition $script:UsagePanel `
+        ($script:UsagePanelDragOrigin.X + $Cursor.X - $script:UsagePanelDragCursor.X) `
+        ($script:UsagePanelDragOrigin.Y + $Cursor.Y - $script:UsagePanelDragCursor.Y) `
+        $CursorScreen
+}
+
+function Stop-UsagePanelDrag {
+    if (-not $script:UsagePanelDragActive) { return }
+    $script:UsagePanelDragActive = $false
+    $script:UsagePanel.Capture = $false
+    Set-PanelPosition $script:UsagePanel $script:UsagePanel.Left $script:UsagePanel.Top
+    try {
+        $script:TraySettings["panel_x"] = $script:UsagePanel.Left
+        $script:TraySettings["panel_y"] = $script:UsagePanel.Top
+        $script:TraySettings["has_panel_position"] = $true
+        Save-TraySettings $SettingsPath $script:TraySettings
+    } catch { Write-TrayUiException $_.Exception }
+}
+
 $RuntimeRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$RuntimeParent = Split-Path -Parent $RuntimeRoot
 $PidPath = Join-Path $RuntimeRoot "tray.pid"
 $StatusPath = Join-Path $RuntimeRoot "tray.status.json"
+$SettingsPath = Join-Path $RuntimeParent "tray-settings.json"
+# Separate from tray.err.log, which start-token-meter.ps1 holds open as redirected stderr.
+$TrayUiLog = Join-Path $RuntimeRoot "tray.ui.log"
 $script:BaseUrl = "http://127.0.0.1:8722"
 $script:SelectedSessionId = ""
 $script:LastState = $null
 $script:Connected = $false
 $script:OpenProbePath = $OpenProbePath
+$script:TrayExiting = $false
+$script:RefreshFailureLogged = $false
+$script:UsagePanelDragActive = $false
+$script:UsagePanelDragCursor = $null
+$script:UsagePanelDragOrigin = $null
+$script:PanelToolTip = $null
+$script:CurrentPanelText = "Token Meter - waiting for server"
+
+function Write-TrayUiException($Exception) {
+    try { [TokenMeterExceptionSuppressor]::Record($Exception) } catch { }
+}
 
 function Write-TrayStatus([bool]$Ready, [bool]$Connected) {
     $Record = [ordered]@{
@@ -327,6 +609,7 @@ if ($SmokeTest) {
         total_cost = 1.25
         total_tokens = 125000
         verdict = [pscustomobject]@{ label = "Healthy" }
+        source = [pscustomobject]@{ provider = "kiro"; model = "" }
         runtime_catalog = [pscustomobject]@{
             kiro = [pscustomobject]@{ label = "Kiro" }
             "unknown-runtime" = [pscustomobject]@{ label = "Unknown Runtime" }
@@ -371,6 +654,10 @@ if ($SmokeTest) {
 
         $IconBitmap = $ProbeIcon.ToBitmap()
         $BrandPixel = $IconBitmap.GetPixel(4, 4)
+        $PanelTextSample = Format-PanelText $Sample
+        $ProbePanel, $ProbePanelLabel = New-UsagePanel
+        $PanelConstructed = $null -ne $ProbePanel -and $null -ne $ProbePanelLabel
+        if ($PanelConstructed) { $ProbePanel.Dispose() }
         [ordered]@{
             ok = $Probe.Visible -and $OpenedUrl -eq "$($script:BaseUrl)/#sessions"
             platform = "windows"
@@ -384,6 +671,9 @@ if ($SmokeTest) {
             unknown_runtime_label = Get-RuntimeLabel $Sample "future-runtime"
             dpi_awareness = $script:DpiAwareness
             theme = $ProbeTheme
+            panel_text = $PanelTextSample
+            panel_text_unavailable = Format-PanelText ([pscustomobject]@{ ok = $true })
+            panel_constructed = $PanelConstructed
         } | ConvertTo-Json -Compress
     } finally {
         $Probe.Visible = $false
@@ -461,6 +751,7 @@ function Update-TrayMenu($State) {
     $script:ActivityItem.Text = Limit-Text "Activity: $ActivityTitle" 100
 
     Update-RecentSessions $State
+    Update-UsagePanel $State
 }
 
 function Invoke-TrayRefresh {
@@ -478,14 +769,22 @@ function Invoke-TrayRefresh {
         $script:LastState = $State
         $script:Connected = $true
         Update-TrayMenu $State
+        $script:RefreshFailureLogged = $false
     } catch {
+        if (-not $script:RefreshFailureLogged) {
+            Write-TrayUiException $_.Exception
+            $script:RefreshFailureLogged = $true
+        }
         $script:Connected = $false
         $script:NotifyIcon.Text = "Token Meter - local server unavailable"
         $script:StatusItem.Text = "Local server unavailable"
         $script:GuidanceItem.Text = "Guidance: reconnecting"
         $script:ActivityItem.Text = "Activity: unavailable"
+        if ($null -ne $script:UsagePanel -and $script:PanelVisible) {
+            Set-PanelText "Token Meter | local server unavailable"
+        }
     }
-    Write-TrayStatus $true $script:Connected
+    try { Write-TrayStatus $true $script:Connected } catch { }
 }
 
 $CreatedNew = $false
@@ -495,12 +794,51 @@ if (-not $CreatedNew) {
     exit 0
 }
 
+[System.Windows.Forms.Application]::SetUnhandledExceptionMode(
+    [System.Windows.Forms.UnhandledExceptionMode]::CatchException
+)
+[TokenMeterExceptionSuppressor]::Configure($TrayUiLog)
+$script:ExceptionHandler = [System.Delegate]::CreateDelegate(
+    [System.Threading.ThreadExceptionEventHandler],
+    [TokenMeterExceptionSuppressor].GetMethod("Handle")
+)
+[System.Windows.Forms.Application]::add_ThreadException($script:ExceptionHandler)
 [System.Windows.Forms.Application]::EnableVisualStyles()
 $script:NotifyIcon = New-Object System.Windows.Forms.NotifyIcon
 $script:TrayIcon = New-TokenMeterIcon
 $script:NotifyIcon.Icon = $script:TrayIcon
 $script:NotifyIcon.Text = "Token Meter - starting"
 $script:NotifyIcon.Visible = $true
+
+$script:TraySettings = Load-TraySettings $SettingsPath
+$script:PanelVisible = [bool]$script:TraySettings["panel_visible"]
+$script:UsagePanel, $script:PanelLabel = New-UsagePanel
+$PanelTooltipText = "Token Meter: right-click for options"
+$script:PanelToolTip = New-Object System.Windows.Forms.ToolTip
+$script:PanelToolTip.ShowAlways = $true
+$script:PanelToolTip.SetToolTip($script:UsagePanel, $PanelTooltipText)
+$script:PanelToolTip.SetToolTip($script:PanelLabel, $PanelTooltipText)
+
+$script:UsagePanel.add_MouseDown({ param($s, $e) try { Start-UsagePanelDrag $s $e } catch { Write-TrayUiException $_.Exception } })
+$script:UsagePanel.add_MouseMove({ try { Move-UsagePanelDrag } catch { Write-TrayUiException $_.Exception } })
+$script:UsagePanel.add_MouseUp({ try { Stop-UsagePanelDrag } catch { Write-TrayUiException $_.Exception } })
+$script:PanelLabel.add_MouseDown({ param($s, $e) try { Start-UsagePanelDrag $s $e } catch { Write-TrayUiException $_.Exception } })
+$script:PanelLabel.add_MouseUp({ try { Stop-UsagePanelDrag } catch { Write-TrayUiException $_.Exception } })
+$script:UsagePanel.add_FormClosing({
+    param($s, $e)
+    if ($script:PanelVisible -and -not $script:TrayExiting -and $e.CloseReason -notin @(
+        [System.Windows.Forms.CloseReason]::WindowsShutDown,
+        [System.Windows.Forms.CloseReason]::TaskManagerClosing
+    )) { $e.Cancel = $true }
+})
+$script:UsagePanel.add_VisibleChanged({
+    # Restore panel if Windows hides it unexpectedly (shell transitions, etc.).
+    # Direct call is safe: Show() fires VisibleChanged(true) and the guard
+    # below returns immediately on that re-entry.
+    if (-not $script:TrayExiting -and $script:PanelVisible -and -not $script:UsagePanel.Visible) {
+        try { Show-UsagePanel } catch { Write-TrayUiException $_.Exception }
+    }
+})
 
 $Menu = New-Object System.Windows.Forms.ContextMenuStrip
 $TitleItem = New-Object System.Windows.Forms.ToolStripMenuItem
@@ -550,6 +888,25 @@ $Refresh.Text = "Refresh now"
 $Refresh.add_Click({ Invoke-TrayRefresh })
 $Menu.Items.Add($Refresh) | Out-Null
 
+$script:TogglePanelItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$script:TogglePanelItem.Text = if ($script:PanelVisible) { "Hide usage panel" } else { "Show usage panel" }
+$script:TogglePanelItem.add_Click({
+    try {
+        $script:PanelVisible = -not $script:PanelVisible
+        $script:TraySettings["panel_visible"] = $script:PanelVisible
+        Save-TraySettings $SettingsPath $script:TraySettings
+        if ($script:PanelVisible) {
+            Update-UsagePanel $script:LastState
+            Show-UsagePanel
+            $script:TogglePanelItem.Text = "Hide usage panel"
+        } else {
+            $script:UsagePanel.Hide()
+            $script:TogglePanelItem.Text = "Show usage panel"
+        }
+    } catch { Write-TrayUiException $_.Exception }
+})
+$Menu.Items.Add($script:TogglePanelItem) | Out-Null
+
 $Quit = New-Object System.Windows.Forms.ToolStripMenuItem
 $Quit.Text = "Quit tray widget"
 $Quit.add_Click({ $script:Context.ExitThread() })
@@ -557,6 +914,8 @@ $Menu.Items.Add($Quit) | Out-Null
 
 Set-TrayMenuTheme $Menu | Out-Null
 $script:NotifyIcon.ContextMenuStrip = $Menu
+$script:UsagePanel.ContextMenuStrip = $Menu
+$script:PanelLabel.ContextMenuStrip = $Menu
 $script:NotifyIcon.add_MouseClick({ Invoke-TrayMouseClick $_ })
 $Menu.add_Opening({
     Invoke-TrayRefresh
@@ -565,21 +924,28 @@ $Menu.add_Opening({
 
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 10000
-$Timer.add_Tick({ Invoke-TrayRefresh })
+$Timer.add_Tick({ try { Invoke-TrayRefresh } catch { Write-TrayUiException $_.Exception } })
 $script:Context = New-Object System.Windows.Forms.ApplicationContext
 
 try {
     [System.IO.File]::WriteAllText($PidPath, "$PID`r`n", [System.Text.UTF8Encoding]::new($false))
+    if ($script:PanelVisible) { Show-UsagePanel }
     Invoke-TrayRefresh
     $Timer.Start()
     [System.Windows.Forms.Application]::Run($script:Context)
 } finally {
+    $script:TrayExiting = $true
     $Timer.Stop()
     $Timer.Dispose()
     $script:NotifyIcon.Visible = $false
     $script:NotifyIcon.Dispose()
     $script:TrayIcon.Dispose()
     $Menu.Dispose()
+    if ($null -ne $script:UsagePanel) {
+        $script:UsagePanel.Visible = $false
+        $script:UsagePanel.Dispose()
+    }
+    if ($null -ne $script:PanelToolTip) { $script:PanelToolTip.Dispose() }
     $script:Context.Dispose()
     foreach ($Path in @($PidPath, $StatusPath)) {
         if (Test-Path -LiteralPath $Path -PathType Leaf) {

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shutil
@@ -375,15 +376,260 @@ class WindowsPackagingContracts(unittest.TestCase):
             subprocess_module.Popen.call_args.kwargs["creationflags"], 0x08000000
         )
 
+    def test_windows_tray_self_backgrounds_unless_inline(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        starter = (ROOT / "scripts" / "start-token-meter.ps1").read_text(encoding="utf-8")
+        self.assertIn("[switch]$Inline", tray)
+        self.assertIn("-not $Inline", tray)
+        self.assertIn("-WindowStyle Hidden", tray)
+        self.assertIn("exit 0", tray)
+        self.assertIn('"-Inline"', starter)
+
+    def test_windows_tray_panel_functions_and_settings_exist(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        for marker in (
+            "function Format-PanelText",
+            "function New-UsagePanel",
+            "function Set-PanelPosition",
+            "function Update-UsagePanel",
+            "function Load-TraySettings",
+            "function Save-TraySettings",
+            "tray-settings.json",
+            "panel_visible",
+            "panel_x",
+            "panel_y",
+            "Hide usage panel",
+            "Show usage panel",
+            "System.Windows.Forms.Form",
+            "FormBorderStyle]::None",
+            "ShowInTaskbar = $false",
+            "TopMost = $true",
+            "WorkingArea",
+            "function Show-UsagePanel",
+            "function Start-UsagePanelDrag",
+            "function Move-UsagePanelDrag",
+            "function Stop-UsagePanelDrag",
+            "$script:UsagePanelDragActive",
+            "UsagePanel.Capture",
+            "UsagePanel.ContextMenuStrip",
+            "PanelLabel.ContextMenuStrip",
+            "add_FormClosing",
+            "add_VisibleChanged",
+            "TrayExiting",
+            "panel_text",
+            "panel_constructed",
+            "SetUnhandledExceptionMode",
+            "TokenMeterExceptionSuppressor",
+            "CreateDelegate",
+            "add_ThreadException",
+        ):
+            self.assertIn(marker, tray, f"run-tray.ps1 missing: {marker!r}")
+
+    def test_windows_tray_preferences_survive_a_runtime_swap(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        installer = (ROOT / "scripts" / "install-windows.ps1").read_text(encoding="utf-8")
+
+        self.assertIn('Join-Path $RuntimeParent "tray-settings.json"', tray)
+        self.assertNotIn('Join-Path $RuntimeRoot "tray-settings.json"', tray)
+        self.assertIn("function Migrate-LegacyTraySettings", installer)
+        self.assertIn('Join-Path $InstallParent "tray-settings.json"', installer)
+        self.assertIn(
+            "Migrate-LegacyTraySettings $InstallRoot $PersistentTraySettingsPath",
+            installer,
+        )
+        self.assertLess(
+            installer.index("Migrate-LegacyTraySettings $InstallRoot $PersistentTraySettingsPath"),
+            installer.index("Move-Item -LiteralPath $InstallRoot -Destination $BackupRoot"),
+        )
+
+    def test_windows_tray_panel_uses_the_target_screen_for_saved_positions(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+
+        self.assertIn("has_panel_position", tray)
+        self.assertIn("$TargetPoint = New-Object System.Drawing.Point($X, $Y)", tray)
+        self.assertIn("Screen]::FromPoint($TargetPoint)", tray)
+        self.assertIn('if ([bool]$script:TraySettings["has_panel_position"])', tray)
+        self.assertIn('$script:TraySettings["has_panel_position"] = $true', tray)
+        resize = tray.index("function Set-PanelText")
+        refresh = tray.index("function Refresh-PanelText")
+        self.assertIn(
+            "Set-PanelPosition $script:UsagePanel $script:UsagePanel.Left $script:UsagePanel.Top",
+            tray[resize:refresh],
+        )
+        self.assertNotIn("add_LocationChanged", tray)
+
+    def test_windows_tray_drag_uses_the_cursor_screen_to_cross_monitors(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        move_drag = tray[
+            tray.index("function Move-UsagePanelDrag"):
+            tray.index("function Stop-UsagePanelDrag")
+        ]
+
+        self.assertIn("$Cursor = [System.Windows.Forms.Control]::MousePosition", move_drag)
+        self.assertIn(
+            "$CursorScreen = [System.Windows.Forms.Screen]::FromPoint($Cursor)",
+            move_drag,
+        )
+        self.assertIn("$CursorScreen", move_drag)
+        self.assertIn(
+            "function Set-PanelPosition($Panel, $X, $Y, $TargetScreen = $null)",
+            tray,
+        )
+        self.assertIn("if ($null -eq $TargetScreen)", tray)
+
+    def test_windows_tray_hover_guidance_uses_a_tooltip_without_resizing_the_panel(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        refresh = tray[
+            tray.index("function Refresh-PanelText"):
+            tray.index("function Update-UsagePanel")
+        ]
+
+        self.assertNotIn("Right-click for options", tray)
+        self.assertNotIn("PanelHovering", tray)
+        self.assertNotIn("MouseEnter", tray)
+        self.assertNotIn("MouseLeave", tray)
+        self.assertNotIn("PanelHover", refresh)
+        self.assertIn("$PanelTooltipText = \"Token Meter: right-click for options\"", tray)
+        self.assertIn("New-Object System.Windows.Forms.ToolTip", tray)
+        self.assertIn("$script:PanelToolTip.ShowAlways = $true", tray)
+        self.assertIn(
+            "$script:PanelToolTip.SetToolTip($script:UsagePanel, $PanelTooltipText)",
+            tray,
+        )
+        self.assertIn(
+            "$script:PanelToolTip.SetToolTip($script:PanelLabel, $PanelTooltipText)",
+            tray,
+        )
+
+    def test_windows_tray_records_only_sanitized_ui_exception_types(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+
+        self.assertIn('$TrayUiLog = Join-Path $RuntimeRoot "tray.ui.log"', tray)
+        self.assertIn("function Write-TrayUiException", tray)
+        self.assertIn("TokenMeterExceptionSuppressor]::Configure($TrayUiLog)", tray)
+        self.assertIn("catch { Write-TrayUiException $_.Exception }", tray)
+        diagnostic_start = tray.index("function Write-TrayUiException")
+        diagnostic_end = tray.index("function Write-TrayStatus")
+        diagnostic = tray[diagnostic_start:diagnostic_end]
+        self.assertIn("[TokenMeterExceptionSuppressor]::Record($Exception)", diagnostic)
+        recorder_start = tray.index("public static class TokenMeterExceptionSuppressor")
+        recorder = tray[recorder_start:tray.index('"@', recorder_start)]
+        for marker in (".Message", "StackTrace", "exception.ToString()", "Exception.ToString()"):
+            self.assertNotIn(marker, recorder)
+            self.assertNotIn(marker, diagnostic)
+
+    def test_windows_tray_ui_log_is_bounded_and_separate_from_redirected_stderr(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        launcher = (ROOT / "scripts" / "start-token-meter.ps1").read_text(encoding="utf-8")
+        recorder_start = tray.index("public static class TokenMeterExceptionSuppressor")
+        recorder = tray[recorder_start:tray.index('"@', recorder_start)]
+
+        self.assertIn('-RedirectStandardError $TrayErrorLog', launcher)
+        self.assertNotIn('Join-Path $RuntimeRoot "tray.err.log"', tray)
+        self.assertNotIn("tray.ui.log", launcher)
+        self.assertIn("private const long MaxLogBytes = 65536;", recorder)
+        self.assertIn("info.Length + line.Length > MaxLogBytes", recorder)
+        self.assertIn("File.WriteAllText(logPath, line", recorder)
+        self.assertEqual(tray.count("AppendAllText"), 1)
+
+    def test_windows_tray_logs_each_server_outage_once(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        refresh = tray[
+            tray.index("function Invoke-TrayRefresh"):
+            tray.index("$CreatedNew = $false")
+        ]
+        success, failure = refresh.split("} catch {", 1)
+
+        self.assertIn("$script:RefreshFailureLogged = $false", success)
+        self.assertLess(
+            success.index("Update-TrayMenu $State"),
+            success.index("$script:RefreshFailureLogged = $false"),
+        )
+        self.assertIn("if (-not $script:RefreshFailureLogged) {", failure)
+        self.assertIn("$script:RefreshFailureLogged = $true", failure)
+        self.assertLess(
+            failure.index("if (-not $script:RefreshFailureLogged)"),
+            failure.index("Write-TrayUiException $_.Exception"),
+        )
+        self.assertIn(
+            "$Timer.add_Tick({ try { Invoke-TrayRefresh } catch { Write-TrayUiException $_.Exception } })",
+            tray,
+        )
+
+    def test_windows_installer_settings_migration_cannot_abort_install(self):
+        installer = (ROOT / "scripts" / "install-windows.ps1").read_text(encoding="utf-8")
+        migrate = installer[
+            installer.index("function Migrate-LegacyTraySettings"):
+            installer.index('if ($env:OS -ne "Windows_NT")')
+        ]
+
+        self.assertIn("} catch {", migrate)
+        self.assertIn("panel will use defaults", migrate)
+        self.assertNotIn("throw", migrate)
+        self.assertNotIn("Fail ", migrate)
+
+    def test_windows_tray_panel_labels_missing_cost_as_unavailable(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+
+        panel_start = tray.index("function Format-PanelText")
+        panel_end = tray.index("function New-UsagePanel")
+        panel = tray[panel_start:panel_end]
+        self.assertIn("cost unavailable", panel)
+        self.assertIn('Get-Value $State "total_cost" $null', panel)
+        self.assertIn("tokens unavailable", panel)
+        self.assertIn('$RawTokens = Get-Value $State "total_tokens" $null', panel)
+        self.assertNotIn('Get-Value $State "total_tokens" 0', panel)
+        self.assertIn("panel_text_unavailable = Format-PanelText", tray)
+
+    def test_windows_tray_panel_places_the_catalog_runtime_after_its_verdict(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        panel_start = tray.index("function Format-PanelText")
+        panel_end = tray.index("function New-UsagePanel")
+        panel = tray[panel_start:panel_end]
+
+        provider = '$Provider = [string](Get-Value $Source "provider" "")'
+        runtime = "$RuntimeLabel = Get-RuntimeLabel $State $Provider"
+        self.assertIn(provider, panel)
+        self.assertIn(
+            '$Provider = [string](Get-Value $State "provider" "")',
+            panel,
+        )
+        self.assertIn(runtime, panel)
+        self.assertIn("if ($VerdictLabel) { $Parts.Add($VerdictLabel) }", panel)
+        self.assertIn("$Parts.Add($RuntimeLabel)", panel)
+        self.assertLess(panel.index("$Parts.Add($VerdictLabel)"), panel.index("$Parts.Add($RuntimeLabel)"))
+
+    def test_windows_tray_panel_uses_nonblank_text_when_refresh_fails(self):
+        tray = (ROOT / "scripts" / "run-tray.ps1").read_text(encoding="utf-8")
+        panel_start = tray.index("function New-UsagePanel")
+        panel_end = tray.index("function Set-PanelPosition")
+        panel = tray[panel_start:panel_end]
+        refresh_start = tray.index("function Invoke-TrayRefresh")
+        refresh_end = tray.index("$CreatedNew = $false")
+        refresh = tray[refresh_start:refresh_end]
+
+        self.assertIn('$Label.Text = "Token Meter - waiting for local usage data"', panel)
+        self.assertIn('Set-PanelText "Token Meter | local server unavailable"', refresh)
+        self.assertIn("Write-TrayUiException $_.Exception", refresh)
+
+    def test_windows_docs_explain_the_tray_panel_and_inline_launch_mode(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        contributing = (ROOT / "specs" / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+        for document in (readme, contributing):
+            self.assertIn("floating usage panel", document)
+            self.assertRegex(document, r"persist(?:s)?\s+across installs and updates")
+            self.assertIn("-Inline", document)
+
     @unittest.skipUnless(os.name == "nt", "Windows-native PowerShell validation")
     def test_powershell_scripts_parse_and_tray_smoke_on_windows(self):
         shell = shutil.which("pwsh") or shutil.which("powershell.exe")
         self.assertTrue(shell)
         for relative in WINDOWS_POWERSHELL_SCRIPTS:
+            script_path = str(ROOT / relative).replace("'", "''")
             command = [
                 shell, "-NoLogo", "-NoProfile", "-Command",
-                "[void][scriptblock]::Create([IO.File]::ReadAllText($args[0]))",
-                str(ROOT / relative),
+                f"[void][scriptblock]::Create([IO.File]::ReadAllText('{script_path}'))",
             ]
             result = subprocess.run(command, capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -397,6 +643,12 @@ class WindowsPackagingContracts(unittest.TestCase):
         self.assertIn('"unknown_runtime_label":"Unknown Runtime"', smoke.stdout)
         self.assertRegex(smoke.stdout, r'"dpi_awareness":"(?:PerMonitorV2|SystemAware|Unavailable)"')
         self.assertRegex(smoke.stdout, r'"theme":"(?:light|dark)"')
+        payload = json.loads(smoke.stdout.strip().splitlines()[-1])
+        self.assertIn("125.0K tokens", payload["panel_text"])
+        self.assertIn("$1.25 est", payload["panel_text"])
+        self.assertIn("tokens unavailable", payload["panel_text_unavailable"])
+        self.assertIn("cost unavailable", payload["panel_text_unavailable"])
+        self.assertTrue(payload["panel_constructed"])
 
     @unittest.skipUnless(os.name == "nt", "Windows-native CMD validation")
     def test_local_windows_wrapper_executes_stub_and_preserves_exit_code(self):

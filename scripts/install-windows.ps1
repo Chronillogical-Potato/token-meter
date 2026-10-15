@@ -256,6 +256,27 @@ function Copy-Directory([string]$Source, [string]$Destination) {
     }
 }
 
+function Migrate-LegacyTraySettings([string]$RuntimeRoot, [string]$PersistentSettingsPath) {
+    if (Test-Path -LiteralPath $PersistentSettingsPath) {
+        return
+    }
+    $LegacySettingsPath = Join-Path $RuntimeRoot "tray-settings.json"
+    if (-not (Test-Path -LiteralPath $LegacySettingsPath -PathType Leaf)) {
+        return
+    }
+    $SettingsParent = Split-Path -Parent $PersistentSettingsPath
+    $TemporaryPath = "$PersistentSettingsPath.tmp-$PID"
+    try {
+        New-Item -ItemType Directory -Path $SettingsParent -Force | Out-Null
+        Copy-Item -LiteralPath $LegacySettingsPath -Destination $TemporaryPath -ErrorAction Stop
+        Move-Item -LiteralPath $TemporaryPath -Destination $PersistentSettingsPath -ErrorAction Stop
+    } catch {
+        Write-Host "Token Meter: tray panel settings were not carried over; the panel will use defaults."
+    } finally {
+        Remove-Item -LiteralPath $TemporaryPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 if ($env:OS -ne "Windows_NT") {
     Fail "the Windows installer requires Windows."
 }
@@ -272,6 +293,7 @@ if (-not $InstallRoot) {
 }
 $InstallRoot = [System.IO.Path]::GetFullPath($InstallRoot)
 $InstallParent = Split-Path -Parent $InstallRoot
+$PersistentTraySettingsPath = Join-Path $InstallParent "tray-settings.json"
 $PathRoot = [System.IO.Path]::GetPathRoot($InstallRoot).TrimEnd('\', '/')
 if (-not $InstallParent -or $InstallRoot.TrimEnd('\', '/') -eq $PathRoot -or
     (Split-Path -Leaf $InstallRoot) -ne "runtime") {
@@ -496,6 +518,7 @@ try {
     if (Test-Path -LiteralPath $InstallRoot) {
         Stop-InstalledTray $InstallRoot
         Stop-InstalledServer $InstallRoot
+        Migrate-LegacyTraySettings $InstallRoot $PersistentTraySettingsPath
         Move-Item -LiteralPath $InstallRoot -Destination $BackupRoot
     }
     Move-Item -LiteralPath $StagingRoot -Destination $InstallRoot

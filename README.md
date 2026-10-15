@@ -50,6 +50,11 @@ The bootstrap uses WinGet (App Installer) to add any missing Git and Python,
 with no administrator access. From a checkout, run `.\scripts\install-windows.cmd`.
 Add `-BackendOnly` (`& $p -BackendOnly`) to skip the notification-area companion.
 
+The notification-area companion includes a floating usage panel. Drag it to
+move it, or hide it from its context menu; its position and visibility persist
+across installs and updates. Running `run-tray.ps1` directly backgrounds it; `-Inline` is the
+installer-managed launch mode.
+
 Uninstall:
 `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Token Meter\runtime\scripts\uninstall-windows.ps1"`
 
@@ -129,6 +134,17 @@ local `git` only. A mechanical signal, not a productivity score.
 
 Track spend, cost per run, and volume for each named child-agent role, and
 drill into individual runs from **Sessions → Subagents**.
+
+### Goals
+
+Set a target for Spend, Output / $, Cost per 1K pushed lines, Context load,
+Reasoning ratio, Frontier share, or Tokens used from **Efficiency → Goals**.
+Choose an app and one or more models, a period, and a target based on your previous usage.
+Inspect goal charts by hovering or using arrow keys. Delivery contributors show
+repository spend and lines pushed; coverage explains which repositories count.
+Hold your current level, repeat calendar goals, or duplicate a previous goal.
+Progress also shows on Spend, Git, and the menu bar or tray.
+See [goal measurements](specs/GOALS.md).
 
 ### Budgets, settings, and MCP
 
