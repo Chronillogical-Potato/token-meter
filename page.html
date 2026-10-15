@@ -849,6 +849,8 @@ select option:checked{background-color:var(--panel3)}
 .previewHead p{color:var(--dim);font-size:var(--fs-13);margin:6px 0 0}
 .previewHead p:empty{display:none}
 .previewRunMeta{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}
+.sessionBackRow{display:flex;margin-bottom:10px}
+.sessionBack{display:inline-flex;align-items:center;gap:6px}
 .previewRunMeta .repo{max-width:460px}
 .previewRunGrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,.65fr);gap:12px;align-items:start}
 .previewChartSlot,.previewDecision{min-width:0}
@@ -2552,6 +2554,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
  </div>
 
  <div class="view on" id=view-session>
+  <div class=sessionBackRow id=session-back-row data-current-detail><button class="tbtn sessionBack" id=session-back type=button aria-label="Back to Current sessions"><span aria-hidden=true>←</span><span id=session-back-label>Current sessions</span></button></div>
   <div class=banner id=banner data-current-detail>
    <span class=msg id=banner-msg></span>
    <span class=budgetadd id=budget-add-row>
@@ -3522,6 +3525,18 @@ const compareTitles=new Map();
 let compareUiReady=false;
 function normalizeSessionScope(scope){return SESSION_SCOPES.includes(scope)?scope:'current';}
 function sessionScopeRoute(scope){scope=normalizeSessionScope(scope);return scope==='all'?'sessions-all':scope==='compare'?'sessions-compare':scope==='subagents'?'sessions-subagents':'sessions';}
+function sessionScopeLabel(scope){return {all:'All sessions',compare:'Compare',subagents:'Subagents'}[normalizeSessionScope(scope)]||'Current sessions';}
+function sessionListBackAvailable(scope){return !routedSessionId()&&(location.hash||'').replace(/^#/,'')===sessionScopeRoute(scope);}
+function renderSessionBack(){
+ const label=sessionScopeLabel(sessionReturnScope);
+ $('session-back-label').textContent=label;
+ $('session-back').setAttribute('aria-label',`Back to ${label}`);
+}
+function openSessionBack(){
+ const scope=normalizeSessionScope(sessionReturnScope),state=history.state;
+ if(state?.sessionListBack&&normalizeSessionScope(state.sessionScope)===scope&&history.back){history.back();return;}
+ openSessionScope(scope);
+}
 function sessionScopeCopy(scope){
  return {
   all:['Local session history.','Search, filter, and compare local session history.'],
@@ -3882,6 +3897,7 @@ function showCurrentPanel(panel){
  $('view-session').classList.toggle('sessionOverview',overview);
  $('view-session').classList.toggle('sessionDetail',!overview);
  document.querySelectorAll('[data-current-detail]').forEach(element=>element.classList.toggle('currentOverviewHidden',overview));
+ if(!overview)renderSessionBack();
  $('session-page-title').textContent=overview?'Sessions':sessionDisplayName(CURRENT);
  const pageHelp=overview?sessionScopeCopy(sessionScope)[1]:'Review this session.';
  $('session-page-title').setAttribute('aria-description',pageHelp);
@@ -3949,6 +3965,7 @@ $('tab-git').onclick=()=>openTopLevelRoute('git');
 $('tab-read').onclick=()=>window.open(TOKENOMICS_SEARCH_URL,'_blank','noopener');
 $('tab-learn').onclick=()=>openTopLevelRoute('learn');
 $('tab-settings').onclick=()=>openTopLevelRoute('settings');
+$('session-back').onclick=openSessionBack;
 $('session-scope-tabs').onclick=event=>{
  const button=event.target.closest('[data-session-scope]');
  if(button)openSessionScope(button.dataset.sessionScope);
@@ -10128,7 +10145,7 @@ function selectSession(id,{updateUrl=true,replace=false,show=true,returnScope=se
  id=String(id||'').trim();
  if(!id)return Promise.resolve();
  sessionReturnScope=normalizeSessionScope(returnScope);
- if(updateUrl&&history.pushState)history[replace?'replaceState':'pushState']({sessionScope:sessionReturnScope},'',sessionRoute(id));
+ if(updateUrl&&history.pushState)history[replace?'replaceState':'pushState']({sessionScope:sessionReturnScope,sessionListBack:!replace&&sessionListBackAvailable(sessionReturnScope)},'',sessionRoute(id));
  sessionRequest++;
  pinned=id;
  if(show)applyHashRoute();

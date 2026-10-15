@@ -7207,6 +7207,79 @@ process.stdout.write(JSON.stringify({{calls,drilldown,restored:{{view:subagentVi
         self.assertEqual(payload["restored"]["filters"]["window"], "30d")
         self.assertEqual(payload["sessionScope"], "all")
 
+    def test_session_detail_back_control_markup_names_origin_list(self):
+        view = self.page.index("id=view-session")
+        back = self.page.index("id=session-back-row")
+        title = self.page.index("id=session-page-title")
+        self.assertLess(view, back)
+        self.assertLess(back, title)
+        self.assertIn(
+            '<div class=sessionBackRow id=session-back-row data-current-detail>'
+            '<button class="tbtn sessionBack" id=session-back type=button aria-label="Back to Current sessions">'
+            '<span aria-hidden=true>←</span><span id=session-back-label>Current sessions</span></button></div>',
+            self.page,
+        )
+        self.assertIn("$('session-back').onclick=openSessionBack;", self.page)
+        self.assertIn("if(!overview)renderSessionBack();", self.page)
+        self.assertIn(".sessionBackRow{display:flex;margin-bottom:10px}", self.page)
+        self.assertIn("sessionListBack:!replace&&sessionListBackAvailable(sessionReturnScope)", self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_session_detail_back_returns_to_origin_list(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('){{',start)+1,depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+const SESSION_SCOPES=['current','all','compare','subagents'];
+const calls=[];
+let location={{pathname:'/',hash:'#sessions-all'}};
+const history={{state:null,back(){{calls.push(['back']);}},pushState(state,title,url){{this.state=state;const [path,hash]=String(url).split('#');location={{pathname:path||'/',hash:hash?'#'+hash:''}};calls.push(['push',url]);}},replaceState(state){{this.state=state;}}}};
+const elements={{}};
+const $=id=>elements[id]||(elements[id]={{textContent:'',attrs:{{}},setAttribute(name,value){{this.attrs[name]=value;}}}});
+let sessionScope='all',sessionReturnScope='current',sessionRequest=0,pinned=null;
+const applyHashRoute=()=>{{}},refreshSelectedSession=()=>Promise.resolve();
+const openSessionScope=scope=>calls.push(['scope',scope]);
+eval(['routedSessionId','sessionRoute','normalizeSessionScope','sessionScopeRoute','sessionScopeLabel','sessionListBackAvailable','renderSessionBack','openSessionBack','selectSession'].map(extract).join('\\n'));
+const result={{}};
+selectSession('abc',{{returnScope:'all'}});
+renderSessionBack();
+result.fromList={{state:history.state,label:$('session-back-label').textContent,aria:$('session-back').attrs['aria-label']}};
+openSessionBack();
+result.fromListCalls=calls.splice(0);
+location={{pathname:'/',hash:'#spend'}};
+selectSession('def');
+openSessionBack();
+result.fromSpend={{state:history.state,calls:calls.splice(0)}};
+selectSession('ghi',{{returnScope:'compare'}});
+result.sessionToSession=history.state;
+calls.splice(0);
+location={{pathname:'/sessions/deep#summary',hash:'#summary'}};
+history.state=null;sessionReturnScope='current';
+renderSessionBack();
+openSessionBack();
+result.deepLink={{label:$('session-back-label').textContent,aria:$('session-back').attrs['aria-label'],calls:calls.splice(0)}};
+result.labels=['current','all','compare','subagents','bogus'].map(sessionScopeLabel);
+process.stdout.write(JSON.stringify(result));
+"""
+        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+
+        self.assertEqual(payload["fromList"]["state"], {"sessionScope": "all", "sessionListBack": True})
+        self.assertEqual(payload["fromList"]["label"], "All sessions")
+        self.assertEqual(payload["fromList"]["aria"], "Back to All sessions")
+        self.assertEqual(payload["fromListCalls"], [["push", "/sessions/abc#summary"], ["back"]])
+        self.assertEqual(payload["fromSpend"]["state"], {"sessionScope": "all", "sessionListBack": False})
+        self.assertEqual(payload["fromSpend"]["calls"], [["push", "/sessions/def#summary"], ["scope", "all"]])
+        self.assertEqual(payload["sessionToSession"], {"sessionScope": "compare", "sessionListBack": False})
+        self.assertEqual(payload["deepLink"]["label"], "Current sessions")
+        self.assertEqual(payload["deepLink"]["aria"], "Back to Current sessions")
+        self.assertEqual(payload["deepLink"]["calls"], [["scope", "current"]])
+        self.assertEqual(
+            payload["labels"],
+            ["Current sessions", "All sessions", "Compare", "Subagents", "Current sessions"],
+        )
+
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_session_compare_keys_forked_traces_and_routes_compare_scope(self):
         self.assertIn("id=session-scope-compare", self.page)
