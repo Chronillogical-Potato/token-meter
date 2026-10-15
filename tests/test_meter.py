@@ -8836,6 +8836,11 @@ process.stdout.write(JSON.stringify(results));
     def test_leaving_the_tour_through_a_link_offers_a_way_back(self):
         self.assertIn('<button class="deckPrimary tourReturn" id=tour-return type=button hidden>', self.page)
         self.assertIn("@media(prefers-reduced-motion:reduce){.tourReturn,.tourReturnArrow{animation:none}}", self.page)
+        self.assertIn("@keyframes tourReturnIn{from{transform:translateY(16px) scale(.94)}to{transform:none}}", self.page, "never starts invisible")
+        self.assertIn("const TOUR_RETURN_KEY='tm_tour_return';", self.page)
+        self.assertIn("$('tour-return').onclick=returnToTour;\nrestoreTourReturn();", self.page)
+        self.assertIn("value.host==='learn'?'Back to Learn':'Back to the tour'", self.page)
+        self.assertIn("const from={index:deckHosts.learn.index,hash:location.hash,host:'learn'};", self.page)
         self.assertIn("if(route){openDeckRoute(route,target);if(from)showTourReturn(from);}", self.page)
         self.assertIn("$('tour-return').onclick=returnToTour;", self.page)
         self.assertIn("window.addEventListener('popstate',()=>{if(tourReturn&&location.hash===tourReturn.hash)returnToTour();});", self.page)

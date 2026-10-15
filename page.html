@@ -1493,7 +1493,7 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .tourReturn[hidden]{display:none}
 .tourReturnArrow{display:inline-block;font-size:var(--fs-18);animation:tourReturnNudge 1.6s ease-in-out .45s 3}
 .tourReturn:hover .tourReturnArrow{transform:translateX(-3px)}
-@keyframes tourReturnIn{from{opacity:0;transform:translateY(16px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes tourReturnIn{from{transform:translateY(16px) scale(.94)}to{transform:none}}
 @keyframes tourReturnPulse{0%{box-shadow:var(--spectrum-glow),0 0 0 0 rgb(var(--signal-rgb)/.55)}70%,100%{box-shadow:var(--spectrum-glow),0 0 0 14px rgb(var(--signal-rgb)/0)}}
 @keyframes tourReturnNudge{0%,100%{transform:none}50%{transform:translateX(-5px)}}
 @media(prefers-reduced-motion:reduce){.tourReturn,.tourReturnArrow{animation:none}}
@@ -3343,7 +3343,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   </div>
 	 </div>
 </div>
-<button class="deckPrimary tourReturn" id=tour-return type=button hidden><span class=tourReturnArrow aria-hidden=true>←</span>Back to the tour</button>
+<button class="deckPrimary tourReturn" id=tour-return type=button hidden><span class=tourReturnArrow aria-hidden=true>←</span><span id=tour-return-label>Back to the tour</span></button>
 <dialog class=welcome id=welcome-dialog aria-modal=true aria-labelledby=welcome-label aria-describedby=welcome-deck-status>
  <header class=welcomeTop><div class=welcomeBrand><b id=welcome-label>Welcome to Token Meter</b></div><div class=welcomeTopActions><button class=welcomeSkip id=welcome-skip type=button>Skip tour</button><button class=welcomeClose id=welcome-close type=button aria-label="Close welcome" title="Close (Esc)"><span aria-hidden=true>&#10005;</span></button></div></header>
  <div class=deck id=welcome-deck data-deck-host=welcome></div>
@@ -4125,19 +4125,28 @@ function openWelcome(index=null,{auto=false,returnFocus=null,fromLearn=false}={}
 }
 // Leaving the tour through one of its links keeps a way back to the same slide.
 let tourReturn=null;
+const TOUR_RETURN_KEY='tm_tour_return';
 function showTourReturn(value){
  tourReturn=value;
  $('tour-return').hidden=!value;
+ if(value)$('tour-return-label').textContent=value.host==='learn'?'Back to Learn':'Back to the tour';
+ try{if(value)sessionStorage.setItem(TOUR_RETURN_KEY,JSON.stringify(value));else sessionStorage.removeItem(TOUR_RETURN_KEY);}catch(error){}
+}
+// Survives a reload, so the way back is still there after the page refreshes.
+function restoreTourReturn(){
+ try{const value=JSON.parse(sessionStorage.getItem(TOUR_RETURN_KEY)||'null');if(value&&Number.isInteger(value.index)&&value.index>=0&&value.index<DECK_SLIDES.length)showTourReturn({index:value.index,hash:String(value.hash||''),host:value.host==='learn'?'learn':'welcome'});}catch(error){}
 }
 function returnToTour(){
  const value=tourReturn;
  showTourReturn(null);
- if(value)openWelcome(value.index);
+ if(!value)return;
+ if(value.host==='learn'){openTopLevelRoute('learn');showDeckSlide('learn',value.index,{animate:false});return;}
+ openWelcome(value.index);
 }
 function closeWelcome({route='',target=''}={}){
  const dialog=$('welcome-dialog');
  welcomeLeaving=!!route;
- const from=dialog.open&&route?{index:deckHosts.welcome.index,hash:location.hash}:null;
+ const from=dialog.open&&route?{index:deckHosts.welcome.index,hash:location.hash,host:'welcome'}:null;
  if(dialog.open)dialog.close();
  if(route){openDeckRoute(route,target);if(from)showTourReturn(from);}
 }
@@ -4167,7 +4176,7 @@ function handleLearnDeckKey(event){
  if(control.dataset.deckGo!==undefined){showDeckSlide(host,Number(control.dataset.deckGo));return;}
  if(control.dataset.deckAction){deckAction(host,control.dataset.deckAction);return;}
  if(host==='welcome')closeWelcome({route:control.dataset.deckRoute,target:control.dataset.deckTarget||''});
- else openDeckRoute(control.dataset.deckRoute,control.dataset.deckTarget||'');
+ else{const from={index:deckHosts.learn.index,hash:location.hash,host:'learn'};openDeckRoute(control.dataset.deckRoute,control.dataset.deckTarget||'');showTourReturn(from);}
 }));
 $('welcome-close').onclick=()=>closeWelcome();
 $('welcome-skip').onclick=()=>closeWelcome();
@@ -4183,6 +4192,7 @@ $('welcome-dialog').addEventListener('close',()=>{
  welcomeLeaving=false;
 });
 $('tour-return').onclick=returnToTour;
+restoreTourReturn();
 window.addEventListener('popstate',()=>{if(tourReturn&&location.hash===tourReturn.hash)returnToTour();});
 $('learn-play').onclick=()=>openWelcome(deckHosts.learn.index,{fromLearn:true});
 
