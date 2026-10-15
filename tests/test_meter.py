@@ -11500,9 +11500,27 @@ process.stdout.write(JSON.stringify({
         self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "under a minute left", "under a minute left"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_keeps_talk_definitions_and_caveats_visible(self):
+        payload = self._run_tour("""
+const ev=learnEvidence(richState,richGit),noExcluded=learnEvidence({...richState,xsession:{...richState.xsession,provenance:{reported_sessions:10,estimated_sessions:0,unavailable_sessions:0}}},richGit);
+const levers=deckPreviewHtml(9,ev,'welcome');
+process.stdout.write(JSON.stringify({
+ shorts:LEVERS.map(lever=>levers.includes(`<small aria-hidden=true>${esc(lever.talk.short)}</small>`)),
+ note:TALK_NOTE,
+ trust:deckPreviewHtml(4,noExcluded,'welcome').includes('never $0'),
+}));
+""")
+        self.assertEqual(payload["shorts"], [True] * 5, "each talk number shows what it measured")
+        self.assertIn("estimated", payload["note"])
+        self.assertTrue(payload["trust"], "the unknown-model rule stays visible with no excluded sessions")
+        tip = "Covered spend: estimated spend from sessions with cost evidence in these projects."
+        for attr in ("data-delivery-model-sort=covered_cost", "data-delivery-sort=covered_cost"):
+            self.assertIn(f'{attr} data-tip="{tip}" aria-description="{tip}">Spend<', self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_tour_copy_stays_within_slide_word_budgets(self):
         # One idea per slide: the visual carries the number, the copy stays short. Node reports
-        # neither a Mac nor a known platform, so the longest companion and host names are counted.
+        # neither a Mac nor a known platform, so the longest host name is counted.
         payload = self._run_tour("""
 const words=text=>String(text||'').split(/\\s+/).filter(word=>/[A-Za-z0-9]/.test(word)).length;
 const sentences=text=>String(text||'').split(/[.!?](?:\\s|$)/).filter(part=>part.trim()).length;
@@ -11585,7 +11603,7 @@ const rows=DECK_SLIDES.map((slide,i)=>{
  const figures=html.flatMap(h=>[...h.matchAll(/<div class=evidenceFigure(?: data-hero)? data-source=(\\w+)>([\\s\\S]*?)<\\/div>/g)].map(m=>[m[1],m[2]]));
  return {id:slide.id,talk:slide.talk,
   chips:html.map(h=>(h.match(/class="chip talkChip">From the talk</g)||[]).length),
-  notes:html.map(h=>(h.match(/From the talk:<\\/b> one engineer’s laptop, list prices\\./g)||[]).length===1),
+  notes:html.map(h=>(h.match(/From the talk:<\\/b> one engineer’s laptop, estimated at list prices\\./g)||[]).length===1),
   anyNote:html.map(h=>h.includes('engineer’s laptop')),
   figureCount:html.reduce((sum,h)=>sum+(h.match(/class=evidenceFigure/g)||[]).length,0),matched:figures.length,
   figuresOk:figures.every(([source,inner])=>source==='talk'?inner.includes('talkChip')&&!inner.includes('yoursChip'):!inner.includes('talkChip')),

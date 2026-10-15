@@ -523,7 +523,7 @@ the headline and preview already say it), a `.takeaway` of at most 10 words, and
 at most one `Open <page>` button. The live `.miniPreview` on the right carries
 the numbers: it leads with one hero figure (`figureHtml(…, {hero:true})`) or one
 visual, followed by at most three supporting rows, and no explanatory
-paragraphs. A test holds every slide to these budgets. At 1180px and below the
+paragraphs. A test holds every slide's copy (headline, body, takeaway, links) to these budgets; preview density is a review check. At 1180px and below the
 preview stacks under the copy and the takeaway moves beside the headline; no
 slide scrolls inside the overlay at 1024×768. In the overlay's last slide, Done
 is a secondary button so the slide's own call to action is the only primary.
@@ -532,7 +532,7 @@ Numbers follow one rule. The user's number carries a `Yours` chip (`Example`
 before any session has tokens). A number from the talk carries a violet
 `From the talk` chip (`.chip.talkChip`), its value renders in `--aura-pale`, and
 the preview ends once with the footnote *From the talk: one engineer's laptop,
-list prices.* The talk's monthly output-per-dollar chart marks its peak and
+estimated at list prices.* The talk's monthly output-per-dollar chart marks its peak and
 drop; the user's own months stay neutral. Slides enter with one short rise per
 change, and every motion is removed under `prefers-reduced-motion`.
 
