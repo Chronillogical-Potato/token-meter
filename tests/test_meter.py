@@ -8833,6 +8833,11 @@ process.stdout.write(JSON.stringify(results));
             self.page,
         )
 
+    def test_git_spend_headers_explain_covered_spend(self):
+        tip = "Covered spend: estimated spend from sessions with cost evidence in these projects."
+        for attr in ("data-delivery-model-sort=covered_cost", "data-delivery-sort=covered_cost"):
+            self.assertIn(f'{attr} data-tip="{tip}" aria-description="{tip}">Spend<', self.page)
+
     def test_review_fixes_keep_focus_targets_and_timestamps(self):
         # The inventory heading receives programmatic focus, so it must be focusable.
         self.assertIn("<h2 id=c-inventory-title tabindex=-1>All capabilities</h2>", self.page)
@@ -11577,10 +11582,11 @@ process.stdout.write(JSON.stringify({tokens:legend('tokens'),privacy:legend('pri
 """)
         self.assertIn("estimate", payload["tokens"])
         self.assertIn("not your bill", payload["tokens"])
-        self.assertIn("never changes them", payload["privacy"])
+        self.assertIn("only reads logs", payload["privacy"])
         self.assertIn("Nothing is uploaded", payload["privacy"])
         self.assertIn("numbers only, never your prompts or code", payload["agent"])
-        self.assertIn("asks you first before changing a session budget", payload["agent"])
+        self.assertIn("session-budget changes need your OK", payload["agent"])
+        self.assertIn("AI provider sees those numbers", payload["agent"])
         self.assertIn("(through MCP)", payload["agentBody"])
         self.assertEqual(payload["glance"], "The live cost sits in your menu bar or tray.")
         self.assertIn("const COMPANION_PLACE={mac:'menu bar',windows:'notification area',linux:'tray'}[DECK_PLATFORM]||'menu bar or tray';", self.page)

@@ -3910,14 +3910,14 @@ function priceFrameHtml(){
  return `<div class=priceLadder>${SAMPLE_PRICES.map((row,index)=>`<div class=priceRow><span class=priceType><i style="--seg:${row.color}"></i>${esc(row.label)}</span>${levelBarHtml(row.price/max)}<b class=mono>$${row.price.toFixed(2)}</b><small class=mono>${esc(`${+(row.price/min).toFixed(1)}×`)}</small>${index===0?calloutHtml(1):index===SAMPLE_PRICES.length-1?calloutHtml(2):''}</div>`).join('')}</div>`;
 }
 function menuFrameHtml(){
- return `<div class=menuMock><div class=menuMockBar data-callout>${calloutHtml(1,'l')}<span class=menuMockMark aria-hidden=true></span><b class=mono>$2.40 est</b><span class=mono>40%</span></div><dl class=menuMockRows><div><dt>This session</dt><dd class=mono>$2.40 est</dd></div><div data-callout><dt>Context</dt><dd class=mono>40%</dd>${calloutHtml(2,'r')}</div><div><dt>Spend today</dt><dd class=mono>$6.40</dd></div></dl></div>`;
+ return `<div class=menuMock><div class=menuMockBar>${calloutHtml(1)}<span class=menuMockMark aria-hidden=true></span><b class=mono>$2.40 est</b><span class=mono>40%</span></div><dl class=menuMockRows><div><dt>This session</dt><dd class=mono>$2.40 est</dd></div><div data-callout><dt>Context</dt><dd class=mono>40%</dd>${calloutHtml(2,'r')}</div><div><dt>Spend today</dt><dd class=mono>$6.40</dd></div></dl></div>`;
 }
 const SAMPLE_TURN_COSTS=[.05,.07,.09,.12,.15,.19,.23,.28,.34,.41,.5,.62];
 function turnsFrameHtml(){
  // Headroom keeps the callout markers above the tallest bars inside the plot.
- const max=Math.max(...SAMPLE_TURN_COSTS)*1.3,last=SAMPLE_TURN_COSTS.length-1;
- const bars=SAMPLE_TURN_COSTS.map((cost,index)=>`<div class=spendDay>${index===0||index===last?`<span class="spendBarValue mono" style="opacity:1">$${cost.toFixed(2)}</span>`:'<span class="spendBarValue mono"></span>'}<span class=spendDayTrack${index===6||index===last?` data-callout style="--bar-h:${(100*cost/max).toFixed(1)}%"`:''}><span class=spendDayStack style="--spend-height:${(100*cost/max).toFixed(1)}%"><i class=spendStackSegment style="--spend-color:${providerColor('claude')};--segment-share:100%"></i></span>${index===6?calloutHtml(1,'bar'):index===last?calloutHtml(2,'bar'):''}</span><span class=spendDayLabel>${index===0?'Turn 1':index===last?'Turn 40':''}</span></div>`).join('');
- return `<div class=spendChart><div class=spendPlot><div class=spendChartInner>${bars}</div></div></div><div class=budgetSpend><div class=budgetFigureLine><span class="budgetSpendValue mono">85%</span><span class=budgetOf>of what the AI can hold in mind</span></div><div class=budgetProgress><i style="width:85%"></i></div><div class=budgetMeterFoot><span>Context in use</span><span>${calloutHtml(3)} Nearly full</span></div></div>`;
+ const max=Math.max(...SAMPLE_TURN_COSTS)*1.3,last=SAMPLE_TURN_COSTS.length-1,first=SAMPLE_TURN_COSTS[0],end=SAMPLE_TURN_COSTS[last];
+ const bars=SAMPLE_TURN_COSTS.map((cost,index)=>`<div class=spendDay><span class="spendBarValue mono"></span><span class=spendDayTrack${index===6||index===last?` data-callout style="--bar-h:${(100*cost/max).toFixed(1)}%"`:''}><span class=spendDayStack style="--spend-height:${(100*cost/max).toFixed(1)}%"><i class=spendStackSegment style="--spend-color:${providerColor('claude')};--segment-share:100%"></i></span>${index===6?calloutHtml(1,'bar'):index===last?calloutHtml(2,'bar'):''}</span><span class=spendDayLabel></span></div>`).join('');
+ return `<div class=spendChart><div class=spendPlot><div class=spendChartInner>${bars}</div></div></div><div class=budgetMeterFoot><span>Turn 1 · <b class=mono>$${first.toFixed(2)}</b></span><span>Turn 40 · <b class=mono>$${end.toFixed(2)}</b></span></div><div class=budgetSpend><div class=budgetFigureLine><span class="budgetSpendValue mono">85%</span><span class=budgetOf>of what the AI can hold in mind</span></div><div class=budgetProgress><i style="width:85%"></i></div><div class=budgetMeterFoot><span>Context in use</span><span>${calloutHtml(3)} Nearly full</span></div></div>`;
 }
 function spendFrameHtml(){
  const max=Math.max(...SAMPLE_SPEND_DAYS);
@@ -3929,7 +3929,7 @@ function privacyFrameHtml(){
 }
 function modelsFrameHtml(){
  const colors=modelRankedColors(SAMPLE_MODELS.map(model=>({key:model.name,ids:[`${model.name}::Claude Code`]})));
- return `<div class=modelSpendHead><h2>Where your spend goes</h2><span class=modelSpendTotal>≈ $300 est.</span></div><div class=modelSpendBar>${SAMPLE_MODELS.map((model,index)=>`<div class=modelSpendSeg style="flex:${model.share} 1 0;background:${colors.get(model.name)}">${index<2?`<span>${esc(model.name)}</span><b>${Math.round(100*model.share)}%</b>`:''}</div>`).join('')}</div><div class=modelSpendLegend>${SAMPLE_MODELS.map((model,index)=>`<span class=modelSpendChip${index!==1?' data-callout':''}><i style="background:${colors.get(model.name)}"></i><span class=modelSpendChipName>${esc(model.name)}</span><b class=mono>${esc(model.cost)}</b><em>${Math.round(100*model.share)}%</em>${index===0?calloutHtml(1,'tr'):index===2?calloutHtml(2,'tr'):''}</span>`).join('')}</div>`;
+ return `<div class=modelSpendHead><h2>Where your spend goes</h2><span class=modelSpendTotal>≈ $300 est.</span></div><div class=modelSpendBar>${SAMPLE_MODELS.map((model,index)=>`<div class=modelSpendSeg style="flex:${model.share} 1 0;background:${colors.get(model.name)}">${index===0?`<span>${esc(model.name)}</span><b>${Math.round(100*model.share)}%</b>`:''}</div>`).join('')}</div><div class=modelSpendLegend>${SAMPLE_MODELS.map((model,index)=>`<span class=modelSpendChip>${index===0?calloutHtml(1):index===2?calloutHtml(2):''}<i style="background:${colors.get(model.name)}"></i><span class=modelSpendChipName>${esc(model.name)}</span><b class=mono>${esc(model.cost)}</b><em>${Math.round(100*model.share)}%</em></span>`).join('')}</div>`;
 }
 function efficiencyFrameHtml(){
  const width=520,height=96,pad=8,max=6.6,points=SAMPLE_OUTPUT_PER_DOLLAR.map((value,index)=>[pad+index*(width-2*pad)/(SAMPLE_OUTPUT_PER_DOLLAR.length-1),pad+(height-2*pad)*(1-value/max)]);
@@ -3993,7 +3993,7 @@ const DECK_SLIDES=[
   frame:{kind:'prices',label:'Price per 1M tokens',alt:'Example prices per million tokens: re-reading $0.30, new text $3, saving to re-read $3.75, writing the answer $15.',legend:['Re-reading what it already saw is the cheapest.','Writing the answer costs about 50 times more.'],html:priceFrameHtml},
   links:[{label:'Open Model pricing',route:'model-pricing'}]},
  {id:'context',chapter:'basics',rail:'Long chats',kicker:'The basics',title:'Long chats get pricier every turn.',body:'Each turn, the AI re-reads the whole chat so far.',
-  frame:{kind:'context',label:'Cost per turn',alt:'Example chat of 40 turns: each turn costs more, from $0.05 for turn 1 to $0.62 for turn 40, and 85% of what the AI can hold in mind is in use.',legend:['Each bar is one turn. Each costs more than the last.','Turn 40 costs about 12 times turn 1.','Nearly full? Start fresh, or ask it to summarize.'],
+  frame:{kind:'context',label:'Cost per turn',alt:'Example chat of 40 turns: each turn costs more, from $0.05 for turn 1 to $0.62 for turn 40, and 85% of what the AI can hold in mind is in use.',legend:['The bars rise as the chat grows. Each turn costs more.','Turn 40 costs about 12 times turn 1.','Nearly full? Start fresh, or ask it to summarize.'],
    html:()=>turnsFrameHtml()},
   links:[{label:'Open Current sessions',route:'sessions'}]},
  {id:'glance',chapter:'glance',rail:'Live cost',kicker:'At a glance',title:'Glance while you work.',body:`The live cost sits in your ${COMPANION_PLACE}.`,
@@ -4003,7 +4003,7 @@ const DECK_SLIDES=[
   frame:{kind:'spend',label:'Spend · this month',alt:'Example month: daily spend bars, $310 spent of a $600 budget, projected to land near $540.',legend:['Each bar is one day of spending.','Where the month should land at this pace.'],html:spendFrameHtml},
   links:[{label:'Open Spend',route:'spend-budgets'}]},
  {id:'privacy',chapter:'glance',rail:'Privacy',kicker:'At a glance',title:'Your data stays on your computer.',
-  frame:{kind:'privacy',label:'Where your data goes',alt:'Agent logs are read on this computer and shown in your browser. Nothing goes to the internet.',legend:['It reads your agents’ logs and never changes them.','Nothing is uploaded. No account needed.'],html:privacyFrameHtml},
+  frame:{kind:'privacy',label:'Where your data goes',alt:'Agent logs are read on this computer and shown in your browser. Your logs and numbers are never uploaded.',legend:['It only reads logs, and deletes one only if you ask.','Nothing is uploaded. No account needed.'],html:privacyFrameHtml},
   links:[]},
  {id:'models',chapter:'waste',rail:'Models',kicker:'Finding waste',title:'One model is often most of the bill.',
   frame:{kind:'models',label:'Models · spend by model',alt:'Example spend by model: Opus 70%, Sonnet 20%, Haiku 10%.',legend:['This one model is 70% of the spend.','A lighter model can do routine work for less.'],html:modelsFrameHtml},
@@ -4022,7 +4022,7 @@ const DECK_SLIDES=[
   frame:{kind:'compare',label:'Compare · two runs',alt:'Example comparison of the same task: run A with Claude Opus cost $0.41, run B with Claude Haiku cost $0.08.',legend:['Same task, one change: a lighter model.','B cost 80% less. Keep it if the result holds.'],html:compareFrameHtml},
   links:[{label:'Open Compare',route:'sessions-compare'}]},
  {id:'agent',chapter:'better',rail:'Ask your AI agent',kicker:'Do better',title:'Ask your AI agent about spending.',body:'Your agent can ask Token Meter for numbers (through MCP).',
-  frame:{kind:'agent',anchor:'agent-access',label:'Chat with your agent',alt:'Example chat: Am I on track this month? Yes, $310 of $600, landing near $540.',legend:['Ask in plain words, in the chat you already use.','It gets numbers only, never your prompts or code.','It asks you first before changing a session budget.'],html:agentFrameHtml},
+  frame:{kind:'agent',anchor:'agent-access',label:'Chat with your agent',alt:'Example chat: Am I on track this month? Yes, $310 of $600, landing near $540.',legend:['Ask in plain words, in the chat you already use.','It gets numbers only, never your prompts or code.','Its AI provider sees those numbers; session-budget changes need your OK.'],html:agentFrameHtml},
   links:[{label:'Open Agent connection',route:'settings',target:'agent-access'}]},
  {id:'start',chapter:'better',rail:'Get started',kicker:'Get started',title:'Three steps for this week.',visual:startListHtml,
   links:[{label:facts=>facts.budgetConfigured?'Review your budget':'Set a monthly budget',route:'spend-budgets',primary:true}]},
