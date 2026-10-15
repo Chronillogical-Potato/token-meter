@@ -1482,14 +1482,17 @@ class GitDashboardContractTests(unittest.TestCase):
         git_page = self.page.split("id=view-git", 1)[1].split("id=view-learn", 1)[0]
 
         for marker in (
-            "Pushed code &times; covered spend.", "Pushed lines", "Spend / 1K",
+            "Pushed code &times; covered spend &middot; ", "Pushed lines", "Spend / 1K",
             "Spend coverage", "Code pushed by day",
             "id=d-daily-chart", "id=d-project-table", "data-delivery-sort",
             ">Projects<",
             "id=d-coverage-bar", "id=d-coverage-percent", "id=d-active-days",
-            "Local Git evidence &middot; Text changes only &middot; Not a quality score.",
+            # One header caveat replaces the repeated table footers.
+            'id=d-caveat tabindex=0 aria-description="Local Git only: hashed keys and line counts, never filenames or messages. Spend is estimated. Few lines make ratios noisy. Not a quality score." data-tip="Local Git only: hashed keys and line counts, never filenames or messages. Spend is estimated. Few lines make ratios noisy. Not a quality score.">local Git only<',
         ):
             self.assertIn(marker, git_page)
+        self.assertNotIn("class=deliveryFoot", git_page)
+        self.assertEqual(git_page.count("Not a quality score"), 2)
         self.assertIn("rolling_spend_per_1k", self.page)
         self.assertIn(
             "#view-git .spectrumPageActions .modelControls{grid-template-columns:repeat(2",
@@ -1578,7 +1581,7 @@ class GitDashboardContractTests(unittest.TestCase):
             ".deliveryTableWrap thead{display:none}",
             ".deliveryTableWrap tbody{display:grid",
             "id=d-mobile-sort",
-            'data-label="Covered spend"',
+            'data-label="Spend"',
             "$('d-mobile-sort').addEventListener('change'",
         ):
             self.assertIn(marker, self.page)
@@ -1592,7 +1595,7 @@ class GitDashboardContractTests(unittest.TestCase):
             "$('d-active-days').textContent",
             "$('d-period-label').textContent",
             "days.filter(row=>(Number(row?.changed_lines)||0)>0).length",
-            "No Git-backed projects discovered",
+            "No Git projects found",
         ):
             self.assertIn(marker, self.page)
 
@@ -1764,7 +1767,7 @@ class GitDeliveryEconomicsContractTests(unittest.TestCase):
             self.page,
         )
         self.assertIn("$('d-push-yield').textContent=yieldAvailable", self.page)
-        self.assertIn("Waiting for output-token coverage.", self.page)
+        self.assertIn("Waiting for output tokens.", self.page)
 
     def test_overview_reports_period_commits_without_inventing_a_zero(self):
         git_page = self.git_view()
@@ -1835,9 +1838,11 @@ console.log(JSON.stringify({measuredTip,measuredMetrics,
 
         for marker in (
             "class=deliveryInsightSection", ">Delivery economics<", ">Signals<",
-            ">Daily shape<", "id=d-signals", "id=d-shape", "id=d-insight-range",
+            ">Daily shape<", "id=d-signals", "id=d-shape",
         ):
             self.assertIn(marker, git_page)
+        # The period and comparable count already lead the overview.
+        self.assertNotIn("id=d-insight-range", git_page)
         for removed in (
             ">Cost by pushed lines<", "id=d-map", "class=deliveryMapViewport",
         ):
@@ -1906,7 +1911,7 @@ console.log(JSON.stringify({measuredTip,measuredMetrics,
             "</table>", 1,
         )[0]
 
-        for label in ("Project", "Covered spend", "Code pushed", "Spend / 1K"):
+        for label in (">Project<", ">Spend<", ">Pushed lines<", "Spend / 1K"):
             self.assertIn(label, table)
         for removed in (
             ">Evidence<", "Vs previous period",
@@ -1973,13 +1978,13 @@ console.log(JSON.stringify({
 
         self.assertIn("Code pushed by day", git_page)
         self.assertIn(
-            'aria-description="Added + deleted text lines from successful pushes. '
-            'Select a day for spend details."',
+            'aria-description="Added + deleted text lines per day. '
+            'Select a day for spend."',
             git_page,
         )
         self.assertNotIn(
-            "<p>Added + deleted text lines from successful pushes. "
-            "Select a day for spend details.</p>",
+            "<p>Added + deleted text lines per day. "
+            "Select a day for spend.</p>",
             git_page,
         )
         self.assertIn('aria-label="Daily pushed text lines"', git_page)
@@ -2036,11 +2041,12 @@ console.log(JSON.stringify({loaded,unavailable:{
         git_page = self.git_view()
         self.assertLess(git_page.index("id=d-model-table"), git_page.index("id=d-project-table"))
         table = git_page.split("id=d-model-table", 1)[1].split("</table>", 1)[0]
-        for label in ("Model", "App", "Reasoning effort", "Covered spend",
-                      "Attributed lines", "Lines / $"):
+        for label in (">Model<", ">App<", ">Effort<", ">Spend<",
+                      ">Est. lines<", "Lines / $"):
             self.assertIn(label, table)
         self.assertIn("id=d-model-note", git_page)
         self.assertIn("split by each model", git_page)
+        self.assertIn('aria-description="Estimate. Each project', git_page)
         self.assertIn("function renderDeliveryModelTable", self.page)
         self.assertIn("renderDeliveryModelTable(payload?.model_rows", self.page)
 
@@ -2244,19 +2250,22 @@ console.log(JSON.stringify(deliverySignals(payload).map(row=>(
         self.assertEqual(
             payload[1]["title"], "6.5 pushed lines per 1K output tokens",
         )
-        self.assertIn("4.8× the typical day per 1K lines", payload[2]["title"])
+        self.assertIn("4.8× the typical Spend / 1K", payload[2]["title"])
+        # Trend and yield signals carry no text: the overview deltas say it once.
+        self.assertEqual(payload[0]["text"], "")
+        self.assertEqual(payload[1]["text"], "")
         self.assertEqual(
             payload[3]["title"],
-            "1 of 6 days had covered spend and no pushed lines",
+            "1 of 6 days had spend but no pushes",
         )
+        self.assertIn("later push", payload[3]["text"])
         self.assertEqual(
             payload[4]["title"],
-            "2 of 4 projects compare cost with Git evidence",
+            "2 of 4 projects have both spend and Git",
         )
         self.assertEqual(
             payload[4]["text"],
-            "Ratios use only projects with comparable evidence; projects outside "
-            "that coverage may change the result.",
+            "Ratios use only these; the rest may shift them.",
         )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
@@ -2296,12 +2305,11 @@ const payload={
         )
         self.assertEqual(
             payload[1]["title"],
-            "1 of 5 projects compare cost with Git evidence",
+            "1 of 5 projects have both spend and Git",
         )
         self.assertEqual(
             payload[1]["text"],
-            "Ratios use only projects with comparable evidence; projects outside "
-            "that coverage may change the result.",
+            "Ratios use only these; the rest may shift them.",
         )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")

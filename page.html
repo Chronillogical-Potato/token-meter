@@ -2011,7 +2011,6 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .deliveryChart .grid{stroke:var(--line);stroke-width:1}
 .deliveryChart .separator{stroke:var(--line2);stroke-width:1}
 .deliveryChart .axis{fill:var(--faint);font:var(--fs-11) var(--font-mono)}
-.deliveryChart .axisTitle{fill:var(--dim);font:var(--fw-bold) var(--fs-11) var(--font-sans);text-transform:uppercase}
 .deliveryChart .added{fill:var(--signal)}
 .deliveryChart .deleted{fill:var(--c-deleted)}
 .deliveryChart .typical{stroke:var(--dim);stroke-width:1;stroke-dasharray:4 4;opacity:.62}
@@ -2035,20 +2034,18 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .deliverySort:hover,.deliverySort:focus-visible{color:var(--fg)}
 .deliverySort:focus-visible{outline:1px solid var(--signal);outline-offset:3px;border-radius:var(--radius-2xs)}
 .deliverySortMark{width:9px;color:var(--signal-hi);font-size:var(--fs-11);text-align:center}
-.deliveryFoot{padding:10px 16px 12px;border-top:1px solid var(--line);color:var(--faint);font-size:var(--fs-11)}
 .deliveryEmpty{min-height:130px;padding:20px}
 .deliveryClearStatus{color:var(--faint);font-size:var(--fs-11)}
 .deliveryVisualHead p{margin:3px 0 0;color:var(--faint);font-size:var(--fs-11);line-height:1.4}
 @media(max-width:1180px){.deliveryOverview{padding-inline:18px}.deliveryMetric{padding-right:16px}.deliveryMetric+.deliveryMetric{padding-left:16px}.deliveryMetricValue{font-size:var(--fs-24)}}
 @media(max-width:900px){.deliveryMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.deliveryMetric:nth-child(odd){border-left:0;padding-left:0}.deliveryMetric:nth-child(n+3){border-top:1px solid var(--line)}.deliveryVisualHead{display:grid}.deliveryLegend{justify-content:flex-start}.deliveryChartWrap,.deliveryChart{height:260px}}
-@media(max-width:700px){.deliveryMobileSort{display:grid;grid-template-columns:auto minmax(132px,180px);align-items:center;gap:8px;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.deliveryMobileSort select{height:32px}.deliveryTableWrap{overflow:visible;padding:0 12px 12px}.deliveryTableWrap .tbl{display:block;min-width:0}.deliveryTableWrap thead{display:none}.deliveryTableWrap tbody{display:grid;gap:8px}.deliveryTableWrap tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:rgb(var(--tint-rgb)/.018);box-shadow:var(--shadow-soft)}.deliveryTableWrap .tbl td{display:grid;gap:3px;min-width:0;padding:6px 0;border:0;text-align:left;overflow-wrap:anywhere}.deliveryTableWrap .tbl td:before{content:attr(data-label);color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.deliveryTableWrap .tbl td:first-child{grid-column:1/-1;margin-bottom:3px;padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--fg);font-weight:var(--fw-bold)}.deliveryTableWrap .tbl td:first-child:before{display:none}.deliveryTableWrap .tbl td[colspan]{display:block;grid-column:1/-1;margin:0;padding:0;border:0}.deliveryTableWrap .tbl td[colspan]:before{display:none}.deliveryTableWrap .deliveryEmpty{min-height:96px}.deliveryFoot{padding-inline:14px}}
+@media(max-width:700px){.deliveryMobileSort{display:grid;grid-template-columns:auto minmax(132px,180px);align-items:center;gap:8px;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.deliveryMobileSort select{height:32px}.deliveryTableWrap{overflow:visible;padding:0 12px 12px}.deliveryTableWrap .tbl{display:block;min-width:0}.deliveryTableWrap thead{display:none}.deliveryTableWrap tbody{display:grid;gap:8px}.deliveryTableWrap tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:rgb(var(--tint-rgb)/.018);box-shadow:var(--shadow-soft)}.deliveryTableWrap .tbl td{display:grid;gap:3px;min-width:0;padding:6px 0;border:0;text-align:left;overflow-wrap:anywhere}.deliveryTableWrap .tbl td:before{content:attr(data-label);color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.deliveryTableWrap .tbl td:first-child{grid-column:1/-1;margin-bottom:3px;padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--fg);font-weight:var(--fw-bold)}.deliveryTableWrap .tbl td:first-child:before{display:none}.deliveryTableWrap .tbl td[colspan]{display:block;grid-column:1/-1;margin:0;padding:0;border:0}.deliveryTableWrap .tbl td[colspan]:before{display:none}.deliveryTableWrap .deliveryEmpty{min-height:96px}}
 @media(max-width:520px){#view-git .spectrumPageActions .modelControls{grid-template-columns:repeat(2,minmax(0,1fr))}.deliveryOverview{padding-inline:14px}.deliveryOverviewHead{align-items:flex-start;flex-direction:column;gap:8px}.deliveryMetricGrid{grid-template-columns:1fr}.deliveryMetric+.deliveryMetric,.deliveryCoverageMetric{border-top:1px solid var(--line);border-left:0;padding-left:0}.deliveryEvidenceStrip{align-items:flex-start;flex-direction:column;padding-block:8px}.deliveryEvidenceItem,.deliveryEvidenceItem:first-child{padding:4px 0;border:0}.deliveryVisual{padding-inline:14px}.deliveryProjectHead{padding-inline:14px}}
 /* git-delivery-economics-v1 */
 .deliveryInsightSection{margin-top:24px}
 .deliveryInsightHead{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:10px;padding-top:20px;border-top:1px solid var(--line)}
 .deliveryInsightHead h2{margin:0;font-size:var(--fs-18)}
 .deliveryInsightHead p{max-width:760px;margin:4px 0 0;color:var(--dim);font-size:var(--fs-12);line-height:1.5}
-.deliveryInsightRange{flex:none;color:var(--faint);font:var(--fw-semibold) var(--fs-11)/1.4 var(--font-mono)}
 .deliveryInsightGrid{display:grid;grid-template-columns:minmax(300px,.78fr) minmax(0,1.22fr);align-items:start;gap:12px}
 .deliverySignalCard,.deliveryShapeCard{padding:16px 18px}
 .deliveryInsightCardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
@@ -2091,8 +2088,8 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .deliveryComposition i{height:100%;background:var(--signal)}
 .deliveryComposition i.deleted{background:var(--c-deleted)}
 @media(max-width:1180px){.deliveryShapeHeader,.deliveryShapeRow{grid-template-columns:112px minmax(96px,1fr) minmax(240px,.88fr)}}
-@media(max-width:900px){.deliveryInsightGrid{grid-template-columns:1fr}.deliveryInsightHead{align-items:flex-start;flex-direction:column}.deliveryInsightRange{white-space:normal}.deliveryShapeHeader,.deliveryShapeRow{grid-template-columns:minmax(0,1fr) minmax(150px,1fr)}.deliveryShapeHeader span:last-child,.deliveryShapeValues{grid-column:1/-1;grid-row:2}.deliveryShapeRow{padding-bottom:8px}}
-@media(max-width:520px){.deliverySignalCard,.deliveryShapeCard{padding:14px 12px}.deliveryShapeHeader{display:none}.deliveryShapeRow{grid-template-columns:1fr}.deliveryShapeValues{grid-row:auto}.deliveryShapeValues span{display:grid;gap:2px;text-align:left}.deliveryShapeValues span:before{content:attr(data-label);color:var(--faint);font:var(--fw-bold) var(--fs-11)/1.2 var(--font-sans);text-transform:uppercase}.deliveryMobileScrollHint{display:block;margin:6px 0 2px;color:var(--faint);font-size:var(--fs-11);text-align:right}.deliveryChartViewport{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}.deliveryChartWrap{min-width:720px}.deliveryChart .axis,.deliveryChart .axisTitle{font-size:var(--fs-11)}}
+@media(max-width:900px){.deliveryInsightGrid{grid-template-columns:1fr}.deliveryInsightHead{align-items:flex-start;flex-direction:column}.deliveryShapeHeader,.deliveryShapeRow{grid-template-columns:minmax(0,1fr) minmax(150px,1fr)}.deliveryShapeHeader span:last-child,.deliveryShapeValues{grid-column:1/-1;grid-row:2}.deliveryShapeRow{padding-bottom:8px}}
+@media(max-width:520px){.deliverySignalCard,.deliveryShapeCard{padding:14px 12px}.deliveryShapeHeader{display:none}.deliveryShapeRow{grid-template-columns:1fr}.deliveryShapeValues{grid-row:auto}.deliveryShapeValues span{display:grid;gap:2px;text-align:left}.deliveryShapeValues span:before{content:attr(data-label);color:var(--faint);font:var(--fw-bold) var(--fs-11)/1.2 var(--font-sans);text-transform:uppercase}.deliveryMobileScrollHint{display:block;margin:6px 0 2px;color:var(--faint);font-size:var(--fs-11);text-align:right}.deliveryChartViewport{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}.deliveryChartWrap{min-width:720px}.deliveryChart .axis{font-size:var(--fs-11)}}
 /* git-evidence-explorer-v2 */
 .deliveryCoverageState{font-family:inherit;cursor:pointer}
 .deliveryCoverageState:after{content:"›";color:var(--faint);font-size:var(--fs-13);line-height:8px;transform:rotate(90deg);transition:transform .15s ease}
@@ -3240,7 +3237,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	 <div class=view id=view-git>
 	  <div class="spectrumPageHeadFrame hasPageActions">
 	   <div class="efficiencyHead spectrumPageHead" data-page-signal=git>
-	    <div class=spectrumPageHeadCopy><h1>Git</h1><p class=spectrumPageSubtitle>Pushed code &times; covered spend.</p></div>
+	    <div class=spectrumPageHeadCopy><h1>Git</h1><p class=spectrumPageSubtitle>Pushed code &times; covered spend &middot; <span class=fieldtip id=d-caveat tabindex=0 aria-description="Local Git only: hashed keys and line counts, never filenames or messages. Spend is estimated. Few lines make ratios noisy. Not a quality score." data-tip="Local Git only: hashed keys and line counts, never filenames or messages. Spend is estimated. Few lines make ratios noisy. Not a quality score.">local Git only</span></p></div>
 	   </div>
 	   <div class=spectrumPageActions><div class="modelControls deliveryControls">
 	    <label class=filterControl><span>Project</span><select class=filterSelect id=d-project aria-label="Git project filter"><option value="">All projects</option></select></label>
@@ -3249,58 +3246,56 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	  </div>
 	  <section class="card deliveryOverview" aria-label="Git overview">
 	   <div class=deliveryOverviewHead>
-	    <div><div class=deliveryEyebrow><span id=d-period-label>7 days</span><span aria-hidden=true>&middot;</span><span>Local Git</span></div><h2 id=d-comparison>No comparable prior period</h2></div>
+	    <div><div class=deliveryEyebrow><span id=d-period-label>7 days</span></div><h2 id=d-comparison>No comparable prior period</h2></div>
 	    <button class="deliveryCoverageState partial" id=d-coverage type=button aria-live=polite aria-expanded=false aria-controls=d-evidence-panel>Scanning local Git</button>
 	   </div>
 	   <div class=deliveryMetricGrid>
-	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Text additions plus deletions from locally observed successful pushes. Binary changes are excluded." data-tip="Text additions plus deletions from locally observed successful pushes. Binary changes are excluded.">Pushed lines</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-code-pushed>--</div><div class=trendDelta id=d-code-pushed-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta><b id=d-added>--</b> added <span aria-hidden=true>&middot;</span> <b id=d-deleted>--</b> deleted</div></div>
-	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Covered spend divided by pushed text lines in the same projects and period." data-tip="Covered spend divided by pushed text lines in the same projects and period.">Spend / 1K</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-spend-lines>--</div><div class=trendDelta id=d-spend-lines-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta id=d-spend-note>Waiting for comparable coverage.</div></div>
-	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Pushed text lines per one thousand covered output tokens in the same projects and period. A conversion statistic, not a quality score." data-tip="Pushed text lines per one thousand covered output tokens in the same projects and period. A conversion statistic, not a quality score.">Push yield</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-push-yield>--</div><div class=trendDelta id=d-push-yield-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta id=d-push-yield-note>Waiting for output-token coverage.</div></div>
-    <div class="deliveryMetric deliveryCoverageMetric"><div class=deliveryMetricTop><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Share of selected-period spend from projects with both cost and Git evidence." data-tip="Share of selected-period spend from projects with both cost and Git evidence.">Spend coverage</div><strong id=d-coverage-percent>--</strong></div><div class=deliveryCoverageBar id=d-coverage-bar role=progressbar aria-label="Share of selected-period spend with comparable Git evidence" aria-valuemin=0 aria-valuemax=100 aria-valuetext="Spend coverage unavailable"><i aria-hidden=true></i></div></div>
+	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Text lines added plus deleted in successful pushes. Binary files excluded." data-tip="Text lines added plus deleted in successful pushes. Binary files excluded.">Pushed lines</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-code-pushed>--</div><div class=trendDelta id=d-code-pushed-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta><b id=d-added>--</b> added <span aria-hidden=true>&middot;</span> <b id=d-deleted>--</b> deleted</div></div>
+	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Covered spend per 1,000 pushed lines, same projects and period." data-tip="Covered spend per 1,000 pushed lines, same projects and period.">Spend / 1K</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-spend-lines>--</div><div class=trendDelta id=d-spend-lines-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta id=d-spend-note>Waiting for coverage.</div></div>
+	    <div class=deliveryMetric><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Pushed lines per 1K covered output tokens, same projects and period. Output includes reasoning where reported." data-tip="Pushed lines per 1K covered output tokens, same projects and period. Output includes reasoning where reported.">Push yield</div><div class=valueWithDelta><div class=deliveryMetricValue id=d-push-yield>--</div><div class=trendDelta id=d-push-yield-change data-direction="" hidden><strong>No comparable prior period</strong><span></span></div></div><div class=deliveryMetricMeta id=d-push-yield-note>Waiting for output tokens.</div></div>
+    <div class="deliveryMetric deliveryCoverageMetric"><div class=deliveryMetricTop><div class="deliveryMetricLabel fieldtip" tabindex=0 aria-description="Share of spend from projects with both cost and Git evidence." data-tip="Share of spend from projects with both cost and Git evidence.">Spend coverage</div><strong id=d-coverage-percent>--</strong></div><div class=deliveryCoverageBar id=d-coverage-bar role=progressbar aria-label="Share of selected-period spend with comparable Git evidence" aria-valuemin=0 aria-valuemax=100 aria-valuetext="Spend coverage unavailable"><i aria-hidden=true></i></div></div>
 	   </div>
 	   <div class=deliveryEvidenceStrip aria-label="Git evidence details">
 	    <div class=deliveryEvidenceItem><span>Push days</span><strong id=d-active-days>--</strong></div>
-	    <div class=deliveryEvidenceItem><span class="fieldtip" tabindex=0 aria-description="Your own non-merge commits introduced by locally observed successful pushes." data-tip="Your own non-merge commits introduced by locally observed successful pushes.">Commits</span><strong id=d-commits>--</strong></div>
+	    <div class=deliveryEvidenceItem><span class="fieldtip" tabindex=0 aria-description="Your non-merge commits in successful pushes." data-tip="Your non-merge commits in successful pushes.">Commits</span><strong id=d-commits>--</strong></div>
 	    <div class=deliveryEvidenceItem><span>Repositories</span><strong id=d-repo-evidence>--</strong></div>
 	    <div class=deliveryEvidenceItem><span>Comparable</span><strong id=d-comparable-evidence>--</strong></div>
-	    <div class=deliveryEvidenceItem><span class="fieldtip" tabindex=0 aria-description="Deleted share of pushed text lines. Deletions are normal editing work, not a defect measure." data-tip="Deleted share of pushed text lines. Deletions are normal editing work, not a defect measure.">Deleted share</span><strong id=d-rework>--</strong></div>
+	    <div class=deliveryEvidenceItem><span class="fieldtip" tabindex=0 aria-description="Deleted share of pushed lines. Deletions are normal editing, not defects." data-tip="Deleted share of pushed lines. Deletions are normal editing, not defects.">Deleted share</span><strong id=d-rework>--</strong></div>
 	   </div>
 	  </section>
 	  <section class="card deliveryEvidencePanel" id=d-evidence-panel hidden aria-labelledby=d-evidence-title>
    <div class=deliveryEvidenceHead><div><h2 class=fieldtip id=d-evidence-title tabindex=0 aria-description="Period-specific spend and Git coverage; unavailable is not zero." data-tip="Period-specific spend and Git coverage; unavailable is not zero.">Evidence coverage</h2></div><button class=deliveryEvidenceClose id=d-evidence-close type=button aria-label="Close evidence coverage">&times;</button></div>
-   <div class=deliveryEvidenceSummary><strong id=d-evidence-spend>--</strong><span>of spend paired with Git evidence</span></div>
+   <div class=deliveryEvidenceSummary><strong id=d-evidence-spend>--</strong><span>of spend has Git evidence</span></div>
 	   <div class=deliveryEvidenceChoices>
-	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=comparable><span>Comparable</span><strong id=d-evidence-count-comparable>--</strong><small>Spend + Git evidence</small></button>
-	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=spend_only><span>Spend only</span><strong id=d-evidence-count-spend>--</strong><small>No pushed-line evidence</small></button>
-	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=git_only><span>Git only</span><strong id=d-evidence-count-git>--</strong><small>No covered spend evidence</small></button>
-	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=unavailable><span>No period evidence</span><strong id=d-evidence-count-unavailable>--</strong><small>Neither signal is available</small></button>
+	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=comparable><span>Comparable</span><strong id=d-evidence-count-comparable>--</strong><small>Spend + Git</small></button>
+	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=spend_only><span>Spend only</span><strong id=d-evidence-count-spend>--</strong><small>No Git lines</small></button>
+	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=git_only><span>Git only</span><strong id=d-evidence-count-git>--</strong><small>No spend</small></button>
+	    <button class=deliveryEvidenceChoice type=button data-delivery-evidence-filter=unavailable><span>No period evidence</span><strong id=d-evidence-count-unavailable>--</strong><small>Neither</small></button>
 	   </div>
 	   <div class=deliveryEvidenceMeta><span class="fieldtip" id=d-evidence-ratio tabindex=0 aria-description="Ratios require overlapping spend and Git evidence." data-tip="Ratios require overlapping spend and Git evidence.">Waiting for overlap</span><span id=d-evidence-freshness>Git scan pending.</span></div>
 	  </section>
 	  <section class=goalsSection id=git-goals aria-labelledby=git-goals-heading><div class=goalsHead><h2 id=git-goals-heading tabindex=-1>Delivery goals</h2><div class=goalActions><button class=tbtn type=button data-goals-toggle>Previous goals</button><button class=tbtn type=button data-goal-new=git-goals>New goal</button></div></div><div class=goalsNotice role=status aria-live=polite hidden></div><div class=goalsList data-goals-current></div><div class=goalsList data-goals-previous hidden></div></section>
 	  <section class="card deliveryVisual">
-	   <div class=deliveryVisualHead><div><h2 class=fieldtip tabindex=0 aria-description="Added + deleted text lines from successful pushes. Select a day for spend details." data-tip="Added + deleted text lines from successful pushes. Select a day for spend details.">Code pushed by day</h2></div><div class=deliveryLegend aria-label="Git chart legend"><span><i></i>Added</span><span><i class=deleted></i>Deleted</span></div></div>
+	   <div class=deliveryVisualHead><div><h2 class=fieldtip tabindex=0 aria-description="Added + deleted text lines per day. Select a day for spend." data-tip="Added + deleted text lines per day. Select a day for spend.">Code pushed by day</h2></div><div class=deliveryLegend aria-label="Git chart legend"><span><i></i>Added</span><span><i class=deleted></i>Deleted</span></div></div>
 	   <div class=deliveryMobileScrollHint aria-hidden=true>Swipe or scroll to explore &rarr;</div>
 	   <div class=deliveryChartViewport><div class=deliveryChartWrap id=d-chart-wrap><svg class=deliveryChart id=d-daily-chart viewBox="0 0 1040 310" preserveAspectRatio=none role=img aria-label="Daily pushed text lines"></svg><div class=deliveryHitGrid id=d-chart-hits aria-label="Daily Git values"></div><div class="deliveryChartTip chartTip" id=d-chart-tip role=tooltip hidden></div></div></div>
 	   <div class=deliveryDayInspector id=d-day-inspector hidden aria-live=polite><div class=deliveryDayIdentity><span>Selected day</span><strong id=d-day-title>--</strong><small id=d-day-note></small></div><div class=deliveryDayMetrics id=d-day-metrics></div><div class=deliveryDayActions><button id=d-day-prev type=button>&larr; Previous</button><button id=d-day-next type=button>Next &rarr;</button><button class=deliveryDayClose id=d-day-close type=button aria-label="Close selected day">&times;</button></div></div>
 	  </section>
 	  <section class=deliveryInsightSection aria-labelledby=d-insight-title>
-	   <div class=deliveryInsightHead><div><h2 class=fieldtip id=d-insight-title tabindex=0 aria-description="Conversion, typical days, and outliers. Statistics only · no quality judgment." data-tip="Conversion, typical days, and outliers. Statistics only · no quality judgment.">Delivery economics</h2></div><div class=deliveryInsightRange id=d-insight-range></div></div>
+	   <div class=deliveryInsightHead><div><h2 class=fieldtip id=d-insight-title tabindex=0 aria-description="Conversion, typical days, and outliers. Statistics only · no quality judgment." data-tip="Conversion, typical days, and outliers. Statistics only · no quality judgment.">Delivery economics</h2></div></div>
 	   <div class=deliveryInsightGrid>
     <section class="card deliverySignalCard"><div class=deliveryInsightCardHead><div><h3 class=fieldtip tabindex=0 aria-description="Ranked local Git and covered-spend observations." data-tip="Ranked local Git and covered-spend observations.">Signals</h3></div></div><div class=deliverySignalList id=d-signals aria-live=polite><div class="deliverySignalEmpty emptyState">Reading local Git evidence&hellip;</div></div></section>
     <section class="card deliveryShapeCard"><div class=deliveryInsightCardHead><div><h3 class=fieldtip tabindex=0 aria-description="Median, range, and high day · ratios require 50+ pushed lines." data-tip="Median, range, and high day · ratios require 50+ pushed lines.">Daily shape</h3></div></div><div class=deliveryShape id=d-shape><div class="deliveryShapeEmpty emptyState">Reading daily distributions&hellip;</div></div></section>
 	   </div>
 	  </section>
 	  <section class="card deliveryModels" aria-labelledby=d-model-title>
-	   <div class=deliveryProjectHead><h2 class=fieldtip id=d-model-title tabindex=0 aria-description="Pushed lines from comparable projects, split by each model&rsquo;s share of that project&rsquo;s covered spend in the period. An estimate; models in the same project share its rate." data-tip="Pushed lines from comparable projects, split by each model&rsquo;s share of that project&rsquo;s covered spend in the period. An estimate; models in the same project share its rate.">Code per dollar by model</h2><div class=deliveryModelNote id=d-model-note>Waiting for local Git evidence.</div></div>
-	   <div class=deliveryTableWrap><table class=tbl id=d-model-table><thead><tr><th aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=model>Model<span class=deliverySortMark aria-hidden=true></span></button></th><th>App</th><th>Reasoning effort</th><th class=num aria-sort=descending><button class=deliverySort type=button data-delivery-model-sort=covered_cost>Covered spend<span class=deliverySortMark aria-hidden=true>&darr;</span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=attributed_lines>Attributed lines<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=lines_per_dollar>Lines / $<span class=deliverySortMark aria-hidden=true></span></button></th></tr></thead><tbody><tr><td colspan=6><div class="deliveryEmpty emptyState">Waiting for local Git evidence.</div></td></tr></tbody></table></div>
-	   <div class=deliveryFoot>Estimate &middot; Each project&rsquo;s pushed lines are split by each model&rsquo;s share of its covered spend &middot; Not a quality score.</div>
-	  </section>
+	   <div class=deliveryProjectHead><h2 class=fieldtip id=d-model-title tabindex=0 aria-description="Estimate. Each project&rsquo;s pushed lines are split by each model&rsquo;s share of its covered spend; models in one project share its rate." data-tip="Estimate. Each project&rsquo;s pushed lines are split by each model&rsquo;s share of its covered spend; models in one project share its rate.">Code per dollar by model</h2><div class=deliveryModelNote id=d-model-note>Waiting for local Git evidence.</div></div>
+	   <div class=deliveryTableWrap><table class=tbl id=d-model-table><thead><tr><th aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=model>Model<span class=deliverySortMark aria-hidden=true></span></button></th><th>App</th><th>Effort</th><th class=num aria-sort=descending><button class=deliverySort type=button data-delivery-model-sort=covered_cost>Spend<span class=deliverySortMark aria-hidden=true>&darr;</span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=attributed_lines>Est. lines<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-model-sort=lines_per_dollar>Lines / $<span class=deliverySortMark aria-hidden=true></span></button></th></tr></thead><tbody><tr><td colspan=6><div class="deliveryEmpty emptyState">Waiting for local Git evidence.</div></td></tr></tbody></table></div>
+		  </section>
 	  <section class="card deliveryProjects">
-	   <div class=deliveryProjectHead><h2>Projects</h2><div class=deliveryProjectControls><label class=deliveryEvidenceFilter><span>Evidence</span><select class=filterSelect id=d-evidence-filter aria-label="Filter Git projects by evidence"><option value=all>All projects</option><option value=comparable>Comparable</option><option value=spend_only>Spend only</option><option value=git_only>Git only</option><option value=unavailable>No period evidence</option></select></label><label class=deliveryMobileSort><span>Sort</span><select class=filterSelect id=d-mobile-sort aria-label="Sort Git projects"><option value=covered_cost:desc>Spend high–low</option><option value=covered_cost:asc>Spend low–high</option><option value=changed_lines:desc>Code high–low</option><option value=changed_lines:asc>Code low–high</option><option value=spend_per_1k:asc>Spend / 1K low–high</option><option value=spend_per_1k:desc>Spend / 1K high–low</option><option value=project:asc>Project A–Z</option><option value=project:desc>Project Z–A</option></select></label></div></div>
-	   <div class=deliveryTableWrap><table class=tbl id=d-project-table><thead><tr><th aria-sort=none><button class=deliverySort type=button data-delivery-sort=project>Project<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=descending><button class=deliverySort type=button data-delivery-sort=covered_cost>Covered spend<span class=deliverySortMark aria-hidden=true>&darr;</span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-sort=changed_lines>Code pushed<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-sort=spend_per_1k>Spend / 1K<span class=deliverySortMark aria-hidden=true></span></button></th></tr></thead><tbody><tr><td colspan=4><div class="deliveryEmpty emptyState">Waiting for local Git evidence.</div></td></tr></tbody></table></div>
-	   <div class=deliveryFoot>Local Git evidence &middot; Text changes only &middot; Not a quality score.</div>
-	  </section>
+	   <div class=deliveryProjectHead><h2>Projects</h2><div class=deliveryProjectControls><label class=deliveryEvidenceFilter><span>Evidence</span><select class=filterSelect id=d-evidence-filter aria-label="Filter Git projects by evidence"><option value=all>All projects</option><option value=comparable>Comparable</option><option value=spend_only>Spend only</option><option value=git_only>Git only</option><option value=unavailable>No period evidence</option></select></label><label class=deliveryMobileSort><span>Sort</span><select class=filterSelect id=d-mobile-sort aria-label="Sort Git projects"><option value=covered_cost:desc>Spend high–low</option><option value=covered_cost:asc>Spend low–high</option><option value=changed_lines:desc>Lines high–low</option><option value=changed_lines:asc>Lines low–high</option><option value=spend_per_1k:asc>Spend / 1K low–high</option><option value=spend_per_1k:desc>Spend / 1K high–low</option><option value=project:asc>Project A–Z</option><option value=project:desc>Project Z–A</option></select></label></div></div>
+	   <div class=deliveryTableWrap><table class=tbl id=d-project-table><thead><tr><th aria-sort=none><button class=deliverySort type=button data-delivery-sort=project>Project<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=descending><button class=deliverySort type=button data-delivery-sort=covered_cost>Spend<span class=deliverySortMark aria-hidden=true>&darr;</span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-sort=changed_lines>Pushed lines<span class=deliverySortMark aria-hidden=true></span></button></th><th class=num aria-sort=none><button class=deliverySort type=button data-delivery-sort=spend_per_1k>Spend / 1K<span class=deliverySortMark aria-hidden=true></span></button></th></tr></thead><tbody><tr><td colspan=4><div class="deliveryEmpty emptyState">Waiting for local Git evidence.</div></td></tr></tbody></table></div>
+		  </section>
 	 </div>
 
 	 <div class=view id=view-learn>
@@ -8491,9 +8486,9 @@ function deliveryShapeRange(distribution){
 }
 const DELIVERY_MIN_RATIO_LINES=50;
 const DELIVERY_SHAPE_METRICS=[
- {key:'spend_per_1k',label:'Spend / 1K',note:'Covered spend per 1K pushed lines',format:value=>money(value)},
- {key:'changed_lines',label:'Lines / push day',note:'Pushed text lines on days with a push',format:value=>compactNumber(value)},
- {key:'delivery_yield',label:'Push yield',note:'Lines per 1K output tokens',format:value=>deliveryRatio(value)},
+ {key:'spend_per_1k',label:'Spend / 1K',format:value=>money(value)},
+ {key:'changed_lines',label:'Lines / push day',format:value=>compactNumber(value)},
+ {key:'delivery_yield',label:'Push yield',format:value=>deliveryRatio(value)},
 ];
 function deliveryRatioDay(row){
  return (Number(row?.comparable_changed_lines)||0)>=DELIVERY_MIN_RATIO_LINES;
@@ -8521,14 +8516,14 @@ function deliverySignals(payload){
   const flat=Math.abs(intensityChange)<.05;
   rows.push({key:'intensity_trend',kind:'neutral',priority:10,
    title:flat?'Cost intensity held steady':`Cost intensity ${intensityChange<0?'fell':'rose'} ${deliveryPercent(intensityChange)}`,
-   text:`Pushed code ${Math.abs(codeChange)<.05?'held steady':`${codeChange>0?'rose':'fell'} ${deliveryPercent(codeChange)}`} against the previous period of the same length.`});
+   text:''});
  }
  const yieldValue=Number(efficiency?.delivery_yield),yieldChange=Number(comparison?.delivery_yield_pct);
  if(efficiencyAvailable?.delivery_yield===true&&Number.isFinite(yieldValue)){
   const known=Number.isFinite(yieldChange);
   rows.push({key:'push_yield',kind:'neutral',priority:20,
    title:`${deliveryRatio(yieldValue)} pushed lines per 1K output tokens`,
-   text:known?`${Math.abs(yieldChange)<.05?'Unchanged':`${yieldChange>0?'Up':'Down'} ${deliveryPercent(yieldChange)}`} versus the previous period. Output tokens include reasoning where the runtime reports it.`:'No comparable prior period for push yield yet.'});
+   text:known?'':'No prior period to compare.'});
  }
  const intensityDays=deliveryIntensityDays(payload);
  if(intensityDays.length>=4){
@@ -8536,21 +8531,21 @@ function deliverySignals(payload){
   const peak=intensityDays.reduce((top,row)=>Number(row.spend_per_1k)>Number(top.spend_per_1k)?row:top);
   const multiple=distribution.median>0?Number(peak.spend_per_1k)/distribution.median:null;
 	  if(multiple&&multiple>=1.6)rows.push({key:'peak_day',kind:'warn',priority:30,action:'day',value:peak.day,
-	   title:`${deliveryDateLabel(peak.day)} cost ${deliveryMultiple(multiple)} the typical day per 1K lines`,
-	   text:`${money(peak.spend_per_1k)} per 1K pushed lines against a ${money(distribution.median)} median across ${distribution.count} ${countWord(distribution.count,'day')} with evidence.`});
+	   title:`${deliveryDateLabel(peak.day)}: ${deliveryMultiple(multiple)} the typical Spend / 1K`,
+	   text:`${money(peak.spend_per_1k)} vs a ${money(distribution.median)} median over ${distribution.count} ${countWord(distribution.count,'day')}.`});
  }
  const quiet=days.filter(row=>Number(row?.covered_cost)>0&&(Number(row?.changed_lines)||0)===0);
  if(quiet.length&&days.length){
   const quietCost=quiet.reduce((total,row)=>total+(Number(row.covered_cost)||0),0);
   rows.push({key:'quiet_days',kind:quiet.length>=Math.max(2,Math.round(days.length*.4))?'warn':'neutral',priority:35,
-   title:`${quiet.length} of ${days.length} ${countWord(days.length,'day')} had covered spend and no pushed lines`,
-   text:`${money(quietCost)} of covered spend on those days. Work can land in a later push, so read this as timing evidence.`});
+   title:`${quiet.length} of ${days.length} ${countWord(days.length,'day')} had spend but no pushes`,
+   text:`${money(quietCost)} spent. Work may land in a later push.`});
  }
  const added=Number(overall?.added),deleted=Number(overall?.deleted),changed=Number(overall?.changed_lines);
  if(available?.code_pushed===true&&Number.isFinite(changed)&&changed>0&&Number.isFinite(deleted)&&Number.isFinite(added)){
   rows.push({key:'deleted_share',kind:'neutral',priority:40,
    title:`${deliveryPercent(100*deleted/changed)} of pushed lines were deletions`,
-   text:`${f(added)} added and ${f(deleted)} deleted. Deletions are ordinary editing work, not a defect measure.`});
+   text:`${f(added)} added, ${f(deleted)} deleted. Normal editing, not defects.`});
  }
  const projectRows=Array.isArray(payload?.project_rows)?payload.project_rows:[];
  const costed=projectRows.filter(row=>row?.availability?.cost===true&&Number(row?.covered_cost)>0);
@@ -8560,13 +8555,13 @@ function deliverySignals(payload){
   const share=total>0?Number(top.covered_cost)/total:0;
 	  if(share>=.6)rows.push({key:'concentration',kind:'neutral',priority:50,action:'project',value:top.project,
 	   title:`${deliveryPercent(100*share)} of covered spend sits in ${deliveryProjectName(top.project)}`,
-	   text:`${money(top.covered_cost)} of ${money(total)} across ${costed.length} ${countWord(costed.length,'project')} with cost evidence in this period.`});
+	   text:`${money(top.covered_cost)} of ${money(total)} across ${costed.length} ${countWord(costed.length,'project')}.`});
  }
  const selectedCount=Number(coverage?.selected_repositories)||0,comparable=Number(coverage?.comparable_repositories)||0;
  if(selectedCount&&comparable<selectedCount){
 	  rows.push({key:'coverage',kind:'neutral',priority:60,action:'coverage',value:'',
-	   title:`${comparable} of ${selectedCount} ${countWord(selectedCount,'project')} compare cost with Git evidence`,
-	   text:'Ratios use only projects with comparable evidence; projects outside that coverage may change the result.'});
+	   title:`${comparable} of ${selectedCount} ${countWord(selectedCount,'project')} have both spend and Git`,
+	   text:'Ratios use only these; the rest may shift them.'});
  }
  const ranked=rows.sort((left,right)=>left.priority-right.priority||left.key.localeCompare(right.key));
  const coverageRow=ranked.find(row=>row.key==='coverage');
@@ -8628,8 +8623,8 @@ function renderDeliveryTable(rows){
 	  const shareBar=costAvailable&&totalCost>0?`<span class=deliverySpendShare style="--share:${share.toFixed(2)}" title="${esc(`${deliveryPercent(share)} of covered spend in this period`)}"><i aria-hidden=true></i></span>`:'';
 	  const added=Number(row.added)||0,deleted=Number(row.deleted)||0,changed=added+deleted;
 	  const composition=codeAvailable&&changed>0?`<span class=deliveryComposition title="${esc(`${f(added)} added · ${f(deleted)} deleted`)}"><i aria-hidden=true style="width:${(100*added/changed).toFixed(2)}%"></i><i class=deleted aria-hidden=true style="width:${(100*deleted/changed).toFixed(2)}%"></i></span>`:'';
-	  return `<tr><td title="${esc(row.project)}" data-label="Project"><button class=deliveryProjectLink type=button data-delivery-project="${esc(row.project)}">${esc(project)}</button></td><td class=num data-label="Covered spend">${costAvailable?money(cost):'--'}${shareBar}</td><td class="num mono" data-label="Code pushed">${codeAvailable?f(row.changed_lines):'--'}${composition}</td><td class="num mono" data-label="Spend / 1K">${ratioAvailable?money(row.spend_per_1k):'--'}</td></tr>`;
-	 }).join(''):`<tr><td colspan=4><div class="deliveryEmpty emptyState">No projects match the ${esc(evidenceSelect?.selectedOptions?.[0]?.textContent||'selected')} evidence filter.</div></td></tr>`;
+	  return `<tr><td title="${esc(row.project)}" data-label="Project"><button class=deliveryProjectLink type=button data-delivery-project="${esc(row.project)}">${esc(project)}</button></td><td class=num data-label="Spend">${costAvailable?money(cost):'--'}${shareBar}</td><td class="num mono" data-label="Pushed lines">${codeAvailable?f(row.changed_lines):'--'}${composition}</td><td class="num mono" data-label="Spend / 1K">${ratioAvailable?money(row.spend_per_1k):'--'}</td></tr>`;
+	 }).join(''):'<tr><td colspan=4><div class="deliveryEmpty emptyState">No projects match this filter.</div></td></tr>';
 	 body.querySelectorAll('[data-delivery-project]').forEach(button=>button.addEventListener('click',()=>selectDeliveryProject(button.dataset.deliveryProject)));
  $('d-project-table').querySelectorAll('th').forEach(header=>{
   const button=header.querySelector('[data-delivery-sort]'),active=button?.dataset.deliverySort===deliverySort.key;
@@ -8665,12 +8660,12 @@ function renderDeliveryModelTable(rows,coverage){
  rows=Array.isArray(rows)?rows:[];
  const body=$('d-model-table').querySelector('tbody'),sorted=sortedDeliveryModelRows(rows);
  const comparableLines=Number(coverage?.comparable_lines)||0,attributedLines=Number(coverage?.attributed_lines)||0;
- $('d-model-note').textContent=coverage?.available?`${f(attributedLines)} of ${f(comparableLines)} comparable lines attributed${coverage?.truncated?' · top 50 rows':''}`:'No model rates for this period.';
+ $('d-model-note').textContent=coverage?.available?`${f(attributedLines)} / ${f(comparableLines)} lines attributed${coverage?.truncated?' · top 50':''}`:'No model rates in this period.';
  body.innerHTML=sorted.length?sorted.map(row=>{
   const share=deliveryModelBarShare(row,rows),rate=deliveryRatio(row.lines_per_dollar);
   const bar=`<span class=deliverySpendShare style="--share:${share.toFixed(2)}" title="${esc(`${deliveryPercent(share)} of the highest rate in this period`)}"><i aria-hidden=true></i></span>`;
-  return `<tr><td data-label="Model"><div class=modelName title="${esc(row.model)}">${esc(row.model)}</div></td><td data-label="App">${esc(row.runtime||'unknown runtime')}</td><td data-label="Reasoning effort">${esc(modelEffortLabel(row))}</td><td class="num mono" data-label="Covered spend">${money(Number(row.covered_cost)||0)}</td><td class="num mono" data-label="Attributed lines">${f(Math.round(Number(row.attributed_lines)||0))}</td><td class="num mono" data-label="Lines / $">${rate==='--'?rate:`${rate} / $`}${bar}</td></tr>`;
- }).join(''):`<tr><td colspan=6><div class="deliveryEmpty emptyState">${comparableLines>0?'Comparable projects have no model-level spend in this period.':'Model rates need projects with both pushed lines and covered spend.'}</div></td></tr>`;
+  return `<tr><td data-label="Model"><div class=modelName title="${esc(row.model)}">${esc(row.model)}</div></td><td data-label="App">${esc(row.runtime||'unknown runtime')}</td><td data-label="Effort">${esc(modelEffortLabel(row))}</td><td class="num mono" data-label="Spend">${money(Number(row.covered_cost)||0)}</td><td class="num mono" data-label="Est. lines">${f(Math.round(Number(row.attributed_lines)||0))}</td><td class="num mono" data-label="Lines / $">${rate==='--'?rate:`${rate} / $`}${bar}</td></tr>`;
+ }).join(''):`<tr><td colspan=6><div class="deliveryEmpty emptyState">${comparableLines>0?'No model spend in comparable projects.':'Needs a project with both pushes and spend.'}</div></td></tr>`;
  $('d-model-table').querySelectorAll('th').forEach(header=>{
   const button=header.querySelector('[data-delivery-model-sort]'),active=button?.dataset.deliveryModelSort===deliveryModelSort.key;
   header.setAttribute('aria-sort',active?(deliveryModelSort.direction==='asc'?'ascending':'descending'):'none');
@@ -8724,7 +8719,7 @@ function renderDeliveryDayInspector(row,index,rows){
  const ratioAvailable=row?.availability?.spend_per_1k===true,rollingAvailable=row?.availability?.rolling_spend_per_1k===true,costAvailable=row?.availability?.cost===true,codeAvailable=row?.availability?.code_pushed===true;
  const lowVolume=ratioAvailable&&(Number(row?.comparable_changed_lines)||0)<DELIVERY_MIN_RATIO_LINES;
  $('d-day-title').textContent=deliveryDateLabel(row.day);
- $('d-day-note').textContent=lowVolume?'Below 50 comparable pushed lines · ratio shown for context only.':'';
+ $('d-day-note').textContent=lowVolume?'Under 50 lines · ratio is noisy.':'';
  const dayCommitsAvailable=codeAvailable&&deliveryCommitsMeasured(row);
  $('d-day-metrics').innerHTML=`<div class="deliveryDayMetric metric"><span>Pushed lines</span><b>${codeAvailable?f(row.changed_lines):'--'}</b></div><div class="deliveryDayMetric metric"><span>Commits</span><b>${dayCommitsAvailable?f(row.commits):'--'}</b></div><div class="deliveryDayMetric metric"><span>Covered spend</span><b>${costAvailable?money(row.covered_cost):'--'}</b></div><div class="deliveryDayMetric metric"><span>Day spend / 1K</span><b>${ratioAvailable?money(row.spend_per_1k):'--'}</b></div><div class="deliveryDayMetric metric"><span>7-day spend / 1K</span><b>${rollingAvailable?money(row.rolling_spend_per_1k):'--'}</b></div>`;
  $('d-day-prev').disabled=index<=0;$('d-day-next').disabled=index>=rows.length-1;
@@ -8773,7 +8768,7 @@ function drawDeliveryChart(rows){
  const x=index=>left+step*(index+.5);
  const barWidth=Math.max(3,Math.min(34,step*.42));
  const labelEvery=Math.max(1,Math.ceil(rows.length/7));
- let markup=`<text class=axisTitle x=${left} y=25>PUSHED TEXT LINES</text>`;
+ let markup='';
  [0,.5,1].forEach(share=>{const y=barBottom-share*(barBottom-barTop),value=lineMax*share;markup+=`<line class=grid x1=${left} y1=${y} x2=${right} y2=${y} /><text class=axis x=${left-9} y=${y+3} text-anchor=end>${esc(compactNumber(value))}</text>`;});
  rows.forEach((row,index)=>{
   const center=x(index),added=Number(row.added)||0,deleted=Number(row.deleted)||0,total=Math.max(0,added+deleted),height=total/lineMax*(barBottom-barTop),deletedHeight=total?height*(deleted/total):0,addedHeight=height-deletedHeight;
@@ -8794,10 +8789,10 @@ function drawDeliveryChart(rows){
 function renderDeliverySignals(payload){
  const list=$('d-signals'),rows=deliverySignals(payload);
 	 list.innerHTML=rows.length?rows.map(row=>{
-	  const body=`<i aria-hidden=true></i><div class=deliverySignalBody><b>${esc(row.title)}</b><span>${esc(row.text)}</span></div>`;
+	  const body=`<i aria-hidden=true></i><div class=deliverySignalBody><b>${esc(row.title)}</b>${row.text?`<span>${esc(row.text)}</span>`:''}</div>`;
 	  const classes=`deliverySignal ${row.kind==='warn'?'warn':row.kind==='good'?'good':''}`;
 	  return row.action?`<button class="${classes}" type=button data-delivery-signal-action="${esc(row.action)}" data-delivery-signal-value="${esc(row.value||'')}">${body}</button>`:`<div class="${classes}">${body}</div>`;
-	 }).join(''):'<div class="deliverySignalEmpty emptyState">No comparable Git and spend evidence in this period.</div>';
+	 }).join(''):'<div class="deliverySignalEmpty emptyState">No overlapping Git and spend in this period.</div>';
 	 list.querySelectorAll('[data-delivery-signal-action]').forEach(button=>button.addEventListener('click',event=>{
 	  event.stopPropagation();
 	  const action=button.dataset.deliverySignalAction,value=button.dataset.deliverySignalValue;
@@ -8808,17 +8803,17 @@ function renderDeliverySignals(payload){
 }
 function renderDeliveryShape(payload){
  const host=$('d-shape'),rows=deliveryShapeRows(payload);
- if(!rows.some(row=>row.distribution)){host.innerHTML='<div class="deliveryShapeEmpty emptyState">No daily distributions available in this period.</div>';return;}
- const header='<div class=deliveryShapeHeader><span>Measure</span><span>Distribution</span><span><span>Median</span><span>Middle half / range</span><span>High day</span></span></div>';
+ if(!rows.some(row=>row.distribution)){host.innerHTML='<div class="deliveryShapeEmpty emptyState">No daily data in this period.</div>';return;}
+ const header='<div class=deliveryShapeHeader><span></span><span></span><span><span>Median</span><span>Range</span><span>High</span></span></div>';
  host.innerHTML=header+rows.map(row=>{
   const distribution=row.distribution;
-  if(!distribution)return `<div class=deliveryShapeRow><span class=deliveryShapeIdentity><b>${esc(row.label)}</b><small>${esc(row.note)}</small></span><span class=deliveryShapeRail></span><span class=deliveryShapeValues><span>--</span><span>--</span><span>--</span></span></div>`;
+  if(!distribution)return `<div class=deliveryShapeRow><span class=deliveryShapeIdentity><b>${esc(row.label)}</b><small>No data</small></span><span class=deliveryShapeRail></span><span class=deliveryShapeValues><span>--</span><span>--</span><span>--</span></span></div>`;
   const range=deliveryShapeRange(distribution),stable=range.label==='Middle half';
   const fence=stable?Math.max(distribution.p75+1.5*(distribution.p75-distribution.p25),distribution.median*1.25,distribution.p75):distribution.max;
   const span=Math.min(distribution.max,fence)||1,beyond=stable&&distribution.max>span*1.0001;
   const percent=value=>`${Math.max(0,Math.min(100,100*value/span)).toFixed(2)}%`;
   const rail=`<span class=deliveryShapeRail role=img aria-label="${esc(`${row.label}: median ${row.format(distribution.median)}, ${range.label.toLowerCase()} ${row.format(range.low)} to ${row.format(range.high)}, high day ${row.format(distribution.max)}${beyond?' beyond the rail scale':''} across ${distribution.count} ${countWord(distribution.count,'day')}`)}"><i class=deliveryShapeIqr style="--p25:${percent(range.low)};--p75:${percent(range.high)}"></i><i class=deliveryShapeMedian style="--median:${percent(distribution.median)}"></i><i class="deliveryShapeHigh${beyond?' beyond':''}" style="--p90:${percent(distribution.max)}"></i></span>`;
-  return `<div class=deliveryShapeRow><span class=deliveryShapeIdentity><b>${esc(row.label)}</b><small>${esc(row.note)} · ${distribution.count} ${countWord(distribution.count,'day')} · ${esc(range.label)}</small></span>${rail}<span class=deliveryShapeValues><span data-label="Median">${esc(row.format(distribution.median))}</span><span data-label="${esc(range.label)}">${esc(`${row.format(range.low)}–${row.format(range.high)}`)}</span><span data-label="High day">${esc(row.format(distribution.max))}</span></span></div>`;
+  return `<div class=deliveryShapeRow><span class=deliveryShapeIdentity><b>${esc(row.label)}</b><small>${distribution.count} ${countWord(distribution.count,'day')} · ${esc(range.label.toLowerCase())}</small></span>${rail}<span class=deliveryShapeValues><span data-label="Median">${esc(row.format(distribution.median))}</span><span data-label="${esc(range.label)}">${esc(`${row.format(range.low)}–${row.format(range.high)}`)}</span><span data-label="High day">${esc(row.format(distribution.max))}</span></span></div>`;
  }).join('');
 }
 document.addEventListener('click',event=>{
@@ -8842,7 +8837,7 @@ function renderDelivery(payload){
  $('d-added').textContent=available.code_pushed===true?`+${f(overall.added)}`:'--';
  $('d-deleted').textContent=available.code_pushed===true?`-${f(overall.deleted)}`:'--';
  $('d-spend-lines').textContent=available.spend_per_1k===true?money(overall.spend_per_1k):'--';
- $('d-spend-note').innerHTML=available.cost===true?`<b>${money(overall.covered_cost)}</b> covered spend`:'Waiting for comparable coverage.';
+ $('d-spend-note').innerHTML=available.cost===true?`<b>${money(overall.covered_cost)}</b> covered spend`:'Waiting for coverage.';
  const efficiency=overall?.efficiency||{},yieldAvailable=efficiency?.availability?.delivery_yield===true;
  // The Git service compares month-to-date with the same days of last month, not the whole month.
  const comparison=payload?.comparison||{},comparisonLabel=deliveryRange==='month'?'same days last month':efficiencyComparisonWindows(deliveryRange)?.label||'prior period';
@@ -8851,7 +8846,7 @@ function renderDelivery(payload){
  renderTrendDelta('d-code-pushed-change',gitDelta('code_pushed_pct'),'',available.code_pushed!==true);
  renderTrendDelta('d-spend-lines-change',gitDelta('spend_per_1k_pct'),'',available.spend_per_1k!==true);
  $('d-push-yield').textContent=yieldAvailable?deliveryRatio(efficiency.delivery_yield):'--';
- $('d-push-yield-note').textContent=yieldAvailable?'lines / 1K output':'Waiting for output-token coverage.';
+ $('d-push-yield-note').textContent=yieldAvailable?'lines / 1K output':'Waiting for output tokens.';
  renderTrendDelta('d-push-yield-change',gitDelta('delivery_yield_pct'),'',!yieldAvailable);
  const changedLines=Number(overall?.changed_lines)||0;
  $('d-rework').textContent=available.code_pushed===true&&changedLines>0?deliveryPercent(100*(Number(overall.deleted)||0)/changedLines):'--';
@@ -8873,9 +8868,7 @@ function renderDelivery(payload){
  $('d-repo-evidence').textContent=checked&&selectedCount?`${measured} / ${selectedCount}`:'--';
  $('d-comparable-evidence').textContent=checked?`${comparable} ${countWord(comparable,'project')}`:'--';
  coverageNode.classList.toggle('partial',evidencePartial||!checked);
- coverageNode.textContent=!checked?'Scanning local Git':selectedCount?(evidencePartial?'Partial evidence':'Evidence ready'):'No Git-backed projects discovered';
-	 const rangeLabel=$('d-period-label').textContent;
-	 $('d-insight-range').textContent=checked&&days.length?`${rangeLabel} · ${comparable} comparable ${countWord(comparable,'project')}`:rangeLabel;
+ coverageNode.textContent=!checked?'Scanning local Git':selectedCount?(evidencePartial?'Partial evidence':'Evidence ready'):'No Git projects found';
 	 drawDeliveryChart(days);renderDeliveryModelTable(payload?.model_rows||[],payload?.model_coverage);renderDeliveryTable(payload?.project_rows||[]);
 	 renderDeliveryEvidence(payload);renderDeliverySignals(payload);renderDeliveryShape(payload);
 }
@@ -8892,7 +8885,7 @@ async function loadDelivery(){
   if(request!==deliveryRequest)return;
   const coverageBar=$('d-coverage-bar');coverageBar.style.setProperty('--delivery-coverage',0);coverageBar.classList.add('partial');coverageBar.removeAttribute('aria-valuenow');coverageBar.setAttribute('aria-valuetext','Spend coverage unavailable');
   $('d-coverage-percent').textContent='--';$('d-coverage').classList.add('partial');$('d-coverage').textContent='Git evidence unavailable';
-  $('d-push-yield').textContent='--';$('d-push-yield-note').textContent='Waiting for output-token coverage.';$('d-rework').textContent='--';
+  $('d-push-yield').textContent='--';$('d-push-yield-note').textContent='Waiting for output tokens.';$('d-rework').textContent='--';
 	  $('d-signals').innerHTML='<div class="deliverySignalEmpty emptyState">Git evidence unavailable.</div>';
 	  $('d-shape').innerHTML='<div class="deliveryShapeEmpty emptyState">Git evidence unavailable.</div>';
 	  $('d-evidence-spend').textContent='--';setDeliveryEvidenceRatio('Git evidence unavailable.','Git evidence unavailable. Ratios require overlapping spend and Git evidence.');$('d-evidence-freshness').textContent='Git scan unavailable.';

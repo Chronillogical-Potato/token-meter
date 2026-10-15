@@ -11133,8 +11133,9 @@ console.log(JSON.stringify({
         git = self.page.split("id=view-git", 1)[1].split("id=view-learn", 1)[0]
         hover_copy = (
             "Period-specific spend and Git coverage; unavailable is not zero.",
-            "Added + deleted text lines from successful pushes. Select a day for spend details.",
+            "Added + deleted text lines per day. Select a day for spend.",
             "Conversion, typical days, and outliers. Statistics only · no quality judgment.",
+            "Local Git only: hashed keys and line counts, never filenames or messages. Spend is estimated. Few lines make ratios noisy. Not a quality score.",
             "Ranked local Git and covered-spend observations.",
             "Median, range, and high day · ratios require 50+ pushed lines.",
         )
@@ -11142,10 +11143,8 @@ console.log(JSON.stringify({
             self.assertIn(f'aria-description="{copy}"', git)
             self.assertIn(f'data-tip="{copy}"', git)
             self.assertNotIn(f"<p>{copy}</p>", git)
-        self.assertIn(
-            "Local Git evidence &middot; Text changes only &middot; Not a quality score.",
-            git,
-        )
+        # The local-only, privacy, estimate, and noise caveats live once in header help.
+        self.assertNotIn("class=deliveryFoot", git)
         self.assertIn('class="fieldtip" id=d-evidence-ratio tabindex=0', git)
         self.assertIn("function setDeliveryEvidenceRatio(text,detail)", self.page)
         self.assertIn(
@@ -12933,7 +12932,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "Track the cost of your custom agents.",
             "Tools, MCP servers, and skills.",
             "Local token efficiency.",
-            "Pushed code &times; covered spend.",
+            "Pushed code &times; covered spend &middot; <span class=fieldtip id=d-caveat",
             "Spend tokens like money. Measure what you get back.",
             "Connections, pricing, and updates.",
         ):
