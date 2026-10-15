@@ -3775,8 +3775,8 @@ function learnEvidence(state=LATEST){
  const priced=row=>row?.prices&&TOKEN_TYPES.some(type=>Number(row.prices[type.key])>0);
  const priceRows=Array.isArray(xs.model_pricing?.models)?xs.model_pricing.models:[];
  const latestPrice=hasSession?priceRows.find(row=>row.provider===runtimeId(state)&&row.model===state.primary_model&&priced(row)):null;
- const topModel=[...(Array.isArray(xs.model_mix)?xs.model_mix:[])].sort((a,b)=>(Number(b.cost)||0)-(Number(a.cost)||0)).find(mix=>priceRows.some(row=>row.model===mix.model&&row.provider===mix.runtime&&priced(row)));
- const priceRow=latestPrice||(topModel?priceRows.find(row=>row.model===topModel.model&&row.provider===topModel.runtime&&priced(row)):null);
+ const topModel=[...(Array.isArray(xs.model_mix)?xs.model_mix:[])].sort((a,b)=>(Number(b.cost)||0)-(Number(a.cost)||0)).find(mix=>priceRows.some(row=>row.model===mix.model&&(mix.providers||[]).includes(row.provider)&&priced(row)));
+ const priceRow=latestPrice||(topModel?priceRows.find(row=>row.model===topModel.model&&(topModel.providers||[]).includes(row.provider)&&priced(row)):null);
  if(priceRow){
   const rows=TOKEN_TYPES.map(type=>({...type,price:Number(priceRow.prices[type.key])||0})).filter(row=>row.price>0).sort((a,b)=>a.price-b.price);
   price={model:currentSessionModelName(priceRow.model),unit:xs.model_pricing?.unit||'per 1M tokens',rows};

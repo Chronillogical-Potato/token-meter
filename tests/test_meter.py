@@ -8833,6 +8833,36 @@ process.stdout.write(JSON.stringify(results));
             self.page,
         )
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for Learn evidence verification")
+    def test_learn_price_fallback_uses_the_model_runtime_provider(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function block(start){{let i=page.indexOf(start);if(i<0)throw Error(start);let open=page.indexOf(start.endsWith('[')?'[':'{{',i),depth=0,close=start.endsWith('[')?']':'}}',o=page[open];for(let j=open;j<page.length;j++){{if(page[j]===o)depth++;else if(page[j]===close&&--depth===0)return page.slice(i,j+1);}}}}
+eval(block('const TOKEN_TYPES=[').replace(/^const /,'var '));
+eval(page.slice(page.indexOf('const HIGH_EFFORTS='),page.indexOf(';',page.indexOf('const HIGH_EFFORTS='))+1).replace(/^const /,'var '));
+eval(block('function learnEvidence('));
+const currentSessionModelName=value=>String(value||'');
+const budgetMonthLabel=value=>String(value||'');
+const runtimeId=()=>'',runtimeLabel=()=>'';
+const prices=(read,out)=>({{cache_read:read,input:read*20,cache_write:read*25,output:out}});
+const state={{total_tokens:0,xsession:{{
+ model_pricing:{{unit:'per 1M tokens',models:[
+  {{provider:'codex',model:'shared-model',prices:prices(0.5,40)}},
+  {{provider:'claude',model:'shared-model',prices:prices(0.2,20)}},
+ ]}},
+ model_mix:[{{id:'shared-model::Claude Code',model:'shared-model',runtime:'Claude Code',providers:['claude'],cost:10,tokens:5}}],
+}}}};
+const evidence=learnEvidence(state);
+const unmatched=learnEvidence({{total_tokens:0,xsession:{{...state.xsession,model_mix:[{{model:'shared-model',runtime:'Hermes',providers:['hermes'],cost:3}}]}}}});
+process.stdout.write(JSON.stringify({{output:evidence.price&&evidence.price.rows.find(row=>row.key==='output').price,unmatched:unmatched.price}}));
+"""
+        completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["output"], 20)
+        self.assertIsNone(payload["unmatched"])
+
     def test_review_fixes_keep_focus_targets_timestamps_and_runtime_scoped_prices(self):
         # The inventory heading receives programmatic focus, so it must be focusable.
         self.assertIn("<h2 id=c-inventory-title tabindex=-1>All capabilities</h2>", self.page)
@@ -8844,8 +8874,8 @@ process.stdout.write(JSON.stringify(results));
         )
         self.assertIn("$('preview-started-at').textContent=(dt12(timing.start_local)||'--').replace(' ','\\n');", self.page)
         # Learn's price fallback matches the model within its runtime only.
-        self.assertIn("row.model===mix.model&&row.provider===mix.runtime&&priced(row)", self.page)
-        self.assertIn("row.model===topModel.model&&row.provider===topModel.runtime&&priced(row)", self.page)
+        self.assertIn("row.model===mix.model&&(mix.providers||[]).includes(row.provider)&&priced(row)", self.page)
+        self.assertIn("row.model===topModel.model&&(topModel.providers||[]).includes(row.provider)&&priced(row)", self.page)
         # The welcome tour opened from the palette returns focus to where the palette opened.
         self.assertIn("const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});", self.page)
         self.assertNotIn("WELCOME_PANELS[2].title=", self.page)
