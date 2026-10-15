@@ -8556,9 +8556,41 @@ process.stdout.write(JSON.stringify(results));
             run_grid.index('id=preview-token-split-slot'),
         )
         self.assertIn(
-            ".previewChartColumn{display:grid;align-content:start;gap:12px;min-width:0}",
+            ".previewChartColumn{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-width:0}",
             self.page,
         )
+
+    def test_selected_session_columns_share_top_and_bottom_edges(self):
+        decision = self.page.split('<aside class=previewDecision>', 1)[1].split('</aside>', 1)[0]
+        # The right column opens with a heading row matching the left column's
+        # "Execution Profile" heading, so the first cards start on one line.
+        self.assertTrue(decision.lstrip().startswith(
+            '<div class=section-h><h2>Session cost</h2><span class=hint>estimate</span></div>'
+        ))
+        self.assertLess(decision.index('class=section-h'), decision.index('id=preview-status-card'))
+        self.assertLess(decision.index('id=preview-status-card'), decision.index('id=preview-run-budget-slot'))
+        for rule in (
+            # Both columns stretch to the row height; the first card in each
+            # column absorbs slack so the last cards end on one line.
+            ".previewRunGrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,.65fr);gap:12px;align-items:stretch}",
+            ".previewChartColumn{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-width:0}",
+            ".previewChartSlot{display:grid}",
+            ".previewChartSlot #session-chart-module{display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px}",
+            ".previewChartSlot .section-h,.previewDecision>.section-h{margin:0}",
+            ".previewDecision{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:12px}",
+            # The wider 18px inset must not push the budget slider past the
+            # narrow 1024px right column.
+            ".previewRunBudgetSlot .sessionBudgetTrack{grid-template-columns:52px minmax(0,1fr) 60px}",
+            ".previewStatus{display:flex;flex-direction:column;",
+            ".previewStatus .previewPressure{margin-block:auto}",
+            # Right-column cards share the left cards' 18px inner edge.
+            "body.sessionRoute #view-session.sessionDetail .previewRunBudgetSlot .sessionBudget{padding:18px;",
+            # Context pressure uses the same label treatment as Started/Last activity.
+            ".previewPressureHead>span{color:var(--faint);font-size:var(--fs-11);text-transform:uppercase;letter-spacing:.04em}",
+        ):
+            self.assertIn(rule, self.page)
+        self.assertNotIn("#view-session.sessionDetail .previewRunGrid{gap:14px}", self.page)
+        self.assertNotIn(".previewChartSlot .section-h{margin:0 0 10px}", self.page)
 
     def test_efficiency_is_the_only_top_level_name_and_route(self):
         for marker in (
