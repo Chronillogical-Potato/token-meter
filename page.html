@@ -822,6 +822,7 @@ select option:checked{background-color:var(--panel3)}
 :where(.evidenceFigure)[hidden]{display:none}
 :where(.evidenceFigure>b){color:var(--fg);font-family:var(--font-mono);font-size:var(--fs-22);font-weight:var(--fw-heavy);line-height:1.1;letter-spacing:-.01em}
 :where(.evidenceFigure>small){color:var(--dim);font-size:var(--fs-12);line-height:1.4}
+:where(.evidenceFigure[data-hero]>b){font-size:var(--fs-readout-lg);letter-spacing:-.02em}
 @media(prefers-reduced-motion:reduce){:where(.readoutScale>i){transition:none}}
 .badge.codex{color:var(--provider-codex);border-color:rgb(var(--provider-codex-rgb)/.42);background:rgb(var(--provider-codex-rgb)/.08)}
 .badge.claude{color:var(--provider-claude);border-color:rgb(var(--provider-claude-rgb)/.42);background:rgb(var(--provider-claude-rgb)/.08)}
@@ -1563,26 +1564,23 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .privacyArrow{align-self:center;color:var(--signal-hi);font-family:var(--font-mono);font-size:var(--fs-20)}
 .privacySources{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .privacySources>span{margin-right:4px;color:var(--faint);font-size:var(--fs-12)}
-.privacyCloud{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px dashed var(--line3);border-radius:var(--radius-md);color:var(--dim);font-size:var(--fs-13)}
-.privacyCloud b{color:var(--fg)}
-.privacyCloudMark{width:28px;height:28px;flex:0 0 auto;fill:none;stroke:var(--faint);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.privacyCloudMark path+path{stroke:var(--fg)}
+.markRow{grid-template-columns:repeat(3,max-content);column-gap:20px}
+.markColumns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.markColumns>div{display:grid;align-content:start;gap:8px}
+.figurePair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .leverHead{display:grid;grid-template-columns:24px minmax(0,1fr) 92px 104px 14px;align-items:center;gap:10px;padding:0 12px;border:1px solid transparent;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.04em;text-transform:uppercase}
 .leverHead>.chip{justify-self:end}
-:is(.leverHead,.shareBlockHead,.monthBarsHead)>.chip{letter-spacing:0;text-transform:none;white-space:nowrap}
+:is(.leverHead,.monthBarsHead)>.chip{letter-spacing:0;text-transform:none;white-space:nowrap}
 .leverList{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .leverRow{display:grid;grid-template-columns:24px minmax(0,1fr) 92px 104px 14px;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.025);color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:border-color var(--dur-press) var(--ease-out),background var(--dur-press) var(--ease-out)}
 .leverRow:hover{border-color:var(--spectrum-edge-hover);background:rgb(var(--signal-rgb)/.08)}
 .leverRow>.deckArrow{color:var(--signal-hi)}
 .leverIndex{display:grid;place-items:center;width:24px;height:24px;border:1px solid rgb(var(--signal-rgb)/.36);border-radius:var(--radius-round);color:var(--signal-hi);font:var(--fw-heavy) var(--fs-11)/1 var(--font-mono)}
-.leverCopy{display:grid;gap:2px;min-width:0}
-.leverCopy>b{font-size:var(--fs-14)}
-.leverCopy>span{color:var(--dim);font-size:var(--fs-12)}
-.leverPage{display:inline-flex;align-items:center;gap:4px;color:var(--signal-hi);font-size:var(--fs-11);font-weight:var(--fw-bold)}
-.leverPage>.deckArrow{width:12px;height:12px}
-.leverValue{display:grid;justify-items:end;gap:2px;text-align:right}
+.leverName{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;min-width:0}
+.leverName>b{font-size:var(--fs-14)}
+.leverName>small{color:var(--faint);font-size:var(--fs-12)}
+.leverValue{display:grid;justify-items:end;text-align:right}
 .leverValue>strong{font-size:var(--fs-16);font-weight:var(--fw-heavy);line-height:1.1}
-.leverValue>small{color:var(--dim);font-size:var(--fs-11);line-height:1.3}
 .leverValue[data-source=talk]>strong{color:var(--aura-pale)}
 .valueChat{display:flex;align-items:center;gap:12px}
 .valueBubble{padding:8px 14px;border:1px solid var(--line2);border-radius:var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-2xs);background:rgb(var(--tint-rgb)/.06);font-size:var(--fs-16);font-weight:var(--fw-semibold)}
@@ -1600,17 +1598,6 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .priceType{display:inline-flex;align-items:center;gap:8px;color:var(--fg);white-space:nowrap}
 .priceType>i{width:10px;height:10px;border-radius:var(--radius-2xs);background:var(--seg)}
 .priceRank{display:grid;gap:8px;margin:0;padding:0 0 0 20px;color:var(--faint);font-size:var(--fs-12)}
-.shareBlock{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
-.shareBlockHead{display:flex;align-items:center;gap:8px;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.04em;text-transform:uppercase}
-.shareBlockNote{margin:0;color:var(--dim);font-size:var(--fs-12)}
-.shareBars{display:grid;gap:8px}
-.shareRow{display:grid;grid-template-columns:56px minmax(0,1fr);align-items:center;gap:12px;color:var(--dim);font-size:var(--fs-12);font-weight:var(--fw-bold)}
-.shareBar{display:flex;height:14px;overflow:hidden;border-radius:var(--radius-xs);background:rgb(var(--tint-rgb)/.06)}
-.shareBar>i{display:block;height:100%;background:var(--seg)}
-.shareBar>i+i{box-shadow:inset 1px 0 0 rgb(var(--shade-rgb)/.5)}
-.shareLegend{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:var(--fs-12)}
-.shareLegend>li{display:flex;justify-content:space-between;gap:8px}
-.shareLegend .mono{color:var(--dim)}
 .glanceDemo{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start;gap:14px}
 .menuMock{display:grid;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--bg-deep-rgb)/.6);overflow:hidden}
 .menuMockBar{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line);background:rgb(var(--tint-rgb)/.06);font-size:var(--fs-12)}
@@ -1635,9 +1622,7 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .deckCard{display:grid;align-content:start;gap:8px;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.025);color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:border-color var(--dur-press) var(--ease-out),background var(--dur-press) var(--ease-out)}
 .deckCard:hover{border-color:var(--spectrum-edge-hover);background:rgb(var(--signal-rgb)/.08)}
 .deckCardTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--signal-hi);font-size:var(--fs-12);font-weight:var(--fw-bold)}
-.deckCardQuestion{color:var(--fg);font-size:var(--fs-13);font-weight:var(--fw-semibold);line-height:1.35}
 .deckCardTalk{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:8px;border-top:1px dashed var(--line2);color:var(--dim);font-size:var(--fs-12);line-height:1.4}
-.deckCardNote{margin:0;color:var(--dim);font-size:var(--fs-12);line-height:1.45}
 .compareRuns{display:grid;gap:8px}
 .compareRuns>.chip{justify-self:start}
 .compareRun{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:8px;color:var(--dim);font-size:var(--fs-12)}
@@ -1647,10 +1632,15 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .loopSteps[data-steps="3"]{grid-template-columns:1fr}
 .loopSteps>li{position:relative;display:grid;align-content:start;gap:4px;min-width:0;padding:10px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.03)}
 .loopSteps:not([data-steps])>li:not(:last-child):after{content:"→";position:absolute;top:12px;right:-10px;z-index:1;color:var(--signal-hi);font-family:var(--font-mono);font-size:var(--fs-12)}
-.loopSteps[data-steps]>li{grid-template-columns:22px minmax(0,1fr);column-gap:10px}
+.loopSteps[data-steps]>li{grid-template-columns:22px minmax(0,1fr);align-items:center;column-gap:12px;padding:14px 16px}
 .loopSteps[data-steps]>li>small{grid-column:2}
 .loopSteps b{font-size:var(--fs-13);line-height:1.3}
 .loopSteps small{color:var(--dim);font-size:var(--fs-12);line-height:1.4}
+.loopSteps[data-steps] b{font-size:var(--fs-18)}
+.teamsRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px dashed var(--line3);border-radius:var(--radius-md)}
+.teamsRow>span{display:flex;align-items:baseline;gap:10px}
+.teamsRow b{font-size:var(--fs-16)}
+.teamsRow>.tbtn{padding:8px 14px;font-size:var(--fs-13);text-decoration:none}
 .loopIndex{display:grid;place-items:center;width:22px;height:22px;border-radius:var(--radius-round);background:var(--spectrum-active);color:var(--on-accent);font:var(--fw-heavy) var(--fs-11)/1 var(--font-mono)}
 .monthBarsPair{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
 .monthBars{display:grid;align-content:start;gap:8px;min-width:0}
@@ -1669,10 +1659,6 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .chatAsk{justify-self:end;max-width:85%;padding:8px 12px;border-radius:var(--radius-lg) var(--radius-lg) var(--radius-2xs) var(--radius-lg);background:rgb(var(--signal-rgb)/.14);color:var(--fg)}
 .chatTool{color:var(--faint);font-size:var(--fs-12)}
 .chatAnswer{padding:10px 12px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.04);color:var(--fg)}
-.teamsBox{display:grid;justify-items:start;gap:6px;padding:14px;border:1px dashed var(--line3);border-radius:var(--radius-md)}
-.teamsBox>b{font-size:var(--fs-16)}
-.teamsBox>p{margin:0;color:var(--dim);font-size:var(--fs-13);line-height:1.5}
-.teamsBox>.tbtn{margin-top:4px;padding:8px 14px;font-size:var(--fs-13);text-decoration:none}
 @media(max-width:1180px){.deck{grid-template-columns:200px minmax(0,1fr)}.deckStage{padding:20px 28px}.deckFoot{padding:12px 28px 16px}.deckSlide{grid-template-columns:1fr;gap:20px;max-width:760px}.deckCopy{grid-template-columns:minmax(0,1fr) minmax(0,260px);column-gap:24px;row-gap:10px;align-items:start}.deckCopy>*{grid-column:1}.deckCopy>.takeaway{grid-column:2;grid-row:1/span 3}.deckCopy h2,.deckInline .deckCopy h2{font-size:var(--fs-28)}.deckCopy p,.deckInline .deckCopy p{font-size:var(--fs-14)}}
 @media(max-height:800px){.welcomeTop{padding:10px 32px}.deckStage{padding-top:16px;padding-bottom:16px}.deckCopy{gap:10px}.deckVisual{gap:12px;padding:16px}}
 @media(max-width:900px){.deck{grid-template-columns:1fr}.deckRail{display:none}.deckFoot{grid-template-columns:auto 1fr}.deckCount{display:none}}
@@ -3418,7 +3404,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	 </div>
 </div>
 <dialog class=welcome id=welcome-dialog aria-modal=true aria-labelledby=welcome-label aria-describedby=welcome-deck-status>
- <header class=welcomeTop><div class=welcomeBrand><b id=welcome-label>Welcome to Token Meter</b></div><div class=welcomeTopActions><button class=welcomeSkip id=welcome-skip type=button>Skip for now</button><button class=welcomeClose id=welcome-close type=button aria-label="Close welcome" title="Close (Esc)"><span aria-hidden=true>&#10005;</span></button></div></header>
+ <header class=welcomeTop><div class=welcomeBrand><b id=welcome-label>Welcome to Token Meter</b></div><div class=welcomeTopActions><button class=welcomeSkip id=welcome-skip type=button>Skip tour</button><button class=welcomeClose id=welcome-close type=button aria-label="Close welcome" title="Close (Esc)"><span aria-hidden=true>&#10005;</span></button></div></header>
  <div class=deck id=welcome-deck data-deck-host=welcome></div>
 </dialog>
 <dialog class=commandPalette id=command-palette aria-labelledby=command-title>
@@ -3942,7 +3928,6 @@ function saveLearnSlide(index){
 }
 const DECK_PLATFORM=(()=>{const platform=String(navigator.userAgentData?.platform||navigator.platform||navigator.userAgent||'');return /mac/i.test(platform)?'mac':/win/i.test(platform)?'windows':/linux|x11|cros/i.test(platform)?'linux':'other';})();
 const WELCOME_HOST=DECK_PLATFORM==='mac'?'Mac':'machine';
-const COMPANION_PLACE={mac:'menu bar',windows:'notification area',linux:'tray'}[DECK_PLATFORM]||'menu bar or tray';
 const TOKEN_TYPES=[
  {key:'cache_read',label:'Cache reads',color:'var(--c-cache-read)'},
  {key:'input',label:'Fresh input',color:'var(--c-input)'},
@@ -3951,12 +3936,13 @@ const TOKEN_TYPES=[
 ];
 const HIGH_EFFORTS=new Set(['high','xhigh','max','ultra']);
 // Each lever carries the number the talk used for it. Talk numbers are never the user's and always render with a From the talk label.
+// `metric` is the one visible label per row; `talk.note` keeps the talk's exact wording for screen readers.
 const LEVERS=[
- {id:'model',title:'Model & reasoning',advice:'Match effort to the task.',route:'models',page:'Models',talk:{value:'70→22%',note:'of spend at xhigh, Jul → Sep'}},
- {id:'context',title:'Task context',advice:'Load only what the task needs.',route:'capabilities',page:'Tools',talk:{value:'83,907',note:'unused tool tokens in prompts'}},
- {id:'cache',title:'Prompt caching',advice:'Keep stable context stable.',route:'efficiency',page:'Efficiency',talk:{value:'55%',note:'of an Opus bill was cache writes'}},
- {id:'prompt',title:'Outcome-focused prompts',advice:'Name the outcome, the scope, and the test.',route:'sessions-compare',page:'Compare',talk:{value:'15%',note:'of follow-ups pushed back'}},
- {id:'rework',title:'Avoid rework',advice:'One clear pass beats three corrections.',route:'sessions-all',page:'All sessions',talk:{value:'$33 vs $6',note:'per session, recovered vs accepted'}},
+ {id:'model',title:'Model & reasoning',metric:'high-effort spend',route:'models',page:'Models',talk:{value:'70→22%',note:'of spend at xhigh, Jul → Sep'}},
+ {id:'context',title:'Task context',metric:'unused tool tokens',route:'capabilities',page:'Tools',talk:{value:'83,907',note:'unused tool tokens in prompts'}},
+ {id:'cache',title:'Prompt caching',metric:'cache-write cost share',route:'efficiency',page:'Efficiency',talk:{value:'55%',note:'of an Opus bill was cache writes'}},
+ {id:'prompt',title:'Outcome-focused prompts',metric:'follow-ups pushed back',route:'sessions-compare',page:'Compare',talk:{value:'15%',note:'of follow-ups pushed back'}},
+ {id:'rework',title:'Avoid rework',metric:'cost per session',route:'sessions-all',page:'All sessions',talk:{value:'$33 vs $6',note:'per session, recovered vs accepted'}},
 ];
 const priceText=value=>`$${Number(value)>=10?Number(value).toFixed(Number.isInteger(Number(value))?0:2):Number(value).toFixed(2)}`;
 const shareText=value=>value>0&&value<.01?'<1%':pct(value);
@@ -4038,13 +4024,13 @@ function learnEvidence(state=LATEST,git=null){
 }
 const exampleChip=sample=>sample?'<span class=chip>Example</span>':'';
 const runtimeChip=(id,label)=>`<span class="badge app ${esc(appBadgeClass({provider:id}))}">${runtimeBadgeContent({provider:id},label)}</span>`;
-const TALK_NOTE='One engineer’s laptop, estimated at public list prices.';
+const TALK_NOTE='one engineer’s laptop, list prices.';
 const TALK_CHIP='<span class="chip talkChip">From the talk</span>';
 const YOURS_CHIP='<span class="chip yoursChip">Yours</span>';
 const sourceChip=source=>source==='talk'?TALK_CHIP:source==='example'?'<span class=chip>Example</span>':YOURS_CHIP;
-// One labeled number: whose it is (Yours, Example, or From the talk), the value, and a short note.
-function figureHtml(source,value,note=''){
- return `<div class=evidenceFigure data-source=${source}>${sourceChip(source)}<b>${esc(value)}</b>${note?`<small>${esc(note)}</small>`:''}</div>`;
+// One labeled number: whose it is (Yours, Example, or From the talk), the value, and a short note. A hero figure leads its preview at readout size.
+function figureHtml(source,value,note='',{hero=false}={}){
+ return `<div class=evidenceFigure${hero?' data-hero':''} data-source=${source}>${sourceChip(source)}<b>${esc(value)}</b>${note?`<small>${esc(note)}</small>`:''}</div>`;
 }
 const DECK_ARROW='<svg class=deckArrow viewBox="0 0 16 16" aria-hidden=true><path d="M3 8h9M9 4l4 4-4 4"/></svg>';
 function deckDay(value){
@@ -4055,18 +4041,21 @@ function levelBarHtml(fill,{label='',tone='',mark=null}={}){
  const at=value=>`${(100*Math.max(0,Math.min(1,value))).toFixed(1)}%`;
  return `<span class=levelBar${tone?` data-tone=${tone}`:''} role=img aria-label="${esc(label)}" style="--fill:${at(fill)}${mark==null?'':`;--mark:${at(mark)}`}"><i></i>${mark==null?'':'<b></b>'}</span>`;
 }
+// Marks for a short checklist; the hidden state word keeps the meaning off color and glyph alone.
+const MARK_GLYPH={yes:'✓',no:'✕',skip:'–'};
+const markItemHtml=(mark,state,text)=>`<li data-mark=${mark}><i aria-hidden=true>${MARK_GLYPH[mark]}</i><span><span class=srOnly>${state}: </span>${esc(text)}</span></li>`;
 const SAMPLE_SESSION={runtimeId:'claude',runtime:'Claude',model:'Claude Sonnet 4.5',cost:4.2,estimate:true,contextTokens:124000,contextWindow:200000,contextPct:.62,calls:42,subagentCalls:6,subagents:2,tokens:3100000,duration:'24m',skills:{loaded:40,used:3}};
 const SAMPLE_BUDGET={month:'',configured:true,spend:312,limit:600,percent:.52,projected:540,lowerBound:false,state:'on_track'};
 const sessionCostText=s=>s.cost==null?'--':`${money(s.cost)}${s.estimate?' est':''}`;
 function contextMeterHtml(s){
  if(s.contextPct!=null)return `<div class=previewMeterHead><span>Context in use</span><b class=mono>${pct(s.contextPct)}</b></div>${levelBarHtml(s.contextPct,{label:`${pct(s.contextPct)} of the context window in use`,tone:s.contextPct>=.8?'warn':''})}<small>${esc(compactNumber(s.contextTokens))} of ${esc(compactNumber(s.contextWindow))} tokens</small>`;
- if(s.contextTokens)return `<div class=previewMeterHead><span>Context in use</span><b class=mono>${esc(compactNumber(s.contextTokens))}</b></div><small>${s.contextPeak>s.contextTokens?`Peak ${esc(compactNumber(s.contextPeak))} this session. `:''}This app does not report its window size.</small>`;
- return '<div class=previewMeterHead><span>Context in use</span><b class=mono>--</b></div><small>Not reported for this session.</small>';
+ if(s.contextTokens)return `<div class=previewMeterHead><span>Context in use</span><b class=mono>${esc(compactNumber(s.contextTokens))}</b></div><small>${s.contextPeak>s.contextTokens?`Peak ${esc(compactNumber(s.contextPeak))}. `:''}Window size not reported.</small>`;
+ return '<div class=previewMeterHead><span>Context in use</span><b class=mono>--</b></div><small>Not reported.</small>';
 }
 function budgetBlockHtml(b){
  const stateLabel={on_track:'On track',warning:'Threshold crossed',over:'Over budget'}[b.state]||'';
  const bar=b.configured?levelBarHtml(b.percent,{label:`${pct(b.percent)} of the monthly budget spent${b.projected!=null?`, projected ${pct(b.projected/b.limit)}`:''}`,tone:b.percent>=1||b.state==='over'?'warn':'',mark:b.projected!=null?b.projected/b.limit:null}):'';
- const projected=b.projected!=null?`<div class=previewBudgetFoot>${b.configured?'<i class=previewTick aria-hidden=true></i>':''}<span>Projected month</span><b class=mono>${esc(wholeMoney(b.projected))}</b>${b.configured&&stateLabel?`<span class="chip${b.state==='on_track'?'':' tone-warn'}">${esc(stateLabel)}</span>`:''}</div>`:'';
+ const projected=b.projected!=null?`<div class=previewBudgetFoot>${b.configured?'<i class=previewTick aria-hidden=true></i>':''}<span>Projected</span><b class=mono>${esc(wholeMoney(b.projected))}</b>${b.configured&&stateLabel?`<span class="chip${b.state==='on_track'?'':' tone-warn'}">${esc(stateLabel)}</span>`:''}</div>`:'';
  return `<div class="metric previewSessionCost"><span>${b.lowerBound?'Spent so far, at least':'Spent so far'}</span><strong>${esc(wholeMoney(b.spend))}</strong><small>${b.configured?`of ${esc(wholeMoney(b.limit))} budget · ${pct(b.percent)}`:'No monthly budget yet'}</small></div>${bar}${projected}`;
 }
 const budgetSample=ev=>!ev.budget||ev.sample&&!ev.budget.spend;
@@ -4077,26 +4066,18 @@ function valuePreviewHtml(ev){
  const rows=[
   ['Model calls',f(s.calls),'383'],
   ['Tokens',compactNumber(s.tokens),'80.6M'],
-  ['Subagents',s.subagents==null?'--':f(s.subagents),'3'],
-  ['Active time',s.duration||'--','110 min'],
   ['Skills used',s.skills?`${f(s.skills.used)} of ${f(s.skills.loaded)}`:'--','6 of 78'],
  ];
  return `<div class=miniPreviewHead><span>One session, two receipts</span></div><div class=valueChat><span class=label>The chat says</span><span class=valueBubble>Done.</span></div><table class=deckTable><caption class=srOnly>What the session did</caption><thead><tr><th scope=col><span class=srOnly>Measure</span></th><th scope=col data-source=${yours}>${sourceChip(yours)}</th><th scope=col data-source=talk>${TALK_CHIP}</th></tr></thead><tbody>${rows.map(([label,value,talk])=>`<tr><th scope=row>${label}</th><td class=mono data-source=${yours}>${esc(value)}</td><td class=mono data-source=talk>${esc(talk)}</td></tr>`).join('')}<tr class=deckTableTotal><th scope=row>Cost</th><td class=mono data-source=${yours}>${esc(sessionCostText(s))}</td><td class=mono data-source=talk>$31.14</td></tr></tbody></table>`;
 }
 // 2 · How token prices work
 function moneyPreviewHtml(ev){
- let ladder;
- if(ev.price){
-  const max=Math.max(...ev.price.rows.map(row=>row.price)),min=ev.price.rows[0].price;
-  ladder=`<div class=miniPreviewHead><span>List price ${esc(ev.price.unit)} · ${esc(ev.price.model)}</span></div><div class=priceLadder>${ev.price.rows.map(row=>`<div class=priceRow><span class=priceType><i style="--seg:${row.color}"></i>${row.label}</span>${levelBarHtml(row.price/max,{label:`${row.label}: ${priceText(row.price)} ${ev.price.unit}`})}<b class=mono>${esc(priceText(row.price))}</b><small class=mono>${esc(`${+(row.price/min).toFixed(1)}×`)}</small></div>`).join('')}</div>`;
- }else{
-  ladder=`<div class=miniPreviewHead><span>List price per 1M tokens, cheapest first</span></div><ol class=priceRank>${TOKEN_TYPES.map(row=>`<li><span class=priceType><i style="--seg:${row.color}"></i>${row.label}</span></li>`).join('')}</ol><p class=miniPreviewNote>Exact prices appear once a priced model is in your history.</p>`;
- }
- const talk=`<div class=shareBlock data-source=talk><div class=shareBlockHead>${TALK_CHIP}<span>30 days on one model</span></div><ul class=shareLegend>${[['cache_write','Cache writes','6% of tokens','55% of cost'],['cache_read','Cache reads','94% of tokens','about a third'],['output','Output','0.3% of tokens','11% of cost']].map(([key,label,tokens,cost])=>`<li><span class=priceType><i style="--seg:${TOKEN_TYPES.find(type=>type.key===key).color}"></i>${label}</span><span class=mono>${tokens} → ${cost}</span></li>`).join('')}</ul></div>`;
- if(!ev.split)return `${ladder}${talk}`;
- const bar=(key,label)=>`<div class=shareRow><span>${label}</span><span class=shareBar role=img aria-label="${esc(`${label}: `+ev.split.map(row=>`${row.label} ${shareText(row[key])}`).join(', '))}">${ev.split.filter(row=>row[key]>0).map(row=>`<i style="--seg:${row.color};width:${(100*row[key]).toFixed(2)}%"></i>`).join('')}</span></div>`;
- const lead=[...ev.split].sort((a,b)=>(b.costShare-b.tokenShare)-(a.costShare-a.tokenShare))[0];
- return `${ladder}<div class=shareBlock data-source=yours><div class=shareBlockHead>${YOURS_CHIP}<span>Latest session</span></div><div class=shareBars>${bar('tokenShare','Tokens')}${bar('costShare','Cost')}</div><p class=shareBlockNote>${esc(`${lead.label} ${/s$/.test(lead.label)?'were':'was'} ${shareText(lead.tokenShare)} of tokens and ${shareText(lead.costShare)} of cost.`)}</p></div>${talk}`;
+ const lead=ev.split?[...ev.split].sort((a,b)=>(b.costShare-b.tokenShare)-(a.costShare-a.tokenShare))[0]:null;
+ const yours=lead?figureHtml('yours',`${shareText(lead.tokenShare)} → ${shareText(lead.costShare)}`,`${lead.label}, latest session`,{hero:true}):'';
+ const figures=`<div class=miniPreviewHead><span>Share of tokens → share of cost</span></div><div class=figurePair>${yours}${figureHtml('talk','6% → 55%','Cache writes, 30 days',{hero:true})}</div>`;
+ if(!ev.price)return `${figures}<div class=miniPreviewHead><span>List price, cheapest first</span></div><ol class=priceRank>${TOKEN_TYPES.map(row=>`<li><span class=priceType><i style="--seg:${row.color}"></i>${row.label}</span></li>`).join('')}</ol>`;
+ const max=Math.max(...ev.price.rows.map(row=>row.price)),min=ev.price.rows[0].price;
+ return `${figures}<div class=miniPreviewHead><span>List price ${esc(ev.price.unit)} · ${esc(ev.price.model)}</span></div><div class=priceLadder>${ev.price.rows.map(row=>`<div class=priceRow><span class=priceType><i style="--seg:${row.color}"></i>${row.label}</span>${levelBarHtml(row.price/max,{label:`${row.label}: ${priceText(row.price)} ${ev.price.unit}`})}<b class=mono>${esc(priceText(row.price))}</b><small class=mono>${esc(`${+(row.price/min).toFixed(1)}×`)}</small></div>`).join('')}</div>`;
 }
 // 3 · A glance now, a deep dive later
 function glancePreviewHtml(ev){
@@ -4108,72 +4089,74 @@ function glancePreviewHtml(ev){
 }
 // 4 · Reads what your agents already wrote
 function tracesPreviewHtml(ev){
- const runtimes=ev.runtimes.length?`<div class=privacySources><span>Reading logs from</span>${ev.runtimes.map(id=>runtimeChip(id,RUNTIME_CATALOG[id]?.label||id)).join('')}</div>`:'';
- const history=ev.history?figureHtml('yours',`${f(ev.history.sessions)} ${countWord(ev.history.sessions,'session')}`,ev.history.since?`read from disk, back to ${deckDay(ev.history.since)}`:'read from disk'):figureHtml('example','1,240 sessions','read from disk, back to the first log');
- return `<div class=miniPreviewHead><span>No setup</span></div><div class=privacyFlow><div class=privacyNode><span>Agent traces</span><b>Already on disk</b></div><span class=privacyArrow aria-hidden=true>→</span><div class="privacyNode on"><span>Token Meter</span><b>Reads, never writes</b></div><span class=privacyArrow aria-hidden=true>→</span><div class=privacyNode><span>Dashboard</span><b>Numbers</b></div></div>${history}${runtimes}<ul class=markList>${[['no','No API keys'],['no','No proxy'],['no','Nothing to configure in the agent']].map(([mark,text])=>`<li data-mark=${mark}><i aria-hidden=true>✕</i><span><span class=srOnly>Not needed: </span>${text}</span></li>`).join('')}</ul>`;
+ const runtimes=ev.runtimes.length?`<div class=privacySources><span>Reading</span>${ev.runtimes.map(id=>runtimeChip(id,RUNTIME_CATALOG[id]?.label||id)).join('')}</div>`:'';
+ const history=ev.history?figureHtml('yours',`${f(ev.history.sessions)} ${countWord(ev.history.sessions,'session')}`,ev.history.since?`on disk, back to ${deckDay(ev.history.since)}`:'on disk',{hero:true}):figureHtml('example','1,240 sessions','on disk, back to the first log',{hero:true});
+ return `<div class=miniPreviewHead><span>No setup</span></div>${history}${runtimes}<ul class="markList markRow">${['No API keys','No proxy','No agent config'].map(text=>markItemHtml('no','Not needed',text)).join('')}</ul>`;
 }
 // 5 · Can I trust the number?
 function trustPreviewHtml(ev){
- const rows=[['yes','Included','Token counts from local logs'],['yes','Included','Public list prices'],['yes','Included','Web search, 1-hour cache, and fast mode, when logged'],['no','Not visible','Contract discounts, gateway and Bedrock rates'],['no','Not visible','Seats and plan fees'],['no','Not visible','Web chat, CI, cloud agents, other devices'],['skip','Excluded','Unknown models are left out, never counted as $0']];
- const glyph={yes:'✓',no:'✕',skip:'–'};
- const coverage=ev.coverage?`<p class=miniPreviewNote>Your history: <b class=mono>${f(ev.coverage.priced)}</b> ${countWord(ev.coverage.priced,'session')} priced${ev.coverage.excluded?` · <b class=mono>${f(ev.coverage.excluded)}</b> left out for missing cost evidence`:''}.</p>`:'';
- return `<div class=miniPreviewHead><span>How the estimate is made</span></div><div class=trustFormula><span>Local token counts</span><b aria-hidden=true>×</b><span>Public list price</span><b aria-hidden=true>=</b><strong>Estimate</strong></div><ul class=markList>${rows.map(([mark,state,text])=>`<li data-mark=${mark}><i aria-hidden=true>${glyph[mark]}</i><span><span class=srOnly>${state}: </span>${esc(text)}</span></li>`).join('')}</ul>${coverage}`;
+ const coverage=ev.coverage?figureHtml('yours',`${f(ev.coverage.priced)} ${countWord(ev.coverage.priced,'session')}`,ev.coverage.excluded?`priced · ${f(ev.coverage.excluded)} left out, never $0`:'priced',{hero:true}):'';
+ const column=(title,mark,state,rows)=>`<div><span class=label>${title}</span><ul class=markList>${rows.map(text=>markItemHtml(mark,state,text)).join('')}</ul></div>`;
+ return `<div class=miniPreviewHead><span>How the estimate is made</span></div>${coverage}<div class=trustFormula><span>Local token counts</span><b aria-hidden=true>×</b><span>Public list price</span><b aria-hidden=true>=</b><strong>Estimate</strong></div><div class=markColumns>${column('Counted','yes','Included',['Token counts','List prices','Web search, fast mode'])}${column('Not visible','no','Not visible',['Discounts, gateways','Seats and plans','Web chat, CI, devices'])}</div>${coverage?'':`<ul class=markList>${markItemHtml('skip','Excluded','Unknown models: left out, never $0')}</ul>`}`;
 }
 // 6 · Privacy is a feature
 function privacyPreviewHtml(ev){
- const cloud='<svg class=privacyCloudMark viewBox="0 0 24 24" aria-hidden=true><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.1 4.5 4.5 0 0 0 7 18Z"/><path d="M4 4l16 16"/></svg>';
- return `<div class=miniPreviewHead><span>Where your data goes</span></div><div class=privacyFlow><div class=privacyNode><span>Agent logs</span><b>Read-only</b></div><span class=privacyArrow aria-hidden=true>→</span><div class="privacyNode on"><span>Token Meter</span><b>On this ${WELCOME_HOST}</b></div><span class=privacyArrow aria-hidden=true>→</span><div class=privacyNode><span>Your browser</span><b>Numbers only</b></div></div><div class=privacyCloud>${cloud}<span><b>Nothing is uploaded.</b> No cloud, no telemetry, no account.</span></div><ul class=markList><li data-mark=yes><i aria-hidden=true>✓</i><span><span class=srOnly>Kept: </span>Git page: salted keys and line counts, never filenames or commit messages</span></li><li data-mark=skip><i aria-hidden=true>–</i><span><span class=srOnly>Note: </span>Connected agents get numbers only, and may pass them to their own model provider</span></li></ul>`;
+ return `<div class=miniPreviewHead><span>Where your data goes</span></div><div class=privacyFlow><div class=privacyNode><span>Agent logs</span><b>Read-only</b></div><span class=privacyArrow aria-hidden=true>→</span><div class="privacyNode on"><span>Token Meter</span><b>On this ${WELCOME_HOST}</b></div><span class=privacyArrow aria-hidden=true>→</span><div class=privacyNode><span>Your browser</span><b>Numbers only</b></div></div><ul class="markList markRow">${['No upload','No telemetry','No account'].map(text=>markItemHtml('yes','Guaranteed',text)).join('')}</ul>`;
 }
 // 7 · What am I spending?
 function spendingPreviewHtml(ev){
  const s=ev.session||SAMPLE_SESSION,b=budgetOf(ev);
- return `<div class=miniPreviewHead><span>Now and this month</span>${exampleChip(ev.sample)}</div><div class=spendPair><div class=spendPairCell><div class=previewSessionTop>${runtimeChip(s.runtimeId,s.runtime)}<span class=previewSessionModel>${esc(s.model)}</span></div><div class="metric previewSessionCost"><span>This session</span><strong>${esc(sessionCostText(s))}</strong><small>At public list prices</small></div><div class=previewMeter>${contextMeterHtml(s)}</div></div><div class=spendPairCell><div class=previewSessionTop><span class=previewSessionModel>${esc(b.month)}</span>${exampleChip(budgetSample(ev)&&!ev.sample)}</div>${budgetBlockHtml(b)}</div></div>`;
+ return `<div class=miniPreviewHead><span>Now and this month</span>${exampleChip(ev.sample)}</div><div class=spendPair><div class=spendPairCell><div class=previewSessionTop>${runtimeChip(s.runtimeId,s.runtime)}<span class=previewSessionModel>${esc(s.model)}</span></div><div class="metric previewSessionCost"><span>This session</span><strong>${esc(sessionCostText(s))}</strong></div><div class=previewMeter>${contextMeterHtml(s)}</div></div><div class=spendPairCell><div class=previewSessionTop><span class=previewSessionModel>${esc(b.month)}</span>${exampleChip(budgetSample(ev)&&!ev.sample)}</div>${budgetBlockHtml(b)}</div></div>`;
+}
+// One clickable card per page: the page, the user's number, and the talk's number on one line.
+function deckCardHtml(route,page,figure,talk){
+ return `<button class=deckCard type=button data-deck-route=${route}><span class=deckCardTitle>${esc(page)}${DECK_ARROW}</span>${figure}<span class=deckCardTalk data-source=talk>${TALK_CHIP}<span>${esc(talk)}</span></span></button>`;
 }
 // 8 · Where does it go?
 function wherePreviewHtml(ev){
- const yours=(value,note,sampleValue,sampleNote)=>value!=null?figureHtml('yours',value,note):ev.sample?figureHtml('example',sampleValue,sampleNote):`<div class=evidenceFigure data-source=yours>${YOURS_CHIP}<b>--</b><small>Not in your history yet</small></div>`;
+ const yours=(value,note,sampleValue,sampleNote)=>value!=null?figureHtml('yours',value,note):ev.sample?figureHtml('example',sampleValue,sampleNote):figureHtml('yours','--','Not in your history yet');
  const week=ev.output?.week,delta=ev.output?.delta;
- const cards=[
-  {route:'models',page:'Models',question:'Which model takes the most?',figure:yours(ev.topModel?pct(ev.topModel.share):null,ev.topModel?`of spend on ${ev.topModel.model}${ev.topModel.runtime?` in ${ev.topModel.runtime}`:''}`:'','48%','of spend on one model'),talk:'56% of spend on one model'},
-  {route:'efficiency',page:'Efficiency',question:'Am I getting more for each dollar?',figure:yours(week!=null?`${compactNumber(week)} / $`:null,week!=null?`output tokens, last 7 days${delta?.direction?` · ${delta.text}`:''}`:'','5.2K / $','output tokens, last 7 days'),talk:'Output per $ fell 30% in a week'},
-  {route:'capabilities',page:'Tools',question:'What rides along unused?',figure:yours(ev.unusedToolTokens!=null?f(ev.unusedToolTokens):ev.skillUse?`${f(ev.skillUse.used)} of ${f(ev.skillUse.enabled)}`:null,ev.unusedToolTokens!=null?'unused tool tokens loaded eagerly':'enabled skills used','12,400','unused tool tokens loaded eagerly'),talk:'83,907 unused tool tokens'},
-  {route:'subagents',page:'Subagents',question:'Do subagents pull their weight?',figure:yours(ev.subagentRun?money(ev.subagentRun.perRun):null,ev.subagentRun?`per priced run · ${f(ev.subagentRun.runs)} ${countWord(ev.subagentRun.runs,'run')}`:'','$0.84','per subagent run'),talk:'$6.04 → $0.96 per run, Aug → Sep'},
- ];
- return `<div class=miniPreviewHead><span>Four places to look</span></div><div class=deckCards>${cards.map(card=>`<button class=deckCard type=button data-deck-route=${card.route}><span class=deckCardTitle>${esc(card.page)}${DECK_ARROW}</span><span class=deckCardQuestion>${esc(card.question)}</span>${card.figure}<span class=deckCardTalk data-source=talk>${TALK_CHIP}<span>${esc(card.talk)}</span></span></button>`).join('')}</div>`;
+ return `<div class=miniPreviewHead><span>Four places to look</span></div><div class=deckCards>${[
+  deckCardHtml('models','Models',yours(ev.topModel?pct(ev.topModel.share):null,ev.topModel?`of spend on ${ev.topModel.model}${ev.topModel.runtime?` · ${ev.topModel.runtime}`:''}`:'','48%','of spend on one model'),'56% on one model'),
+  deckCardHtml('efficiency','Efficiency',yours(week!=null?`${compactNumber(week)} / $`:null,week!=null?`output tokens, 7 days${delta?.direction?` · ${String(delta.text).replace(/\s+vs\s.*$/,'')}`:''}`:'','5.2K / $','output tokens, 7 days'),'Fell 30% in a week'),
+  deckCardHtml('capabilities','Tools',yours(ev.unusedToolTokens!=null?f(ev.unusedToolTokens):ev.skillUse?`${f(ev.skillUse.used)} of ${f(ev.skillUse.enabled)}`:null,ev.unusedToolTokens!=null?'unused tool tokens loaded':'enabled skills used','12,400','unused tool tokens loaded'),'83,907 unused tokens'),
+  deckCardHtml('subagents','Subagents',yours(ev.subagentRun?money(ev.subagentRun.perRun):null,ev.subagentRun?`per run · ${f(ev.subagentRun.runs)} priced ${countWord(ev.subagentRun.runs,'run')}`:'','$0.84','per run'),'$6.04 → $0.96 per run'),
+ ].join('')}</div>`;
 }
 // 9 · Is it working?
 function workingPreviewHtml(ev){
- const git=ev.git?figureHtml('yours',`${money(ev.git.per1k)} / 1K lines`,`${compactNumber(ev.git.lines)} comparable pushed lines in the projects and period Git last showed`):`<p class=deckCardNote>Open Git once and it pairs your local pushes with spend. It reads local history only and never contacts a remote.</p>`;
+ const git=ev.git?figureHtml('yours',`${money(ev.git.per1k)} / 1K lines`,`${compactNumber(ev.git.lines)} comparable pushed lines`):figureHtml('yours','--','Open Git once to measure');
  const runs=[['Haiku',.079],['Opus',.407]];
- return `<div class=miniPreviewHead><span>Two checks</span></div><div class=deckCards><button class=deckCard type=button data-deck-route=git><span class=deckCardTitle>Git${DECK_ARROW}</span><span class=deckCardQuestion>Spend per 1K pushed lines</span>${git}<span class=deckCardTalk data-source=talk>${TALK_CHIP}<span>$31.72 per 1K lines, up 18% in a week</span></span></button><button class=deckCard type=button data-deck-route=sessions-compare><span class=deckCardTitle>Sessions › Compare${DECK_ARROW}</span><span class=deckCardQuestion>Same prompt, different models</span><div class=compareRuns data-source=talk>${TALK_CHIP}${runs.map(([model,cost])=>`<span class=compareRun><span>${model}</span>${levelBarHtml(cost/.407,{label:`${model}: $${cost.toFixed(3)}`})}<b class=mono>$${cost.toFixed(3)}</b></span>`).join('')}<small>Opus cost 5.1× Haiku. $0.21 of the $0.33 gap was cache writes.</small></div></button></div>`;
+ const compare=`<button class=deckCard type=button data-deck-route=sessions-compare><span class=deckCardTitle>Compare${DECK_ARROW}</span><div class=compareRuns data-source=talk>${TALK_CHIP}${runs.map(([model,cost])=>`<span class=compareRun><span>${model}</span>${levelBarHtml(cost/.407,{label:`${model}: $${cost.toFixed(3)}`})}<b class=mono>$${cost.toFixed(3)}</b></span>`).join('')}<small>Same prompt: Opus cost 5.1× Haiku, mostly cache writes.</small></div></button>`;
+ return `<div class=miniPreviewHead><span>Two checks</span></div><div class=deckCards>${deckCardHtml('git','Git',git,'$31.72 / 1K lines, up 18% in a week')}${compare}</div>`;
 }
 // 10 · Five levers move the bill
 function leverValue(ev,id){
  if(id==='model'&&ev.highEffortShare!=null)return {value:shareText(ev.highEffortShare),note:'of known-effort spend at high effort or above'};
  if(id==='context'&&ev.unusedToolTokens!=null)return {value:f(ev.unusedToolTokens),note:'unused tool tokens loaded'};
- if(id==='context'&&ev.session?.skills)return {value:`${f(ev.session.skills.used)} of ${f(ev.session.skills.loaded)}`,note:'skills used, latest session'};
- if(id==='cache'&&ev.cacheWriteShare!=null)return {value:shareText(ev.cacheWriteShare),note:'of latest session was cache writes'};
+ if(id==='cache'&&ev.cacheWriteShare!=null)return {value:shareText(ev.cacheWriteShare),note:'of latest session cost was cache writes'};
  return null;
 }
 function leversPreviewHtml(ev){
  return `<div class=leverHead aria-hidden=true><span></span><span>Lever</span>${YOURS_CHIP}${TALK_CHIP}<span></span></div><ol class=leverList>${LEVERS.map((lever,index)=>{
   const reading=leverValue(ev,lever.id);
-  return `<li><button class=leverRow type=button data-deck-route=${lever.route}><span class=leverIndex aria-hidden=true>${index+1}</span><span class=leverCopy><b>${esc(lever.title)}</b><span>${esc(lever.advice)}</span><small class=leverPage>${esc(lever.page)}${DECK_ARROW}</small></span><span class=leverValue data-source=yours><span class=srOnly>Yours: </span>${reading?`<strong class=mono>${esc(reading.value)}</strong><small>${esc(reading.note)}</small>`:'<strong class=mono>--</strong><small>Not measured yet</small>'}</span><span class=leverValue data-source=talk><span class=srOnly>From the talk: </span><strong class=mono>${esc(lever.talk.value)}</strong><small>${esc(lever.talk.note)}</small></span></button></li>`;
+  return `<li><button class=leverRow type=button data-deck-route=${lever.route}><span class=leverIndex aria-hidden=true>${index+1}</span><span class=leverName><b>${esc(lever.title)}</b><small>${esc(lever.metric)}</small><span class=srOnly>, opens ${esc(lever.page)}</span></span><span class=leverValue data-source=yours><span class=srOnly>Yours: </span><strong class=mono>${reading?esc(reading.value):'--'}</strong><span class=srOnly> ${reading?esc(reading.note):'not measured yet'}</span></span><span class=leverValue data-source=talk><span class=srOnly>From the talk: </span><strong class=mono>${esc(lever.talk.value)}</strong><span class=srOnly> ${esc(lever.talk.note)}</span></span>${DECK_ARROW}</button></li>`;
  }).join('')}</ol>`;
 }
 // 11 · Change one thing, then measure
 const TALK_OUTPUT_MONTHS=[['Jun',4200],['Jul',4900],['Aug',5600],['Sep',7200],['Oct',5100]];
 // Only the talk's chart marks its peak and drop; the user's own months stay neutral, since a month is not judged here.
-function monthBarsHtml(source,rows,label,note){
+function monthBarsHtml(source,rows,label,note=''){
  const max=Math.max(1,...rows.map(row=>Number(row.value)||0)),peak=source==='talk'?Math.max(...rows.map(row=>Number(row.value)||0)):null;
- return `<div class=monthBars data-source=${source}><div class=monthBarsHead>${sourceChip(source)}<span>${esc(label)}</span></div><ol role=img aria-label="${esc(`${label}: `+rows.map(row=>`${row.label} ${row.value==null?'no data':compactNumber(row.value)}`).join(', '))}">${rows.map((row,index)=>`<li${peak!=null&&row.value===peak?' data-tone=peak':peak!=null&&index===rows.length-1&&row.value<peak?' data-tone=drop':''} style="--h:${row.value==null?0:(100*row.value/max).toFixed(1)}%"><b class=mono>${row.value==null?'--':esc(compactNumber(row.value))}</b><i></i><span>${esc(row.label)}${row.partial?' so far':''}</span></li>`).join('')}</ol>${note?`<small>${esc(note)}</small>`:''}</div>`;
+ return `<div class=monthBars data-source=${source}><div class=monthBarsHead>${sourceChip(source)}</div><ol role=img aria-label="${esc(`${label}: `+rows.map(row=>`${row.label} ${row.value==null?'no data':compactNumber(row.value)}`).join(', '))}">${rows.map((row,index)=>`<li${peak!=null&&row.value===peak?' data-tone=peak':peak!=null&&index===rows.length-1&&row.value<peak?' data-tone=drop':''} style="--h:${row.value==null?0:(100*row.value/max).toFixed(1)}%"><b class=mono>${row.value==null?'--':esc(compactNumber(row.value))}</b><i></i><span>${esc(row.label)}${row.partial?' so far':''}</span></li>`).join('')}</ol>${note?`<small>${esc(note)}</small>`:''}</div>`;
 }
 function loopPreviewHtml(ev){
- const steps=[['Pick a task you repeat','Two or three make a benchmark.'],['Change one thing','Model, effort, prompt, skills, or a fresh session.'],['Run it again','Same task, same definition of done.'],['Compare','Put both runs side by side.']];
- const talk=monthBarsHtml('talk',TALK_OUTPUT_MONTHS.map(([label,value])=>({label,value})),'Output tokens per $','All agents, rounded. +73% Jun → Sep. Then −30% in Oct: 98% of spend moved to Opus 5.5 and cache writes reached 55% of the bill.');
+ const steps=['Pick a repeated task','Change one thing','Run it again','Compare both runs'];
+ const label='Output tokens per $';
+ const talk=monthBarsHtml('talk',TALK_OUTPUT_MONTHS.map(([month,value])=>({label:month,value})),label,'+73% Jun → Sep. −30% in Oct, after a move to Opus.');
  const months=ev.output?.months,first=months?months.findIndex(row=>row.value!=null):-1;
- const yours=first>=0?monthBarsHtml('yours',months.slice(first),'Output tokens per $','All agents, from your model history.'):'';
- return `<div class=miniPreviewHead><span>Three months up. One month down.</span></div><ol class=loopSteps>${steps.map(([title,note],index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b><small>${note}</small></li>`).join('')}</ol><div class=monthBarsPair>${talk}${yours}</div>`;
+ const yours=first>=0?monthBarsHtml('yours',months.slice(first),label):'';
+ return `<ol class=loopSteps>${steps.map((title,index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b></li>`).join('')}</ol><div class=miniPreviewHead><span>Output tokens per $, by month</span></div><div class=monthBarsPair>${talk}${yours}</div>`;
 }
 // 12 · Ask your agent
 function agentAnswerText(ev){
@@ -4183,15 +4166,14 @@ function agentAnswerText(ev){
  return `You've spent ${spent} of your ${wholeMoney(b.limit)} ${month} budget. At this pace the month lands near ${wholeMoney(b.projected)}, so ${b.projected<=b.limit?'you’re on track':`you’d go about ${wholeMoney(b.projected-b.limit)} over`}.`;
 }
 function agentPreviewHtml(ev,host){
- return `<div class=miniPreviewHead><span>Claude Code · token-meter</span>${exampleChip(budgetSample(ev))}</div><div class=chatMock><p class=chatAsk>How much have I spent this month, and am I on track?</p><p class=chatTool><span class=mono>budget()</span> → numbers only</p><p class=chatAnswer>${esc(agentAnswerText(ev))}</p></div><ul class=markList><li data-mark=yes><i aria-hidden=true>✓</i><span><span class=srOnly>Read-only: </span>8 read-only tools: check, usage, budget, capabilities, sessions, trace, stats, schema</span></li><li data-mark=skip><i aria-hidden=true>–</i><span><span class=srOnly>Writes: </span>2 session-budget setters, only after you confirm</span></li></ul><p class=miniPreviewNote id=${host}-agent-access>Read-only numeric evidence. No prompts, messages, reasoning, tool content, credentials, paths, or named history. Metrics may be processed by the agent’s model provider.</p>`;
+ return `<div class=miniPreviewHead><span>Claude Code · token-meter</span>${exampleChip(budgetSample(ev))}</div><div class=chatMock><p class=chatAsk>How much have I spent this month, and am I on track?</p><p class=chatTool><span class=mono>budget()</span> → numbers only</p><p class=chatAnswer>${esc(agentAnswerText(ev))}</p></div><p class=miniPreviewNote id=${host}-agent-access>8 read-only tools · numbers, never content</p>`;
 }
 // 13 · Get started
 const TOKENOMICS_URL='https://www.splunk.com/en_us/products/tokenomics.html';
 function startPreviewHtml(ev){
  const b=ev.budget;
- const budgetNote=b?.configured?`Yours: ${wholeMoney(b.limit)} for ${b.month}`:'Not set yet';
- const steps=[['Set a monthly budget',`Spend → Budgets. ${budgetNote}.`],['Change one thing this week','Model, effort, prompt, skills, or a fresh session.'],['Compare the two runs','Sessions › Compare puts them side by side.']];
- return `<div class=miniPreviewHead><span>This week</span></div><ol class=loopSteps data-steps=3>${steps.map(([title,note],index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b><small>${esc(note)}</small></li>`).join('')}</ol><div class=teamsBox><span class=label>For teams</span><b>Splunk Tokenomics</b><p>The same habit for a whole organization: agentic workloads across teams, effective cost with caching included, and workflow budgets with alerts.</p><a class=tbtn href="${TOKENOMICS_URL}" target=_blank rel="noopener noreferrer">Read about Tokenomics<span aria-hidden=true> ↗</span><span class=srOnly> (opens in a new tab)</span></a></div>`;
+ const steps=[['Set a monthly budget',b?.configured?`Yours: ${wholeMoney(b.limit)} for ${b.month}`:'Not set yet'],['Change one thing',''],['Compare the two runs','']];
+ return `<ol class=loopSteps data-steps=3>${steps.map(([title,note],index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b>${note?`<small>${esc(note)}</small>`:''}</li>`).join('')}</ol><div class=teamsRow><span><span class=label>For teams</span><b>Splunk Tokenomics</b></span><a class=tbtn href="${TOKENOMICS_URL}" target=_blank rel="noopener noreferrer">Read about Tokenomics<span aria-hidden=true> ↗</span><span class=srOnly> (opens in a new tab)</span></a></div>`;
 }
 const DECK_CHAPTERS=[
  {id:'why',title:'Why'},
@@ -4200,29 +4182,30 @@ const DECK_CHAPTERS=[
  {id:'better',title:'Do better'},
 ];
 // One slide set, two hosts: the welcome overlay and the Learn page render these same entries.
+// Copy budget per slide: headline ≤ 8 words, optional one-sentence body ≤ 18, takeaway ≤ 10, at most one link. The preview carries the numbers.
 const DECK_SLIDES=[
- {id:'value',chapter:'why',rail:'Usage is not value',kicker:'The problem',title:'The chat says “Done.” The bill says more.',body:'Behind one short reply are model calls, millions of tokens, subagents, and skills that were loaded but never used. The chat shows none of it.',takeaway:'Measure what you get back per dollar, not only what you spend.',talk:true,preview:valuePreviewHtml,links:[{label:'Open Current sessions',route:'sessions'}]},
- {id:'money',chapter:'why',rail:'How token prices work',kicker:'Basics',title:'A small share of tokens can be most of the bill.',body:'Each token type has its own price, and reasoning is billed as output. A cache write costs many times a cache read, so long sessions that keep changing pay for it.',takeaway:'Caching makes repeated input cheaper. It doesn’t make irrelevant context useful.',talk:true,preview:moneyPreviewHtml,links:[{label:'Open Models',route:'models'}]},
- {id:'glance',chapter:'how',rail:'A glance, then a deep dive',kicker:'How it works',title:'A glance now. A deep dive later.',body:`The ${COMPANION_PLACE} companion shows the live run while you work, so you see the cost before the bill does. The dashboard is for review: every session, every month, every agent.`,takeaway:'Glance while you work. Review when you’re done.',talk:false,preview:glancePreviewHtml,links:[{label:'Open Current sessions',route:'sessions'}]},
- {id:'traces',chapter:'how',rail:'Reads what agents wrote',kicker:'How it works',title:'It reads what your agents already wrote.',body:'No API keys, no proxy, nothing to configure in the agent. If a session is on disk, Token Meter can read it, including history from before you installed it.',takeaway:'Nothing to set up. Your history is already here.',talk:false,preview:tracesPreviewHtml,links:[{label:'Open All sessions',route:'sessions-all'}]},
- {id:'trust',chapter:'how',rail:'Can I trust the number?',kicker:'Before we go further',title:'Can I trust the number?',body:'It’s an estimate: token counts from your local logs, priced at public list rates. It sees this computer only, not web chat, CI, cloud agents, or your other devices.',takeaway:'Compare with it. Get the invoice from your provider.',talk:false,preview:trustPreviewHtml,links:[{label:'Open Model pricing',route:'model-pricing'}]},
- {id:'privacy',chapter:'how',rail:'Privacy is a feature',kicker:'Before we go further',title:`Your traces never leave this ${WELCOME_HOST}.`,body:`Token Meter reads your agents’ logs without changing them and does the math here. Prompts, responses, paths, and costs stay on this ${WELCOME_HOST}.`,takeaway:'Connected agents get numbers only, never content.',talk:false,preview:privacyPreviewHtml,links:[]},
- {id:'spending',chapter:'questions',rail:'What am I spending?',kicker:'What am I spending?',title:'What did this session cost, and am I on track?',body:'Every live session has a card with its running cost and how full its context is. The month projection uses your active days, not calendar days, so a slow week doesn’t make you look under budget.',takeaway:'When context climbs, compact or start fresh.',talk:false,preview:spendingPreviewHtml,links:[{label:'Open Current sessions',route:'sessions'},{label:'Open Spend',route:'spend-budgets'}]},
- {id:'where',chapter:'questions',rail:'Where does it go?',kicker:'Where does it go?',title:'Where does the money go?',body:'Four pages split the bill: which model, how much output each dollar buys, which tools ride along unused, and what each subagent run costs.',takeaway:'Start with the biggest share. One model or one habit often explains most of it.',talk:true,preview:wherePreviewHtml,links:[]},
- {id:'working',chapter:'questions',rail:'Is it working?',kicker:'Is it working?',title:'Is the spend paying off?',body:'Git pairs your local pushes with spend. Compare puts up to four sessions side by side, so the same prompt on different models shows where the gap came from.',takeaway:'Read spend per pushed line as a mechanical signal, not a productivity score.',talk:true,preview:workingPreviewHtml,links:[{label:'Open Git',route:'git'},{label:'Open Compare',route:'sessions-compare'}]},
- {id:'levers',chapter:'better',rail:'Five levers',kicker:'Do better',title:'Five levers move the bill.',body:'A few habits drive most of the cost. Each lever opens the page that measures it, with your number next to the one from the talk.',takeaway:'Switching models mid-task? Start a fresh session with a short handoff.',talk:true,preview:leversPreviewHtml,links:[]},
- {id:'loop',chapter:'better',rail:'Change one thing',kicker:'The loop',title:'Change one thing. Then measure.',body:'Pick two or three tasks you repeat and change one thing. Keep it only if it holds up on cost per successful result, quality, elapsed time, and correction effort.',takeaway:'One change at a time, or you cannot tell what helped.',talk:true,preview:loopPreviewHtml,links:[{label:'Open Compare',route:'sessions-compare'},{label:'Open Efficiency',route:'efficiency'}]},
- {id:'agent',chapter:'better',rail:'Ask your agent',kicker:'Ask your agent',title:'Ask the Token Meter MCP.',body:'Turn it on in Settings → Agent connection. Claude and Codex get eight read-only tools, and the only writes are two session-budget setters that ask before they change anything.',takeaway:'Agents get numbers, never content. Their model provider may still see those numbers.',talk:false,preview:agentPreviewHtml,links:[{label:'Open Agent connection',route:'settings',target:'agent-access'}]},
- {id:'start',chapter:'better',rail:'Get started',kicker:'Get started',title:'Three steps for this week.',body:'Set a monthly budget, change one thing in how you work, then compare the two runs.',takeaway:'Spend tokens like money. Measure what you get back.',talk:false,preview:startPreviewHtml,links:[{label:ev=>ev.budget?.configured?'Review your budget':'Set a monthly budget',route:'spend-budgets',primary:true},{label:'Open Compare',route:'sessions-compare'}]},
+ {id:'value',chapter:'why',rail:'Usage is not value',kicker:'The problem',title:'The chat says “Done.” The bill says more.',takeaway:'Measure what you get back per dollar.',talk:true,preview:valuePreviewHtml,links:[{label:'Open Current sessions',route:'sessions'}]},
+ {id:'money',chapter:'why',rail:'How token prices work',kicker:'Basics',title:'Few tokens can drive most of the bill.',body:'Each token type has its own price, and reasoning is billed as output.',takeaway:'Caching cheapens repeats; it doesn’t make irrelevant context useful.',talk:true,preview:moneyPreviewHtml,links:[{label:'Open Models',route:'models'}]},
+ {id:'glance',chapter:'how',rail:'A glance, then a deep dive',kicker:'How it works',title:'A glance now. A deep dive later.',takeaway:'Glance while you work. Review when you’re done.',talk:false,preview:glancePreviewHtml,links:[{label:'Open Current sessions',route:'sessions'}]},
+ {id:'traces',chapter:'how',rail:'Reads what agents wrote',kicker:'How it works',title:'It reads what your agents already wrote.',takeaway:'Nothing to set up. Your history is already here.',talk:false,preview:tracesPreviewHtml,links:[{label:'Open All sessions',route:'sessions-all'}]},
+ {id:'trust',chapter:'how',rail:'Can I trust the number?',kicker:'Before we go further',title:'Can I trust the number?',takeaway:'Compare with it. Get the invoice from your provider.',talk:false,preview:trustPreviewHtml,links:[{label:'Open Model pricing',route:'model-pricing'}]},
+ {id:'privacy',chapter:'how',rail:'Privacy is a feature',kicker:'Before we go further',title:`Your traces never leave this ${WELCOME_HOST}.`,body:`Prompts, responses, paths, and costs stay on this ${WELCOME_HOST}.`,takeaway:'Connected agents get numbers only, never content.',talk:false,preview:privacyPreviewHtml,links:[]},
+ {id:'spending',chapter:'questions',rail:'What am I spending?',kicker:'Spending',title:'What am I spending, now and this month?',body:'The month projection uses active days, so a slow week won’t look under budget.',takeaway:'When context climbs, compact or start fresh.',talk:false,preview:spendingPreviewHtml,links:[{label:'Open Spend',route:'spend-budgets'}]},
+ {id:'where',chapter:'questions',rail:'Where does it go?',kicker:'Breakdown',title:'Where does the money go?',takeaway:'Start with the biggest share. It usually explains most.',talk:true,preview:wherePreviewHtml,links:[]},
+ {id:'working',chapter:'questions',rail:'Is it working?',kicker:'Payoff',title:'Is the spend paying off?',takeaway:'Spend per line is a signal, not a productivity score.',talk:true,preview:workingPreviewHtml,links:[]},
+ {id:'levers',chapter:'better',rail:'Five levers',kicker:'Do better',title:'Five levers move the bill.',takeaway:'Switching models mid-task? Start fresh with a short handoff.',talk:true,preview:leversPreviewHtml,links:[]},
+ {id:'loop',chapter:'better',rail:'Change one thing',kicker:'The loop',title:'Change one thing. Then measure.',body:'Keep it only if cost per success, quality, time, and correction effort hold up.',takeaway:'One change at a time shows what helped.',talk:true,preview:loopPreviewHtml,links:[{label:'Open Compare',route:'sessions-compare'}]},
+ {id:'agent',chapter:'better',rail:'Ask your agent',kicker:'Token Meter MCP',title:'Ask your agent about spend.',body:'No prompts, messages, reasoning, tool content, or paths; session-budget changes ask first.',takeaway:'Its model provider may still see those numbers.',talk:false,preview:agentPreviewHtml,links:[{label:'Open Agent connection',route:'settings',target:'agent-access'}]},
+ {id:'start',chapter:'better',rail:'Get started',kicker:'Get started',title:'Three steps for this week.',takeaway:'Spend tokens like money. Measure what you get back.',talk:false,preview:startPreviewHtml,links:[{label:ev=>ev.budget?.configured?'Review your budget':'Set a monthly budget',route:'spend-budgets',primary:true}]},
 ];
 function deckCopyHtml(index,ev,host){
  const slide=DECK_SLIDES[index];
  const links=(slide.links||[]).map(link=>`<button class=${link.primary?'deckPrimary':'tbtn'} type=button data-deck-route=${link.route}${link.target?` data-deck-target=${link.target}`:''}>${esc(typeof link.label==='function'?link.label(ev):link.label)}${DECK_ARROW}</button>`).join('');
- return `<span class=deckKicker>${esc(slide.kicker)}</span><h2 id=${host}-deck-title>${esc(slide.title)}</h2><p>${esc(slide.body)}</p><div class=takeaway><span>Takeaway</span><b>${esc(slide.takeaway)}</b></div>${links?`<div class=deckActions>${links}</div>`:''}`;
+ return `<span class=deckKicker>${esc(slide.kicker)}</span><h2 id=${host}-deck-title>${esc(slide.title)}</h2>${slide.body?`<p>${esc(slide.body)}</p>`:''}<div class=takeaway><span>Takeaway</span><b>${esc(slide.takeaway)}</b></div>${links?`<div class=deckActions>${links}</div>`:''}`;
 }
 function deckPreviewHtml(index,ev,host){
  const slide=DECK_SLIDES[index];
- return slide.preview(ev,host)+(slide.talk?`<p class="miniPreviewNote talkNote"><b>From the talk</b> · ${TALK_NOTE}</p>`:'');
+ return slide.preview(ev,host)+(slide.talk?`<p class="miniPreviewNote talkNote"><b>From the talk:</b> ${TALK_NOTE}</p>`:'');
 }
 function deckRailHtml(index){
  return `<ol class=deckChapters>${DECK_CHAPTERS.map((chapter,number)=>{

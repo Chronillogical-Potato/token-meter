@@ -473,7 +473,7 @@ Components own identity (color, type, tracking, surface), not layout.
 | Mark list | `.markList` | A checklist of what is and is not counted. `data-mark=yes` (good ✓), `no` (bad ✕, dimmed text), or `skip` (neutral –). Each row carries visually hidden state text, so the meaning never relies on color or glyph | `<ul class=markList><li data-mark=yes><i aria-hidden=true>✓</i><span><span class=srOnly>Included: </span>…</span></li></ul>` |
 | Level bar | `.levelBar`, rendered by `levelBarHtml()` | A pill track filled to `--fill` with the active gradient; `data-tone=warn` switches to `--warn`; an optional `<b>` tick at `--mark` (for example, a projection). Fills only from real values, never decoratively | `<span class=levelBar role=img aria-label="…" style="--fill:62%"><i></i></span>` |
 | Takeaway | `.takeaway` | One action line after explanatory copy: signal left rule, faint signal fill, an uppercase `Takeaway` label, then the line | `<div class=takeaway><span>Takeaway</span><b>…</b></div>` |
-| Evidence figure | `.evidenceFigure`, rendered by `figureHtml()` | One labeled number in a tour preview: a source chip (`Yours`, `Example`, or `From the talk`), a mono heavy value, and a secondary note. `data-source` is `yours`, `example`, or `talk`, so a talk number can never pass as the user's | `<div class=evidenceFigure data-source=yours><span class="chip yoursChip">Yours</span><b>55%</b><small>of spend on one model</small></div>` |
+| Evidence figure | `.evidenceFigure`, rendered by `figureHtml()` | One labeled number in a tour preview: a source chip (`Yours`, `Example`, or `From the talk`), a mono heavy value, and a secondary note. `data-source` is `yours`, `example`, or `talk`, so a talk number can never pass as the user's. `data-hero` (from `figureHtml(…, {hero:true})`) sets the value at `--fs-readout-lg` for the one number a preview leads with | `<div class=evidenceFigure data-source=yours><span class="chip yoursChip">Yours</span><b>55%</b><small>of spend on one model</small></div>` |
 
 **Readable numbers.** A block leads with one main number. When the page
 already has history to compare against, it adds a `.readoutScale` and a
@@ -509,7 +509,7 @@ renders in two hosts, so copy lives in one place:
 
 - **Welcome overlay.** A full-viewport modal `<dialog class=welcome>` over the
   shared `--spectrum-page` atmosphere. A top-right round ✕ button
-  (`aria-label="Close welcome"`), Esc, and **Skip for now** all dismiss it.
+  (`aria-label="Close welcome"`), Esc, and **Skip tour** all dismiss it.
 - **Learn deck.** `.deck.deckInline` on the Learn page, inside a bordered panel.
   Its footer sticks to the bottom of the viewport so Next stays in reach.
   **Play as full screen** opens the overlay at the current slide.
@@ -517,16 +517,21 @@ renders in two hosts, so copy lives in one place:
 Each host is a `.deck`: a 212px chapter rail (`.deckRail`, chapter headings with
 `.deckStep` slide buttons marked ✓ done, ● current, ○ upcoming), a stage, and a
 footer with **Skip chapter**, the `7 / 13 · about 2 min left` counter, and Back /
-Next. A slide pairs a display headline, one or two sentences, a `.takeaway`, and
-`Open <page>` buttons on the left with a live `.miniPreview` on the right. At
-1180px and below the preview stacks under the copy and the takeaway moves beside
-the headline. In the overlay's last slide, Done is a secondary button so the
-slide's own call to action is the only primary.
+Next. A slide holds one idea. Its copy, on the left, is a display headline of
+at most 8 words, an optional single sentence of at most 18 words (left out when
+the headline and preview already say it), a `.takeaway` of at most 10 words, and
+at most one `Open <page>` button. The live `.miniPreview` on the right carries
+the numbers: it leads with one hero figure (`figureHtml(…, {hero:true})`) or one
+visual, followed by at most three supporting rows, and no explanatory
+paragraphs. A test holds every slide to these budgets. At 1180px and below the
+preview stacks under the copy and the takeaway moves beside the headline; no
+slide scrolls inside the overlay at 1024×768. In the overlay's last slide, Done
+is a secondary button so the slide's own call to action is the only primary.
 
 Numbers follow one rule. The user's number carries a `Yours` chip (`Example`
 before any session has tokens). A number from the talk carries a violet
 `From the talk` chip (`.chip.talkChip`), its value renders in `--aura-pale`, and
-the preview ends with the footnote *One engineer's laptop, estimated at public
+the preview ends once with the footnote *From the talk: one engineer's laptop,
 list prices.* The talk's monthly output-per-dollar chart marks its peak and
 drop; the user's own months stay neutral. Slides enter with one short rise per
 change, and every motion is removed under `prefers-reduced-motion`.

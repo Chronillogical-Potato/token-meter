@@ -11486,7 +11486,7 @@ const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,
 process.stdout.write(JSON.stringify({
  chapters:DECK_CHAPTERS.map(c=>c.title),
  slides:DECK_SLIDES.map(s=>[s.chapter,s.id]),
- complete:DECK_SLIDES.every(s=>['rail','kicker','title','body','takeaway'].every(k=>typeof s[k]==='string'&&s[k].trim())&&typeof s.preview==='function'),
+ complete:DECK_SLIDES.every(s=>['rail','kicker','title','takeaway'].every(k=>typeof s[k]==='string'&&s[k].trim())&&(s.body===undefined||typeof s.body==='string'&&s.body.trim())&&typeof s.preview==='function'),
  time:[deckTimeLeft(0),deckTimeLeft(6),deckTimeLeft(10),deckTimeLeft(12)],
 }));
 """)
@@ -11499,6 +11499,24 @@ process.stdout.write(JSON.stringify({
         ])
         self.assertTrue(payload["complete"])
         self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "under a minute left", "under a minute left"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_copy_stays_within_slide_word_budgets(self):
+        # One idea per slide: the visual carries the number, the copy stays short. Node reports
+        # neither a Mac nor a known platform, so the longest companion and host names are counted.
+        payload = self._run_tour("""
+const words=text=>String(text||'').split(/\\s+/).filter(word=>/[A-Za-z0-9]/.test(word)).length;
+const sentences=text=>String(text||'').split(/[.!?](?:\\s|$)/).filter(part=>part.trim()).length;
+process.stdout.write(JSON.stringify(DECK_SLIDES.map(s=>({id:s.id,title:words(s.title),body:words(s.body),
+ bodySentences:sentences(s.body),takeaway:words(s.takeaway),links:(s.links||[]).length}))));
+""")
+        for row in payload:
+            with self.subTest(slide=row["id"]):
+                self.assertLessEqual(row["title"], 8, "headline")
+                self.assertLessEqual(row["body"], 18, "body")
+                self.assertLessEqual(row["bodySentences"], 1, "body is one sentence or none")
+                self.assertLessEqual(row["takeaway"], 10, "takeaway")
+                self.assertLessEqual(row["links"], 1, "at most one action link")
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_both_tour_hosts_render_the_same_slides(self):
@@ -11565,10 +11583,12 @@ const evidence=[learnEvidence({}),learnEvidence(richState,richGit)];
 const talkParts=html=>[...html.matchAll(/data-source=talk>([\\s\\S]*?)<\\/(?:div|span|td|th)>/g)].map(m=>m[1]);
 const rows=DECK_SLIDES.map((slide,i)=>{
  const html=evidence.map(ev=>deckPreviewHtml(i,ev,'learn'));
- const figures=html.flatMap(h=>[...h.matchAll(/<div class=evidenceFigure data-source=(\\w+)>([\\s\\S]*?)<\\/div>/g)].map(m=>[m[1],m[2]]));
+ const figures=html.flatMap(h=>[...h.matchAll(/<div class=evidenceFigure(?: data-hero)? data-source=(\\w+)>([\\s\\S]*?)<\\/div>/g)].map(m=>[m[1],m[2]]));
  return {id:slide.id,talk:slide.talk,
   chips:html.map(h=>(h.match(/class="chip talkChip">From the talk</g)||[]).length),
-  notes:html.map(h=>h.includes('One engineer’s laptop, estimated at public list prices.')),
+  notes:html.map(h=>(h.match(/From the talk:<\\/b> one engineer’s laptop, list prices\\./g)||[]).length===1),
+  anyNote:html.map(h=>h.includes('engineer’s laptop')),
+  figureCount:html.reduce((sum,h)=>sum+(h.match(/class=evidenceFigure/g)||[]).length,0),matched:figures.length,
   figuresOk:figures.every(([source,inner])=>source==='talk'?inner.includes('talkChip')&&!inner.includes('yoursChip'):!inner.includes('talkChip')),
   talkStable:JSON.stringify(talkParts(html[0]))===JSON.stringify(talkParts(html[1])),
   yoursCount:(html[1].match(/data-source=yours/g)||[]).length};
@@ -11583,8 +11603,9 @@ process.stdout.write(JSON.stringify(rows));
                     self.assertTrue(row["talkStable"], "talk numbers must not change with the user's data")
                 else:
                     self.assertEqual(row["chips"], [0, 0])
-                    self.assertEqual(row["notes"], [False, False])
+                    self.assertEqual(row["anyNote"], [False, False])
                 self.assertTrue(row["figuresOk"])
+                self.assertEqual(row["matched"], row["figureCount"], "every figure is checked for its source chip")
         by_id = {row["id"]: row for row in payload}
         for slide in ("value", "money", "where", "working", "levers", "loop"):
             self.assertTrue(by_id[slide]["talk"])
@@ -11727,7 +11748,7 @@ process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel
         self.assertIn("aria-labelledby=welcome-label", dialog)
         self.assertIn('<button class=welcomeClose id=welcome-close type=button aria-label="Close welcome"', dialog)
         self.assertIn("aria-hidden=true>&#10005;</span>", dialog)
-        self.assertIn("id=welcome-skip type=button>Skip for now</button>", dialog)
+        self.assertIn("id=welcome-skip type=button>Skip tour</button>", dialog)
         for marker in (
             "$('welcome-close').onclick=()=>closeWelcome();",
             "$('welcome-skip').onclick=()=>closeWelcome();",
