@@ -50,7 +50,67 @@ MENUBAR_URL="http://127.0.0.1:8722/menubar"
 DASHBOARD_URL="http://127.0.0.1:8722"
 READINESS_TIMEOUT_SECONDS="${TOKEN_METER_READINESS_TIMEOUT_SECONDS:-600}"
 
+# Long waits get visible progress: a single self-overwriting spinner line on a
+# terminal, or a plain heartbeat line every 10s when output is captured. The
+# ticker exits by itself if the installer disappears, and progress_stop (also
+# run from fail and the EXIT/INT/TERM traps) always kills it and clears its line.
+PROGRESS_TTY=0
+if [ -t 1 ]; then
+  PROGRESS_TTY=1
+fi
+PROGRESS_PID=""
+PROGRESS_STARTED=$SECONDS
+PROGRESS_WIDTH=0
+
+progress_start() {
+  local label="$1" heartbeat="$2" parent=$$
+  progress_stop
+  PROGRESS_STARTED=$SECONDS
+  PROGRESS_WIDTH=$((${#label} + 16))
+  (
+    trap - EXIT INT TERM
+    frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    frame=0
+    next_heartbeat=10
+    while kill -0 "$parent" 2>/dev/null; do
+      elapsed=$((SECONDS - PROGRESS_STARTED))
+      if ((PROGRESS_TTY)); then
+        printf '\r%s %s %ds' "${frames[frame]}" "$label" "$elapsed"
+        frame=$(((frame + 1) % ${#frames[@]}))
+        sleep 0.1
+      else
+        if ((elapsed >= next_heartbeat)); then
+          printf '%s %ds\n' "$heartbeat" "$elapsed"
+          next_heartbeat=$(((elapsed / 10 + 1) * 10))
+        fi
+        sleep 0.5
+      fi
+    done
+  ) &
+  PROGRESS_PID=$!
+}
+
+progress_stop() {
+  [[ -n "$PROGRESS_PID" ]] || return 0
+  kill "$PROGRESS_PID" 2>/dev/null || true
+  wait "$PROGRESS_PID" 2>/dev/null || true
+  PROGRESS_PID=""
+  if ((PROGRESS_TTY)); then
+    printf '\r%*s\r' "$PROGRESS_WIDTH" ''
+  fi
+}
+
+progress_done() {
+  progress_stop
+  printf '✓ %s (%ds)\n' "$1" "$((SECONDS - PROGRESS_STARTED))"
+}
+
+trap progress_stop EXIT
+trap 'progress_stop; trap - INT; kill -INT $$' INT
+trap 'progress_stop; trap - TERM; kill -TERM $$' TERM
+
 fail() {
+  progress_stop
   echo "Token Meter installation failed: $*" >&2
   exit 1
 }
@@ -231,6 +291,8 @@ else
   "$INSTALL_ROOT/scripts/install-launch-agent" server-only
 fi
 
+echo "Indexing local agent history (first run can take a few minutes)…"
+progress_start "Indexing local agent history" "Still indexing…"
 health_json=""
 readiness_deadline=$((SECONDS + READINESS_TIMEOUT_SECONDS))
 while (( SECONDS < readiness_deadline )); do
@@ -242,11 +304,13 @@ while (( SECONDS < readiness_deadline )); do
 done
 
 if [[ "$health_json" != *'"ok": true'* || "$health_json" != *'"state_ready": true'* ]]; then
+  progress_stop
   for log in menubar.err.log meter.err.log meter.log; do
     [[ -f "$INSTALL_ROOT/$log" ]] && tail -n 30 "$INSTALL_ROOT/$log" >&2 || true
   done
   fail "the local server did not finish indexing within ${READINESS_TIMEOUT_SECONDS}s at $HEALTH_URL."
 fi
+progress_done "Server ready"
 
 if ! server_launch_state="$(launchctl print "gui/$UID/$SERVER_LABEL" 2>&1)"; then
   fail "the local server LaunchAgent was not registered."
@@ -275,9 +339,25 @@ else
   curl -fsS --max-time 5 "$MENUBAR_URL" \
     | python3 -c 'import json, sys; json.load(sys.stdin)' \
     || fail "the menu bar endpoint did not return valid JSON."
-  if ! "$INSTALL_ROOT/scripts/run-menubar" --check; then
+  echo "Building the menu bar companion (first build compiles Swift, ~1 min)…"
+  # Hold the build's own output until the spinner line is cleared, then replay
+  # it unchanged so compiler messages never share a line with the spinner.
+  menubar_check_out="$(mktemp "${TMPDIR:-/tmp}/token-meter-menubar-check.XXXXXX")"
+  menubar_check_err="$(mktemp "${TMPDIR:-/tmp}/token-meter-menubar-check.XXXXXX")"
+  trap 'progress_stop; rm -f "$menubar_check_out" "$menubar_check_err"' EXIT
+  progress_start "Building the menu bar companion" "Still building…"
+  menubar_check_status=0
+  "$INSTALL_ROOT/scripts/run-menubar" --check \
+    >"$menubar_check_out" 2>"$menubar_check_err" || menubar_check_status=$?
+  progress_stop
+  cat "$menubar_check_out"
+  cat "$menubar_check_err" >&2
+  rm -f "$menubar_check_out" "$menubar_check_err"
+  trap progress_stop EXIT
+  if ((menubar_check_status != 0)); then
     fail "the native companion cannot build with the installed Swift toolchain and macOS SDKs."
   fi
+  progress_done "Menu bar companion ready"
   TOKEN_METER_MENUBAR_SMOKE=1 \
     "$INSTALL_ROOT/.build/Token Meter Menu Bar.app/Contents/MacOS/token-meter-menubar" \
     >/dev/null || fail "the native menu bar companion failed its installed smoke check."

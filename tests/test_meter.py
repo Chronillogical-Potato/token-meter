@@ -15075,6 +15075,46 @@ class InstallationTests(unittest.TestCase):
         self.assertIn("Token Meter installation complete.", script)
         self.assertNotIn('exec "$INSTALL_ROOT/scripts/install-launch-agent"', script)
 
+    def test_installers_show_progress_during_long_waits_and_always_clean_up(self):
+        root = Path(__file__).resolve().parents[1]
+        for name in ("install", "install-linux"):
+            with self.subTest(installer=name):
+                script = (root / "scripts" / name).read_text()
+                intro = script.index(
+                    'echo "Indexing local agent history (first run can take a few minutes)\u2026"'
+                )
+                start = script.index('progress_start "Indexing local agent history" "Still indexing\u2026"')
+                readiness = script.index('readiness_deadline=$((SECONDS + READINESS_TIMEOUT_SECONDS))')
+                done = script.index('progress_done "Server ready"')
+                self.assertLess(intro, start)
+                self.assertLess(start, readiness)
+                self.assertLess(readiness, done)
+                self.assertIn("if [ -t 1 ]; then", script)
+                self.assertIn("frames=(\u280b \u2819 \u2839 \u2838 \u283c \u2834 \u2826 \u2827 \u2807 \u280f)", script)
+                self.assertIn('while kill -0 "$parent" 2>/dev/null; do', script)
+                self.assertIn("trap progress_stop EXIT", script)
+                self.assertIn("trap 'progress_stop; trap - INT; kill -INT $$' INT", script)
+                self.assertIn("trap 'progress_stop; trap - TERM; kill -TERM $$' TERM", script)
+                self.assertIn('fail() {\n  progress_stop\n  echo "Token Meter installation failed: $*" >&2', script)
+                self.assertNotIn("\\033", script)
+                self.assertIn("the local server did not finish indexing within ${READINESS_TIMEOUT_SECONDS}s at $HEALTH_URL.", script)
+        mac = (root / "scripts" / "install").read_text()
+        build_intro = mac.index(
+            'echo "Building the menu bar companion (first build compiles Swift, ~1 min)\u2026"'
+        )
+        build_start = mac.index('progress_start "Building the menu bar companion" "Still building\u2026"')
+        build_check = mac.index('"$INSTALL_ROOT/scripts/run-menubar" --check')
+        build_stop = mac.index("progress_stop", build_check)
+        build_fail = mac.index(
+            'fail "the native companion cannot build with the installed Swift toolchain and macOS SDKs."'
+        )
+        build_done = mac.index('progress_done "Menu bar companion ready"')
+        self.assertLess(build_intro, build_start)
+        self.assertLess(build_start, build_check)
+        self.assertLess(build_check, build_stop)
+        self.assertLess(build_stop, build_fail)
+        self.assertLess(build_fail, build_done)
+
     def test_update_helper_requires_clean_fast_forward_then_reuses_installer(self):
         root = Path(__file__).resolve().parents[1]
         script = (root / "scripts" / "update").read_text()
