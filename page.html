@@ -1547,15 +1547,6 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .priceRow>small{color:var(--faint);font-size:var(--fs-12);text-align:right}
 .priceType{display:inline-flex;align-items:center;gap:8px;color:var(--fg);white-space:nowrap}
 .priceType>i{width:10px;height:10px;border-radius:var(--radius-2xs);background:var(--seg)}
-.privacyFlow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:8px}
-.privacyNode{display:grid;align-content:start;gap:4px;min-width:0;padding:12px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.03)}
-.privacyNode>span:first-child{color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.04em;text-transform:uppercase}
-.privacyNode>b{font-size:var(--fs-14)}
-.privacyNode.on{border-color:rgb(var(--signal-rgb)/.42);background:rgb(var(--signal-rgb)/.1)}
-.privacyNode.off{border-style:dashed;background:none}
-.privacyNode.off>b{color:var(--dim)}
-.privacyNode.off s{text-decoration-color:var(--bad);text-decoration-thickness:2px}
-.privacyArrow{align-self:center;color:var(--signal-hi);font-family:var(--font-mono);font-size:var(--fs-20)}
 .leverList{display:grid;gap:8px;margin:0;padding:0;list-style:none}
 .leverRow{display:grid;grid-template-columns:20px minmax(0,1fr) auto 14px;align-items:center;gap:14px;width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.025);color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:border-color var(--dur-press) var(--ease-out),background var(--dur-press) var(--ease-out)}
 .leverRow:hover{border-color:var(--spectrum-edge-hover);background:rgb(var(--signal-rgb)/.08)}
@@ -1573,11 +1564,6 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 .menuMockRows>div{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:var(--fs-14)}
 .menuMockRows dt{margin-right:auto;color:var(--dim)}
 .menuMockRows dd{margin:0;color:var(--fg)}
-.loopSteps{display:grid;gap:10px;margin:0;padding:0;list-style:none}
-.loopSteps>li{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:2px 14px;min-width:0;padding:14px 16px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.03)}
-.loopSteps b{font-size:var(--fs-18);line-height:1.3}
-.loopSteps small{grid-column:2;color:var(--dim);font-size:var(--fs-13);line-height:1.4}
-.loopIndex{display:grid;place-items:center;width:24px;height:24px;border-radius:var(--radius-round);background:var(--spectrum-active);color:var(--on-accent);font:var(--fw-heavy) var(--fs-12)/1 var(--font-mono)}
 .teamsRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px dashed var(--line3);border-radius:var(--radius-md)}
 .teamsRow>span{display:flex;align-items:baseline;gap:10px}
 .teamsRow b{font-size:var(--fs-16)}
@@ -3927,9 +3913,6 @@ function spendFrameHtml(){
  const bars=SAMPLE_SPEND_DAYS.map((cost,index)=>`<div class=spendDay><span class="spendBarValue mono"></span><span class=spendDayTrack${index===9?' data-callout':''}><span class=spendDayStack style="--spend-height:${cost?Math.max(3,100*cost/max).toFixed(1):0}%">${cost?`<i class=spendStackSegment style="--spend-color:${providerColor('claude')};--segment-share:100%"></i>`:''}</span>${index===9?calloutHtml(1,'t'):''}</span><span class=spendDayLabel>${index===0?'Oct 1':index===SAMPLE_SPEND_DAYS.length-1?'Oct 12':''}</span></div>`).join('');
  return `<div class=spendChart><div class=spendPlot><div class=spendChartInner>${bars}</div></div></div><div class=budgetSpend><div class=budgetFigureLine><span class="budgetSpendValue mono">$310</span><span class=budgetOf>of <b class=mono>$600</b></span></div><div class=budgetProgress><i style="width:52%"></i><span class=budgetProgressMarkers><span style="left:90%"></span></span></div><div class=budgetMeterFoot><span>Monthly budget · 52% used</span><span>${calloutHtml(2)} Lands near $540</span></div></div>`;
 }
-function privacyFrameHtml(){
- return `<div class=privacyFlow><div class=privacyNode data-callout><span>Agent logs</span><b>Read only</b>${calloutHtml(1,'tr')}</div><span class=privacyArrow aria-hidden=true>→</span><div class="privacyNode on"><span>Token Meter</span><b>This computer</b></div><span class=privacyArrow aria-hidden=true>→</span><div class=privacyNode><span>Your browser</span><b>Numbers only</b></div></div><div class="privacyNode off" data-callout><span>Internet</span><b><s>Upload</s> · <s>Account</s></b>${calloutHtml(2,'tr')}</div>`;
-}
 function modelsFrameHtml(){
  const colors=modelRankedColors(SAMPLE_MODELS.map(model=>({key:model.name,ids:[`${model.name}::Claude Code`]})));
  return `<div class=modelSpendHead><h2>Where your spend goes</h2><span class=modelSpendTotal>≈ $300 est.</span></div><div class=modelSpendBar>${SAMPLE_MODELS.map((model,index)=>`<div class=modelSpendSeg style="flex:${model.share} 1 0;background:${colors.get(model.name)}">${index===0?`<span>${esc(model.name)}</span><b>${Math.round(100*model.share)}%</b>`:''}</div>`).join('')}</div><div class=modelSpendLegend>${SAMPLE_MODELS.map((model,index)=>`<span class=modelSpendChip>${index===0?calloutHtml(1):index===2?calloutHtml(2):''}<i style="background:${colors.get(model.name)}"></i><span class=modelSpendChipName>${esc(model.name)}</span><b class=mono>${esc(model.cost)}</b><em>${Math.round(100*model.share)}%</em></span>`).join('')}</div>`;
@@ -3966,7 +3949,6 @@ const DECK_ICONS={
 const HABITS=[
  {icon:'model',title:'Pick the right model for the job',page:'Models',route:'models'},
  {icon:'load',title:'Load only the tools you need',page:'Tools',route:'capabilities'},
- {icon:'stable',title:'Keep the start of a chat the same',page:'Efficiency',route:'efficiency'},
  {icon:'done',title:'Say what “done” looks like',page:'Compare',route:'sessions-compare'},
  {icon:'fresh',title:'Start fresh instead of arguing',page:'All sessions',route:'sessions-all'},
 ];
@@ -3975,59 +3957,54 @@ function habitsListHtml(){
 }
 const TOKENOMICS_URL='https://www.splunk.com/en_us/products/tokenomics.html';
 function startListHtml(){
- const steps=[['Set a monthly budget','On the Spend page'],['Change one thing','A model, a tool, or how you ask'],['Compare the two runs','Sessions, then Compare']];
- return `<ol class=loopSteps>${steps.map(([title,note],index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b><small>${note}</small></li>`).join('')}</ol><div class=teamsRow><span><span class=label>For teams</span><b>Splunk Tokenomics</b></span><a class=tbtn href="${TOKENOMICS_URL}" target=_blank rel="noopener noreferrer">Read about Tokenomics<span aria-hidden=true> ↗</span><span class=srOnly> (opens in a new tab)</span></a></div>`;
+ return `${habitsListHtml()}<div class=teamsRow><span><span class=label>For teams</span><b>Splunk Tokenomics</b></span><a class=tbtn href="${TOKENOMICS_URL}" target=_blank rel="noopener noreferrer">Read about Tokenomics<span aria-hidden=true> ↗</span><span class=srOnly> (opens in a new tab)</span></a></div>`;
 }
 const DECK_CHAPTERS=[
  {id:'basics',title:'The basics'},
- {id:'glance',title:'Token Meter at a glance'},
- {id:'waste',title:'Finding waste'},
+ {id:'work',title:'While you work'},
+ {id:'review',title:'Review and find waste'},
  {id:'better',title:'Do better'},
 ];
 // One slide set, two hosts: the welcome overlay and the Learn page render these same entries.
 // Word budget per slide: headline ≤ 8, optional body ≤ 14, one to three legend lines of ≤ 12 each, at most one link.
 // A frame shows a real dashboard component with sample values and carries an Example chip; list slides show rows instead.
 const DECK_SLIDES=[
- {id:'tokens',chapter:'basics',rail:'Paying per word',kicker:'The basics',title:'Every word the AI reads or writes costs.',body:'Token Meter counts the words and turns them into dollars.',
-  frame:{kind:'session',label:'Session card',alt:'Example session card: Fix the login page, 1.2 million tokens, $2.40 estimated.',legend:['Words are counted in tokens, small pieces of words.','The cost is an estimate from public prices, not your bill.'],
+ {id:'tokens',chapter:'basics',rail:'Tokens',kicker:'Current sessions',title:'You pay for every token the AI uses.',body:'Counted on your computer, never uploaded, and turned into dollars.',
+  frame:{kind:'session',label:'Session card',alt:'Example session card: Fix the login page, 1.2 million tokens, $2.40 estimated.',legend:['Tokens are small pieces of words. Every request is counted.','The cost is an estimate from public prices, not your bill.'],
    html:()=>sampleCardHtml({title:'Fix the login page',model:'Claude Sonnet',cost:'$2.40 est',heroCallout:calloutHtml(2),metrics:[['Tokens','1.2M','',calloutHtml(1)],['Context in use','40%'],['Turns','12']]})},
   links:[{label:'Open Current sessions',route:'sessions'}]},
- {id:'prices',chapter:'basics',rail:'Token prices',kicker:'The basics',title:'Not every token costs the same.',
+ {id:'prices',chapter:'basics',rail:'Model pricing',kicker:'Model pricing',title:'Not every token costs the same.',
   frame:{kind:'prices',label:'Price per 1M tokens',alt:'Example prices per million tokens: re-reading $0.30, new text $3, saving to re-read $3.75, writing the answer $15.',legend:['Re-reading what it already saw is the cheapest.','Writing the answer costs about 50 times more.'],html:priceFrameHtml},
   links:[{label:'Open Model pricing',route:'model-pricing'}]},
- {id:'context',chapter:'basics',rail:'Long chats',kicker:'The basics',title:'Long chats get pricier every turn.',body:'Each turn, the AI re-reads the whole chat so far.',
+ {id:'context',chapter:'work',rail:'Current sessions',kicker:'Current sessions',title:'Context in use: long chats cost more.',body:'Each turn, the AI re-reads the whole chat so far.',
   frame:{kind:'context',label:'Cost per turn',alt:'Example chat of 40 turns: each turn costs more, from $0.05 for turn 1 to $0.62 for turn 40, and 85% of what the AI can hold in mind is in use.',legend:['The bars rise as the chat grows. Each turn costs more.','Turn 40 costs about 12 times turn 1.','Nearly full? Start fresh, or ask it to summarize.'],
    html:()=>turnsFrameHtml()},
   links:[{label:'Open Current sessions',route:'sessions'}]},
- {id:'glance',chapter:'glance',rail:'Live cost',kicker:'At a glance',title:'Glance while you work.',body:`The live cost sits in your ${COMPANION_PLACE}.`,
+ {id:'glance',chapter:'work',rail:'Menu bar',kicker:'Menu bar',title:'See the live cost while you work.',body:`It sits in your ${COMPANION_PLACE}, always on.`,
   frame:{kind:'menu',label:`Companion in the ${COMPANION_PLACE}`,alt:'Example companion: this session $2.40 estimated, context 40%, spend today $6.40.',legend:['The live cost of the session you are running.','How much the AI is holding in mind right now.'],html:menuFrameHtml},
   links:[{label:'Open Current sessions',route:'sessions'}]},
- {id:'month',chapter:'glance',rail:'Your month',kicker:'At a glance',title:'Review your month.',body:'See each day, and where the month will land.',
-  frame:{kind:'spend',label:'Spend · this month',alt:'Example month: daily spend bars, $310 spent of a $600 budget, projected to land near $540.',legend:['Each bar is one day of spending.','Where the month should land at this pace.'],html:spendFrameHtml},
-  links:[{label:'Open Spend',route:'spend-budgets'}]},
- {id:'privacy',chapter:'glance',rail:'Privacy',kicker:'At a glance',title:'Your data stays on your computer.',
-  frame:{kind:'privacy',label:'Where your data goes',alt:'Agent logs are read on this computer and shown in your browser. Your logs and numbers are never uploaded.',legend:['It only reads logs, and deletes one only if you ask.','Nothing is uploaded. No account needed.'],html:privacyFrameHtml},
-  links:[]},
- {id:'models',chapter:'waste',rail:'Models',kicker:'Finding waste',title:'One model is often most of the bill.',
-  frame:{kind:'models',label:'Models · spend by model',alt:'Example spend by model: Opus 70%, Sonnet 20%, Haiku 10%.',legend:['This one model is 70% of the spend.','A lighter model can do routine work for less.'],html:modelsFrameHtml},
-  links:[{label:'Open Models',route:'models'}]},
- {id:'efficiency',chapter:'waste',rail:'Work per dollar',kicker:'Finding waste',title:'Aim for more work per dollar.',
-  frame:{kind:'efficiency',label:'Efficiency · output per dollar',alt:'Example efficiency: output per dollar rose 50% over 30 days.',legend:['A rising line means more work for each dollar.','The change compared with the 30 days before.'],html:efficiencyFrameHtml},
-  links:[{label:'Open Efficiency',route:'efficiency'}]},
- {id:'tools',chapter:'waste',rail:'Unused tools',kicker:'Finding waste',title:'Unused tools still cost you.',body:'Tool instructions ride along with every request.',
-  frame:{kind:'tools',label:'Tools · needs review',alt:'Example review list: Browser tools, used 0 times, adds 12 thousand tokens to every request.',legend:['Never used in your recent sessions.','Still sent with every request. Turn it off.'],html:toolsFrameHtml},
-  links:[{label:'Open Tools',route:'capabilities'}]},
- {id:'helpers',chapter:'waste',rail:'Helper tasks',kicker:'Finding waste',title:'Small helper tasks are cheap.',body:'Your agent can hand side jobs to helpers (subagents).',
-  frame:{kind:'helpers',label:'Subagents · cost per run',alt:'Example helper: cost per run fell from $6 to $1 over four weeks.',legend:['Cost per helper run fell from $6 to $1.','Short, clear jobs keep each run small.'],html:helpersFrameHtml},
-  links:[{label:'Open Subagents',route:'subagents'}]},
- {id:'habits',chapter:'better',rail:'Five habits',kicker:'Do better',title:'Five habits that lower the bill.',visual:habitsListHtml,links:[]},
- {id:'compare',chapter:'better',rail:'Change one thing',kicker:'Do better',title:'Change one thing, then compare.',body:'Run the same task twice, with one change.',
+ {id:'compare',chapter:'work',rail:'Compare',kicker:'Compare',title:'Compare: change one thing, run again.',body:'Pick two sessions of the same task and see what changed.',
   frame:{kind:'compare',label:'Compare · two runs',alt:'Example comparison of the same task: run A with Claude Opus cost $0.41, run B with Claude Haiku cost $0.08.',legend:['Same task, one change: a lighter model.','B cost 80% less. Keep it if the result holds.'],html:compareFrameHtml},
   links:[{label:'Open Compare',route:'sessions-compare'}]},
- {id:'agent',chapter:'better',rail:'Ask your AI agent',kicker:'Do better',title:'Ask your AI agent about spending.',body:'Your agent can ask Token Meter for numbers (through MCP).',
+ {id:'month',chapter:'review',rail:'Spend',kicker:'Spend',title:'Spend: your month and your budget.',body:'Each day, and where the month will land.',
+  frame:{kind:'spend',label:'Spend · this month',alt:'Example month: daily spend bars, $310 spent of a $600 budget, projected to land near $540.',legend:['Each bar is one day of spending.','Where the month should land at this pace.'],html:spendFrameHtml},
+  links:[{label:'Open Spend',route:'spend-budgets'}]},
+ {id:'models',chapter:'review',rail:'Models',kicker:'Models',title:'Models: one model is often most of it.',
+  frame:{kind:'models',label:'Models · spend by model',alt:'Example spend by model: Opus 70%, Sonnet 20%, Haiku 10%.',legend:['This one model is 70% of the spend.','A lighter model can do routine work for less.'],html:modelsFrameHtml},
+  links:[{label:'Open Models',route:'models'}]},
+ {id:'efficiency',chapter:'review',rail:'Efficiency',kicker:'Efficiency',title:'Efficiency: more work for each dollar.',
+  frame:{kind:'efficiency',label:'Efficiency · output per dollar',alt:'Example efficiency: output per dollar rose 50% over 30 days.',legend:['A rising line means more work for each dollar.','The change compared with the 30 days before.'],html:efficiencyFrameHtml},
+  links:[{label:'Open Efficiency',route:'efficiency'}]},
+ {id:'tools',chapter:'review',rail:'Tools',kicker:'Tools',title:'Tools: unused tools still cost you.',body:'Tool instructions ride along with every request.',
+  frame:{kind:'tools',label:'Tools · needs review',alt:'Example review list: Browser tools, used 0 times, adds 12 thousand tokens to every request.',legend:['Never used in your recent sessions.','Still sent with every request. Turn it off.'],html:toolsFrameHtml},
+  links:[{label:'Open Tools',route:'capabilities'}]},
+ {id:'helpers',chapter:'review',rail:'Subagents',kicker:'Subagents',title:'Subagents: small helper jobs are cheap.',body:'Your agent can hand side jobs to helpers called subagents.',
+  frame:{kind:'helpers',label:'Subagents · cost per run',alt:'Example helper: cost per run fell from $6 to $1 over four weeks.',legend:['Cost per helper run fell from $6 to $1.','Short, clear jobs keep each run small.'],html:helpersFrameHtml},
+  links:[{label:'Open Subagents',route:'subagents'}]},
+ {id:'agent',chapter:'better',rail:'Agent connection',kicker:'Agent connection',title:'Ask your AI agent about spending.',body:'Turn on Agent connection, and your agent can ask Token Meter (MCP).',
   frame:{kind:'agent',anchor:'agent-access',label:'Chat with your agent',alt:'Example chat: Am I on track this month? Yes, $310 of $600, landing near $540.',legend:['Ask in plain words, in the chat you already use.','It gets numbers only, never your prompts or code.','Its AI provider sees those numbers; session-budget changes need your OK.'],html:agentFrameHtml},
   links:[{label:'Open Agent connection',route:'settings',target:'agent-access'}]},
- {id:'start',chapter:'better',rail:'Get started',kicker:'Get started',title:'Three steps for this week.',visual:startListHtml,
+ {id:'start',chapter:'better',rail:'Get started',kicker:'Get started',title:'Four habits that lower the bill.',body:'Each habit opens the page that measures it.',visual:startListHtml,
   links:[{label:facts=>facts.budgetConfigured?'Review your budget':'Set a monthly budget',route:'spend-budgets',primary:true}]},
 ];
 function deckCopyHtml(index,facts,host){
@@ -4284,7 +4261,7 @@ const NAV_COMMANDS=[
  {id:'appearance',label:'Settings · Appearance',description:'Choose the dashboard theme',aliases:'theme colors look',section:'Appearance',route:'settings-appearance',glyph:'◐'},
  ...THEMES.map(theme=>({id:`theme-${theme.id}`,label:`Theme · ${theme.label}`,description:theme.tagline,aliases:'appearance theme colors look',section:'Appearance',action:'theme',theme:theme.id,glyph:'◑'})),
  {id:'theme-random',label:`Theme · ${THEME_RANDOM.name}`,description:THEME_RANDOM.tagline,aliases:'appearance theme random shuffle daily',section:'Appearance',action:'theme',theme:THEME_RANDOM.id,glyph:'⚄'},
- {id:'welcome',label:'Open welcome tour',description:'Replay the 13-slide tour: costs, trust, privacy, and the five levers',aliases:'getting started onboarding intro help tour',section:'Help',action:'welcome',glyph:'?'},
+ {id:'welcome',label:'Open welcome tour',description:'Replay the 12-slide tour of Token Meter pages',aliases:'getting started onboarding intro help tour',section:'Help',action:'welcome',glyph:'?'},
 ];
 let visibleCommands=[],commandIndex=0,commandReturnFocus=null;
 function setCommandIndex(index,{scroll=true}={}){

@@ -502,8 +502,9 @@ describe it here. For script-rendered components, add one shared render helper
 
 ### Welcome tour and Learn deck
 
-The tour is one registry, `DECK_CHAPTERS` and `DECK_SLIDES`: 14 slides in four
-chapters (The basics, Token Meter at a glance, Finding waste, Do better). It
+The tour is one registry, `DECK_CHAPTERS` and `DECK_SLIDES`: 12 slides in four
+chapters (The basics, While you work, Review and find waste, Do better). Each
+slide's rail label and kicker is the Token Meter page or term it teaches. It
 explains concepts for anyone, a PM, a designer, or a new engineer, at about a
 grade-7 reading level. The same registry renders in two hosts, so copy lives in
 one place:
@@ -531,8 +532,8 @@ the idea obvious, never the user's data, and each carries one `Example` chip.
 One to three `.frameCallout` markers sit on the part that matters, and the
 `.frameLegend` explains each in at most 12 words. Jargon is said in plain words
 first, with the technical term at most once in parentheses, for example
-"Re-reading (cache read)". Two list slides (Five habits, Get started) show rows
-instead of a frame; they carry no sample numbers and no Example chip.
+"Re-reading (cache read)". One list slide (Get started: four habits) shows rows
+instead of a frame; it carries no sample numbers and no Example chip.
 
 Frame markup functions take no arguments, so no live value can reach them. The
 deck reads two live facts, only for behavior: the platform names the companion's

@@ -104,16 +104,20 @@ and select it from **Sessions**.
 ### Welcome and Learn
 
 The first time the dashboard opens, a full-page welcome tour explains how AI
-usage turns into cost in 14 short slides, in four chapters:
+usage turns into cost in 12 short slides, in four chapters. Each slide is named
+after the Token Meter page it teaches, so the tour and the dashboard use the
+same words:
 
-1. **The basics:** you pay for the words the AI reads and writes, not every
-   word costs the same, and long chats get pricier every turn.
-2. **Token Meter at a glance:** the live cost while you work, your month and
-   budget, and why your data stays on your computer.
-3. **Finding waste:** one model taking most of the bill, work per dollar,
-   unused tools, and small helper tasks (subagents).
-4. **Do better:** five habits, changing one thing and comparing, asking your AI
-   agent about spending, and three steps to get started.
+1. **The basics:** Tokens (you pay for every token, counted on your computer)
+   and Model pricing (not every token costs the same).
+2. **While you work:** Current sessions (context in use; long chats cost more),
+   the Menu bar companion, and Compare (change one thing, run again).
+3. **Review and find waste:** Spend, Models, Efficiency, Tools, and Subagents.
+4. **Do better:** Agent connection (ask your AI agent about spending) and Get
+   started (four habits, starting with a monthly budget).
+
+If you open a page from the full-screen tour, a **Back to the tour** button
+(and browser Back) returns you to the same slide.
 
 Each slide shows a real piece of the dashboard filled with simple example
 numbers, marked **Example**, so they are never mistaken for yours. Numbered

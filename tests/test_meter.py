@@ -10661,7 +10661,7 @@ console.log(JSON.stringify(out));
         self.assertLess(self.page.index("id=tab-session"), self.page.index("id=tab-daily"))
         self.assertIn("id=s-range", self.page)
         self.assertNotIn("id=learn-glossary", self.page)
-        self.assertIn("Change one thing, then compare.", self.page)
+        self.assertIn("Compare: change one thing, run again.", self.page)
         self.assertIn("if(h==='daily')setHashRoute('spend',{replace:true,apply:false})", self.page)
         self.assertIn("if(h==='spend'||h==='daily'||h==='spend-budgets'||h==='settings-budgets'||h==='budgets')", self.page)
         self.assertIn("if(h==='learn'||h==='learn-agent-access')", self.page)
@@ -11449,26 +11449,26 @@ const frameSlides=DECK_SLIDES.map((slide,index)=>({{slide,index}})).filter(row=>
         return json.loads(completed.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_tour_registry_has_fourteen_concept_slides_in_four_chapters(self):
+    def test_tour_registry_has_twelve_page_named_slides_in_four_chapters(self):
         payload = self._run_tour("""
 process.stdout.write(JSON.stringify({
  chapters:DECK_CHAPTERS.map(c=>c.title),
  slides:DECK_SLIDES.map(s=>[s.chapter,s.id]),
  complete:DECK_SLIDES.every(s=>['rail','kicker','title'].every(k=>typeof s[k]==='string'&&s[k].trim())&&(s.body===undefined||typeof s.body==='string'&&s.body.trim())&&(!!s.frame!==(typeof s.visual==='function'))),
  frames:DECK_SLIDES.filter(s=>s.frame).every(s=>typeof s.frame.html==='function'&&s.frame.html.length===0&&s.frame.label&&s.frame.alt&&Array.isArray(s.frame.legend)),
- time:[deckTimeLeft(0),deckTimeLeft(6),deckTimeLeft(10),deckTimeLeft(12)],
+ time:[deckTimeLeft(0),deckTimeLeft(6),deckTimeLeft(10),deckTimeLeft(11)],
 }));
 """)
-        self.assertEqual(payload["chapters"], ["The basics", "Token Meter at a glance", "Finding waste", "Do better"])
+        self.assertEqual(payload["chapters"], ["The basics", "While you work", "Review and find waste", "Do better"])
         self.assertEqual(payload["slides"], [
-            ["basics", "tokens"], ["basics", "prices"], ["basics", "context"],
-            ["glance", "glance"], ["glance", "month"], ["glance", "privacy"],
-            ["waste", "models"], ["waste", "efficiency"], ["waste", "tools"], ["waste", "helpers"],
-            ["better", "habits"], ["better", "compare"], ["better", "agent"], ["better", "start"],
+            ["basics", "tokens"], ["basics", "prices"],
+            ["work", "context"], ["work", "glance"], ["work", "compare"],
+            ["review", "month"], ["review", "models"], ["review", "efficiency"], ["review", "tools"], ["review", "helpers"],
+            ["better", "agent"], ["better", "start"],
         ])
         self.assertTrue(payload["complete"], "each slide has copy and exactly one visual: a frame or a list")
         self.assertTrue(payload["frames"], "frame markup takes no arguments, so no live value can reach it")
-        self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "about 1 min left", "under a minute left"])
+        self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "under a minute left", "under a minute left"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_tour_copy_stays_within_slide_word_budgets(self):
@@ -11480,7 +11480,7 @@ const sentences=text=>String(text||'').split(/[.!?](?:\\s|$)/).filter(part=>part
 process.stdout.write(JSON.stringify(DECK_SLIDES.map(s=>({id:s.id,title:words(s.title),body:words(s.body),
  bodySentences:sentences(s.body),legend:(s.frame?.legend||[]).map(words),links:(s.links||[]).length,frame:!!s.frame}))));
 """)
-        self.assertEqual(len(payload), 14)
+        self.assertEqual(len(payload), 12)
         for row in payload:
             with self.subTest(slide=row["id"]):
                 self.assertLessEqual(row["title"], 8, "headline")
@@ -11509,7 +11509,7 @@ process.stdout.write(JSON.stringify(frameSlides.map(({slide,index})=>{
   allMarkersHidden:(html.match(/class=frameCallout/g)||[]).length===(html.match(/class=frameCallout(?: data-at=\\w+)? aria-hidden=true>/g)||[]).length};
 })));
 """)
-        self.assertEqual(len(payload), 12)
+        self.assertEqual(len(payload), 11)
         for row in payload:
             with self.subTest(frame=row["id"]):
                 self.assertTrue(row["figure"])
@@ -11542,7 +11542,7 @@ process.stdout.write(JSON.stringify({
             {"budgetConfigured": False}, {"budgetConfigured": False},
         ])
         self.assertTrue(payload["visualsStable"])
-        self.assertEqual(payload["copyStable"], [1] * 13 + [2], "only the last slide's call to action reads live state")
+        self.assertEqual(payload["copyStable"], [1] * 11 + [2], "only the last slide's call to action reads live state")
         self.assertEqual(payload["personal"], [], "frames carry sample values, never the user's numbers")
         self.assertEqual(payload["talk"], [], "the deck explains concepts; no Yours or From the talk comparisons")
         for retired in (
@@ -11563,7 +11563,7 @@ const agent=DECK_SLIDES.findIndex(slide=>slide.id==='agent'),last=DECK_SLIDES.le
 process.stdout.write(JSON.stringify({same,agentAnchor:deckVisualHtml(agent,'learn').includes(' id=learn-agent-access>'),
  cta:[deckCopyHtml(last,facts[0],'welcome').includes('>Set a monthly budget<'),deckCopyHtml(last,facts[1],'welcome').includes('>Review your budget<')]}));
 """)
-        self.assertEqual(payload["same"], [True] * 14)
+        self.assertEqual(payload["same"], [True] * 12)
         self.assertTrue(payload["agentAnchor"])
         self.assertEqual(payload["cta"], [True, True])
         dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
@@ -11583,19 +11583,19 @@ process.stdout.write(JSON.stringify({same,agentAnchor:deckVisualHtml(agent,'lear
     def test_tour_keeps_privacy_estimate_and_agent_caveats(self):
         payload = self._run_tour("""
 const legend=id=>DECK_SLIDES.find(slide=>slide.id===id).frame.legend.join(' ');
-process.stdout.write(JSON.stringify({tokens:legend('tokens'),privacy:legend('privacy'),agent:legend('agent'),
+process.stdout.write(JSON.stringify({tokens:legend('tokens'),privacy:DECK_SLIDES.find(slide=>slide.id==='tokens').body,agent:legend('agent'),
  agentBody:DECK_SLIDES.find(slide=>slide.id==='agent').body,glance:DECK_SLIDES.find(slide=>slide.id==='glance').body,
  places:['mac','windows','linux','other'].map(id=>({mac:'menu bar',windows:'notification area',linux:'tray'}[id]||'menu bar or tray'))}));
 """)
         self.assertIn("estimate", payload["tokens"])
         self.assertIn("not your bill", payload["tokens"])
-        self.assertIn("only reads logs", payload["privacy"])
-        self.assertIn("Nothing is uploaded", payload["privacy"])
+        self.assertIn("on your computer", payload["privacy"])
+        self.assertIn("never uploaded", payload["privacy"])
         self.assertIn("numbers only, never your prompts or code", payload["agent"])
         self.assertIn("session-budget changes need your OK", payload["agent"])
         self.assertIn("AI provider sees those numbers", payload["agent"])
-        self.assertIn("(through MCP)", payload["agentBody"])
-        self.assertEqual(payload["glance"], "The live cost sits in your menu bar or tray.")
+        self.assertIn("(MCP)", payload["agentBody"])
+        self.assertEqual(payload["glance"], "It sits in your menu bar or tray, always on.")
         self.assertIn("const COMPANION_PLACE={mac:'menu bar',windows:'notification area',linux:'tray'}[DECK_PLATFORM]||'menu bar or tray';", self.page)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
@@ -11622,8 +11622,8 @@ process.stdout.write(JSON.stringify({
  glyphs:[rail.includes('aria-hidden=true>✓</i>'),rail.includes('aria-hidden=true>●</i>'),rail.includes('aria-hidden=true>○</i>')],
 }));
 """)
-        self.assertEqual(payload["skip"], [3, 3, 3, 6, 6, 6, 10, 10, 10, 10, -1, -1, -1, -1])
-        self.assertEqual(payload["steps"], ["done"] * 6 + ["current"] + ["upcoming"] * 7)
+        self.assertEqual(payload["skip"], [2, 2, 5, 5, 5, 10, 10, 10, 10, 10, -1, -1])
+        self.assertEqual(payload["steps"], ["done"] * 6 + ["current"] + ["upcoming"] * 5)
         self.assertEqual(payload["chapters"], ["done", "done", "current", "upcoming"])
         self.assertEqual(payload["current"], 1)
         self.assertEqual(payload["glyphs"], [True, True, True])
@@ -11727,7 +11727,7 @@ deckAction('welcome','restart');
 $('welcome-dialog').open=true;closeWelcome({{route:'settings',target:'agent-access'}});
 process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel,closed,learnAfterLast:deckHosts.learn.index,learnLast,offerFoot,offerResume:offerStage.includes('data-deck-action=resume')&&offerStage.includes('data-deck-action=restart'),afterRestart:[deckHosts.welcome.index,deckHosts.welcome.offer],routes,counter:$('welcome-deck-count').textContent}}));
 """)
-        self.assertEqual(payload["log"], [0, 3, 6, 10, 10, 9])
+        self.assertEqual(payload["log"], [0, 2, 5, 10, 10, 9])
         self.assertTrue(payload["skipDisabled"])
         self.assertEqual(payload["recorded"], 9)
         self.assertEqual(payload["arrows"], [10, 9])
@@ -11739,7 +11739,7 @@ process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel
         self.assertTrue(payload["offerResume"])
         self.assertEqual(payload["afterRestart"], [0, False])
         self.assertEqual(payload["routes"], ["settings"])
-        self.assertEqual(payload["counter"], "1 / 14 · about 4 min")
+        self.assertEqual(payload["counter"], "1 / 12 · about 4 min")
 
     def test_welcome_overlay_and_learn_deck_shells(self):
         dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
