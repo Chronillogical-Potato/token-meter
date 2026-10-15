@@ -447,6 +447,7 @@ class InstallerModeTests(unittest.TestCase):
                 workspace / "bin" / "swiftc",
                 """
                 #!/usr/bin/env bash
+                [[ " $* " == *" -typecheck "* ]] && exit 0
                 printf 'COMPILER-STDOUT\\n'
                 printf 'COMPILER-STDERR\\n' >&2
                 exit 1
@@ -463,10 +464,14 @@ class InstallerModeTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 1, result.stderr)
             failure = "Token Meter installation failed: the native companion cannot build"
-            build_error = "Token Meter menu bar build failed"
-            self.assertIn(build_error, result.stderr)
+            # The compiler's own stdout and stderr are replayed after the spinner
+            # line is cleared, and stderr lands before the installer's failure line.
+            self.assertIn("COMPILER-STDOUT\n", result.stdout)
+            self.assertIn("COMPILER-STDERR", result.stderr)
             self.assertIn(failure, result.stderr)
-            self.assertLess(result.stderr.index(build_error), result.stderr.index(failure))
+            self.assertLess(result.stderr.index("COMPILER-STDERR"), result.stderr.index(failure))
+            building = result.stdout.index("Building the menu bar companion")
+            self.assertLess(building, result.stdout.index("COMPILER-STDOUT"))
             self.assertNotIn("\r", result.stdout)
             self.assertNotIn("Menu bar companion ready", result.stdout)
             self.assertEqual(sorted(temp_dir.glob("token-meter-menubar-check.*")), [])
