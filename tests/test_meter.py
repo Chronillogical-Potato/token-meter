@@ -8841,6 +8841,7 @@ process.stdout.write(JSON.stringify(results));
         self.assertIn("$('tour-return').onclick=returnToTour;\nrestoreTourReturn();", self.page)
         self.assertIn("value.host==='learn'?'Back to Learn':'Back to the tour'", self.page)
         self.assertIn("const from={index:deckHosts.learn.index,hash:location.hash,host:'learn'};", self.page)
+        self.assertIn("if(tourReturn?.host==='learn'&&(h==='learn'||h==='learn-agent-access'))showTourReturn(null);", self.page)
         self.assertIn("if(route){openDeckRoute(route,target);if(from)showTourReturn(from);}", self.page)
         self.assertIn("$('tour-return').onclick=returnToTour;", self.page)
         self.assertIn("window.addEventListener('popstate',()=>{if(tourReturn&&location.hash===tourReturn.hash)returnToTour();});", self.page)

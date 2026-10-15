@@ -4985,6 +4985,8 @@ function renderGoalDetail(d){
 }
 function applyHashRoute(){
  const h=(location.hash||'').replace(/^#/,'');
+ // Back on Learn by any route (button, browser Back, or the nav) means the way back is used up.
+ if(tourReturn?.host==='learn'&&(h==='learn'||h==='learn-agent-access'))showTourReturn(null);
  const panel=PANEL_ALIAS[h]||h;
  const legacyGlobal=h==='global'||h==='global-logs'||/^global-(overview|evidence)$/.test(h);
  if(h==='subagents'||h==='sessions-subagents'){
