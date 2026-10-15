@@ -11436,7 +11436,7 @@ console.log(JSON.stringify({
             "function maybeAutoShowWelcome()",
             "$('welcome-dialog').addEventListener('cancel'",
             "$('welcome-dialog').addEventListener('close'",
-            "if(command.action==='welcome'){openWelcome(0);return;}",
+            "if(command.action==='welcome'){const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});return;}",
             "{id:'welcome',label:'Open welcome tour'",
             "this machine",
         ):
