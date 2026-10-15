@@ -11508,11 +11508,18 @@ process.stdout.write(JSON.stringify({
  shorts:LEVERS.map(lever=>levers.includes(`<small aria-hidden=true>${esc(lever.talk.short)}</small>`)),
  note:TALK_NOTE,
  trust:deckPreviewHtml(4,noExcluded,'welcome').includes('never $0'),
+ trustText:deckPreviewHtml(4,ev,'welcome'),privacy:deckPreviewHtml(5,ev,'welcome'),
+ agentBody:DECK_SLIDES.find(slide=>slide.id==='agent').body,
 }));
 """)
         self.assertEqual(payload["shorts"], [True] * 5, "each talk number shows what it measured")
         self.assertIn("estimated", payload["note"])
         self.assertTrue(payload["trust"], "the unknown-model rule stays visible with no excluded sessions")
+        self.assertIn("when logged", payload["trustText"])
+        self.assertIn("cloud agents", payload["trustText"])
+        self.assertIn("never filenames", payload["privacy"])
+        self.assertIn("credentials", payload["agentBody"])
+        self.assertIn("session-budget changes ask first", payload["agentBody"])
         tip = "Covered spend: estimated spend from sessions with cost evidence in these projects."
         for attr in ("data-delivery-model-sort=covered_cost", "data-delivery-sort=covered_cost"):
             self.assertIn(f'{attr} data-tip="{tip}" aria-description="{tip}">Spend<', self.page)
