@@ -3885,10 +3885,10 @@ function learnEvidence(state=LATEST,git=null){
   todaySpend:today&&today.availability?.cost!==false?finiteOrNull(today.cost):null,
   topModel:lead&&mixTotal>0&&Number(lead.cost)>0?{model:currentSessionModelName(lead.model),runtime:String(lead.runtime||''),share:Number(lead.cost)/mixTotal}:null,
   output:learnOutputTrend(xs),
-  unusedToolTokens:definitions&&finiteOrNull(definitions.unused_eager_definition_tokens)!==null?Number(definitions.unused_eager_definition_tokens):null,
+  unusedToolTokens:definitions&&Number(definitions.definition_tokens)>0&&finiteOrNull(definitions.unused_eager_definition_tokens)!==null?Number(definitions.unused_eager_definition_tokens):null,
   skillUse:Number(skillSummary?.enabled)>0?{used:Math.max(0,Number(skillSummary.used)||0),enabled:Number(skillSummary.enabled)}:null,
   subagentRun:pricedRuns>0&&runCost!==null?{perRun:runCost/pricedRuns,runs:pricedRuns,total:Number(agentTotals.agents)||pricedRuns}:null,
-  git:gitAvailable?{per1k:Number(gitOverall.spend_per_1k),lines:Number(gitOverall.changed_lines)||0}:null,
+  git:gitAvailable?{per1k:Number(gitOverall.spend_per_1k),lines:Number(gitOverall.comparable_changed_lines)||0}:null,
   budget:budget?{
    month:budgetMonthLabel(budget.month),configured:!!budget.configured&&Number(budget.budget)>0,
    spend:Number(budget.spend)||0,limit:Number(budget.budget)||0,percent:Number(budget.percent)||0,
@@ -3965,7 +3965,7 @@ function glancePreviewHtml(ev){
  const context=s.contextPct!=null?pct(s.contextPct):s.contextTokens?compactNumber(s.contextTokens):'--';
  const today=sample?'$6.40':ev.todaySpend==null?'--':money(ev.todaySpend);
  const places=[['mac','macOS','Menu bar',''],['linux','Linux','Tray',''],['windows','Windows','Notification area','Beta']];
- return `<div class=miniPreviewHead><span>While you work</span>${exampleChip(sample)}</div><div class=glanceDemo><div class=menuMock role=img aria-label="${esc(`Companion: this session ${sessionCostText(s)}, context ${context}, spend today ${today}`)}"><div class=menuMockBar><span class=menuMockMark aria-hidden=true></span><b class=mono>${esc(sessionCostText(s))}</b><span class=mono>${esc(context)}</span></div><dl class=menuMockRows><div><dt>This session</dt><dd class=mono>${esc(sessionCostText(s))}</dd></div><div><dt>Context</dt><dd class=mono>${esc(context)}</dd></div><div><dt>Spend today</dt><dd class=mono>${esc(today)}</dd></div></dl></div><div class="metric glanceTile"><span>Dashboard · ${esc(b.month)}</span><strong>${esc(wholeMoney(b.spend))}</strong><small>Every session, every month</small></div></div><ul class=platformList>${places.map(([id,os,place,beta])=>`<li${id===DECK_PLATFORM?' data-current':''}><b>${os}</b><span>${place}</span>${beta?`<span class=chip>${beta}</span>`:''}${id===DECK_PLATFORM?'<span class="chip yoursChip">This computer</span>':''}</li>`).join('')}</ul>`;
+ return `<div class=miniPreviewHead><span>While you work</span>${exampleChip(sample)}</div><div class=glanceDemo><div class=menuMock role=img aria-label="${esc(`Companion: this session ${sessionCostText(s)}, context ${context}, spend today ${today}`)}"><div class=menuMockBar><span class=menuMockMark aria-hidden=true></span><b class=mono>${esc(sessionCostText(s))}</b><span class=mono>${esc(context)}</span></div><dl class=menuMockRows><div><dt>This session</dt><dd class=mono>${esc(sessionCostText(s))}</dd></div><div><dt>Context</dt><dd class=mono>${esc(context)}</dd></div><div><dt>Spend today</dt><dd class=mono>${esc(today)}</dd></div></dl></div><div class="metric glanceTile"><span>Dashboard · ${esc(b.month)}${exampleChip(budgetSample(ev)&&!sample)}</span><strong>${esc(wholeMoney(b.spend))}</strong><small>Every session, every month</small></div></div><ul class=platformList>${places.map(([id,os,place,beta])=>`<li${id===DECK_PLATFORM?' data-current':''}><b>${os}</b><span>${place}</span>${beta?`<span class=chip>${beta}</span>`:''}${id===DECK_PLATFORM?'<span class="chip yoursChip">This computer</span>':''}</li>`).join('')}</ul>`;
 }
 // 4 · Reads what your agents already wrote
 function tracesPreviewHtml(ev){
@@ -3995,7 +3995,7 @@ function wherePreviewHtml(ev){
  const yours=(value,note,sampleValue,sampleNote)=>value!=null?figureHtml('yours',value,note):ev.sample?figureHtml('example',sampleValue,sampleNote):`<div class=evidenceFigure data-source=yours>${YOURS_CHIP}<b>--</b><small>Not in your history yet</small></div>`;
  const week=ev.output?.week,delta=ev.output?.delta;
  const cards=[
-  {route:'models',page:'Models',question:'Which model takes the most?',figure:yours(ev.topModel?pct(ev.topModel.share):null,ev.topModel?`of spend on ${ev.topModel.model}`:'','48%','of spend on one model'),talk:'56% of spend on one model'},
+  {route:'models',page:'Models',question:'Which model takes the most?',figure:yours(ev.topModel?pct(ev.topModel.share):null,ev.topModel?`of spend on ${ev.topModel.model}${ev.topModel.runtime?` in ${ev.topModel.runtime}`:''}`:'','48%','of spend on one model'),talk:'56% of spend on one model'},
   {route:'efficiency',page:'Efficiency',question:'Am I getting more for each dollar?',figure:yours(week!=null?`${compactNumber(week)} / $`:null,week!=null?`output tokens, last 7 days${delta?.direction?` · ${delta.text}`:''}`:'','5.2K / $','output tokens, last 7 days'),talk:'Output per $ fell 30% in a week'},
   {route:'capabilities',page:'Tools',question:'What rides along unused?',figure:yours(ev.unusedToolTokens!=null?f(ev.unusedToolTokens):ev.skillUse?`${f(ev.skillUse.used)} of ${f(ev.skillUse.enabled)}`:null,ev.unusedToolTokens!=null?'unused tool tokens loaded eagerly':'enabled skills used','12,400','unused tool tokens loaded eagerly'),talk:'83,907 unused tool tokens'},
   {route:'subagents',page:'Subagents',question:'Do subagents pull their weight?',figure:yours(ev.subagentRun?money(ev.subagentRun.perRun):null,ev.subagentRun?`per priced run · ${f(ev.subagentRun.runs)} ${countWord(ev.subagentRun.runs,'run')}`:'','$0.84','per subagent run'),talk:'$6.04 → $0.96 per run, Aug → Sep'},
@@ -4004,13 +4004,13 @@ function wherePreviewHtml(ev){
 }
 // 9 · Is it working?
 function workingPreviewHtml(ev){
- const git=ev.git?figureHtml('yours',`${money(ev.git.per1k)} / 1K lines`,`${compactNumber(ev.git.lines)} pushed lines in the period Git last showed`):`<p class=deckCardNote>Open Git once and it pairs your local pushes with spend. It reads local history only and never contacts a remote.</p>`;
+ const git=ev.git?figureHtml('yours',`${money(ev.git.per1k)} / 1K lines`,`${compactNumber(ev.git.lines)} comparable pushed lines in the projects and period Git last showed`):`<p class=deckCardNote>Open Git once and it pairs your local pushes with spend. It reads local history only and never contacts a remote.</p>`;
  const runs=[['Haiku',.079],['Opus',.407]];
  return `<div class=miniPreviewHead><span>Two checks</span></div><div class=deckCards><button class=deckCard type=button data-deck-route=git><span class=deckCardTitle>Git${DECK_ARROW}</span><span class=deckCardQuestion>Spend per 1K pushed lines</span>${git}<span class=deckCardTalk data-source=talk>${TALK_CHIP}<span>$31.72 per 1K lines, up 18% in a week</span></span></button><button class=deckCard type=button data-deck-route=sessions-compare><span class=deckCardTitle>Sessions › Compare${DECK_ARROW}</span><span class=deckCardQuestion>Same prompt, different models</span><div class=compareRuns data-source=talk>${TALK_CHIP}${runs.map(([model,cost])=>`<span class=compareRun><span>${model}</span>${levelBarHtml(cost/.407,{label:`${model}: $${cost.toFixed(3)}`})}<b class=mono>$${cost.toFixed(3)}</b></span>`).join('')}<small>Opus cost 5.1× Haiku. $0.21 of the $0.33 gap was cache writes.</small></div></button></div>`;
 }
 // 10 · Five levers move the bill
 function leverValue(ev,id){
- if(id==='model'&&ev.highEffortShare!=null)return {value:shareText(ev.highEffortShare),note:'of spend at high effort or above'};
+ if(id==='model'&&ev.highEffortShare!=null)return {value:shareText(ev.highEffortShare),note:'of known-effort spend at high effort or above'};
  if(id==='context'&&ev.unusedToolTokens!=null)return {value:f(ev.unusedToolTokens),note:'unused tool tokens loaded'};
  if(id==='context'&&ev.session?.skills)return {value:`${f(ev.session.skills.used)} of ${f(ev.session.skills.loaded)}`,note:'skills used, latest session'};
  if(id==='cache'&&ev.cacheWriteShare!=null)return {value:shareText(ev.cacheWriteShare),note:'of latest session was cache writes'};
@@ -4031,7 +4031,7 @@ function monthBarsHtml(source,rows,label,note){
 }
 function loopPreviewHtml(ev){
  const steps=[['Pick a task you repeat','Two or three make a benchmark.'],['Change one thing','Model, effort, prompt, skills, or a fresh session.'],['Run it again','Same task, same definition of done.'],['Compare','Put both runs side by side.']];
- const talk=monthBarsHtml('talk',TALK_OUTPUT_MONTHS.map(([label,value])=>({label,value})),'Output tokens per $','All agents. +73% Jun → Sep. Then −30% in Oct: 98% of spend moved to Opus 5.5 and cache writes reached 55% of the bill.');
+ const talk=monthBarsHtml('talk',TALK_OUTPUT_MONTHS.map(([label,value])=>({label,value})),'Output tokens per $','All agents, rounded. +73% Jun → Sep. Then −30% in Oct: 98% of spend moved to Opus 5.5 and cache writes reached 55% of the bill.');
  const months=ev.output?.months,first=months?months.findIndex(row=>row.value!=null):-1;
  const yours=first>=0?monthBarsHtml('yours',months.slice(first),'Output tokens per $','All agents, from your model history.'):'';
  return `<div class=miniPreviewHead><span>Three months up. One month down.</span></div><ol class=loopSteps>${steps.map(([title,note],index)=>`<li><span class=loopIndex aria-hidden=true>${index+1}</span><b>${title}</b><small>${note}</small></li>`).join('')}</ol><div class=monthBarsPair>${talk}${yours}</div>`;

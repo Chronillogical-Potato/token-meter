@@ -11464,12 +11464,12 @@ const richState={{
   model_pricing:{{unit:'per 1M tokens',models:[{{provider:'claude',model:'claude-opus-5-5',prices:{{cache_read:.5,input:5,cache_write:6.25,output:25}}}}]}},
   model_stats:{{first_day:'2026-06-13',models:[],trend:{{week:4400,delta:{{text:'↓ 30.3% vs prior 7 days',direction:'down'}},months:[{{label:'Jun',value:4183}},{{label:'Oct',value:6492,partial:true}}]}}}},
   provenance:{{reported_sessions:1638,estimated_sessions:40,unavailable_sessions:1}},
-  capabilities:{{summary:{{definitions:{{unused_eager_definition_tokens:83907}},skills:{{enabled:210,used:75}}}}}},
+  capabilities:{{summary:{{definitions:{{definition_tokens:120000,unused_eager_definition_tokens:83907}},skills:{{enabled:210,used:75}}}}}},
   agent_usage:{{totals:{{agents:646,cost_covered_agents:640,known_cost:1001.45}}}},
   budget:{{month:'2026-10',configured:true,budget:8940,spend:1792.7,percent:.2,projection_ready:true,projected_spend:3704.9,lower_bound:true,state:'on_track'}},
  }},
 }};
-const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,changed_lines:24000}}}};
+const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,changed_lines:24000,comparable_changed_lines:21000}}}};
 {body}
 """
 
@@ -11524,6 +11524,39 @@ process.stdout.write(JSON.stringify({same,agentNote:deckPreviewHtml(11,evidence[
         self.assertIn("if(ensureDeck('learn'))paintDeck('learn',state);", self.page)
         for retired in ("WELCOME_PANELS", "data-welcome-panel", "learnQuestion", "learnBlock", "learn-replay-welcome", "welcomeDot"):
             self.assertNotIn(retired, self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_never_turns_missing_tool_definitions_into_a_measured_zero(self):
+        payload = self._run_tour("""
+const none=JSON.parse(JSON.stringify(richState));
+none.xsession.capabilities.summary.definitions={definition_tokens:0,eager_definition_tokens:0,deferred_definition_tokens:0,unused_eager_definition_tokens:0};
+const measuredZero=JSON.parse(JSON.stringify(richState));
+measuredZero.xsession.capabilities.summary.definitions={definition_tokens:5000,eager_definition_tokens:5000,deferred_definition_tokens:0,unused_eager_definition_tokens:0};
+const a=learnEvidence(none,richGit),b=learnEvidence(measuredZero,richGit),c=learnEvidence(richState,richGit);
+process.stdout.write(JSON.stringify({none:a.unusedToolTokens,skills:a.skillUse,measured:b.unusedToolTokens,rich:c.unusedToolTokens,
+ where:deckPreviewHtml(7,a,'learn').includes('unused tool tokens loaded'),git:c.git}));
+""")
+        self.assertIsNone(payload["none"])
+        self.assertEqual(payload["skills"], {"used": 75, "enabled": 210})
+        self.assertFalse(payload["where"], "no definition evidence must not render as 0 unused tool tokens")
+        self.assertEqual(payload["measured"], 0)
+        self.assertEqual(payload["rich"], 83907)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_escapes_every_interpolated_label(self):
+        payload = self._run_tour("""
+var runtimeMarkSvg=()=>'';eval(page.match(/^const runtimeBadgeContent=.*$/m)[0].replace(/^const /,''));
+const bad='<img src=x onerror=alert(1)>';
+const hostile=JSON.parse(JSON.stringify(richState));
+hostile.primary_model=bad;hostile.source={provider:bad,label:bad};hostile.timing.duration=bad;
+hostile.xsession.model_mix[0].model=bad;hostile.xsession.model_mix[0].runtime=bad;
+hostile.xsession.model_pricing.unit=bad;hostile.xsession.model_stats.first_day=bad;hostile.xsession.budget.month=bad;
+hostile.xsession.providers=[{provider:bad,sessions:3}];
+const ev=learnEvidence(hostile,richGit);
+const leaks=DECK_SLIDES.map((slide,i)=>deckCopyHtml(i,ev,'learn')+deckPreviewHtml(i,ev,'learn')).map((html,i)=>html.includes('<img')?i+1:0).filter(Boolean);
+process.stdout.write(JSON.stringify({leaks}));
+""")
+        self.assertEqual(payload["leaks"], [])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_talk_numbers_are_labeled_and_never_presented_as_yours(self):
@@ -11583,7 +11616,9 @@ function run(entries,{read=false,write=false,requested=null,act=null}={}){
  const auto=welcomeShouldAutoShow(),start=welcomeStartSlide(requested);
  if(act)act();
  let saved=null;try{saved=JSON.parse(stored.get(WELCOME_KEY));}catch(error){}
- return {auto,start,saved:saved&&{seen:saved.seen,stamped:Number(saved.dismissed_at)>0,last_slide:saved.last_slide}};
+ const legacyKept=stored.has(LEGACY_ONBOARDING_KEY);
+ let after=null;if(!read&&!write){markWelcomeSeen(0);after=welcomeShouldAutoShow();}
+ return {auto,start,saved:saved&&{seen:saved.seen,stamped:Number(saved.dismissed_at)>0,last_slide:saved.last_slide},legacyKept,after};
 }
 const welcome=value=>[[WELCOME_KEY,typeof value==='string'?value:JSON.stringify(value)]];
 const legacy=value=>[[LEGACY_ONBOARDING_KEY,JSON.stringify(value)]];
@@ -11610,7 +11645,15 @@ process.stdout.write(JSON.stringify({
 }));
 """)
         start = lambda index, offer: {"index": index, "offer": offer}
-        self.assertEqual(payload["fresh"], {"auto": True, "start": start(0, False), "saved": {"seen": True, "stamped": True, "last_slide": 0}})
+        self.assertEqual(payload["fresh"]["saved"], {"seen": True, "stamped": True, "last_slide": 0})
+        self.assertTrue(payload["fresh"]["auto"])
+        self.assertEqual(payload["fresh"]["start"], start(0, False))
+        for case in ("fresh", "legacyStep", "legacyUntouched", "corrupt", "resume"):
+            with self.subTest(after=case):
+                self.assertFalse(payload[case]["after"], "a seen tour never auto-shows again")
+        for case in ("legacyStep", "legacyCollapsed", "legacyFinished", "legacyUntouched"):
+            with self.subTest(legacy=case):
+                self.assertTrue(payload[case]["legacyKept"], "the legacy onboarding key stays readable")
         self.assertEqual(payload["progressing"]["saved"], {"seen": False, "stamped": False, "last_slide": 4})
         self.assertEqual(payload["resume"]["start"], start(6, True))
         self.assertFalse(payload["resume"]["auto"])
@@ -11629,7 +11672,9 @@ process.stdout.write(JSON.stringify({
         self.assertTrue(payload["legacyUntouched"]["auto"])
         self.assertEqual(payload["readBlocked"]["auto"], False)
         self.assertEqual(payload["readBlocked"]["start"], start(0, False))
-        self.assertEqual(payload["writeBlocked"], {"auto": True, "start": start(0, False), "saved": None})
+        self.assertEqual(payload["writeBlocked"]["auto"], True)
+        self.assertEqual(payload["writeBlocked"]["start"], start(0, False))
+        self.assertIsNone(payload["writeBlocked"]["saved"])
         self.assertEqual(payload["learn"], [9, 0, 0])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
