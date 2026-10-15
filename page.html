@@ -850,13 +850,15 @@ select option:checked{background-color:var(--panel3)}
 .previewHead p:empty{display:none}
 .previewRunMeta{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}
 .previewRunMeta .repo{max-width:460px}
-.previewRunGrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,.65fr);gap:12px;align-items:start}
+.previewRunGrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,.65fr);gap:12px;align-items:stretch}
 .previewChartSlot,.previewDecision{min-width:0}
-.previewChartSlot .section-h{margin:0 0 10px}
+.previewChartSlot{display:grid}
+.previewChartSlot #session-chart-module{display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px}
+.previewChartSlot .section-h,.previewDecision>.section-h{margin:0}
 .previewChartSlot #session-chart-module>.card{min-height:350px}
 .previewChartSlot .chart{height:286px}
-.previewDecision{display:grid;gap:12px}
-.previewStatus{overflow:hidden;padding:16px;background:linear-gradient(155deg,rgb(var(--panel2-rgb)/.98),rgb(var(--bg2-rgb)/.98))}
+.previewDecision{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:12px}
+.previewStatus{display:flex;flex-direction:column;overflow:hidden;padding:16px;background:linear-gradient(155deg,rgb(var(--panel2-rgb)/.98),rgb(var(--bg2-rgb)/.98))}
 .previewStatus:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--good),var(--accent),transparent)}
 .previewStatus.warn:before{background:linear-gradient(90deg,var(--bad),var(--warn),transparent)}
 .previewStatusTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -867,25 +869,28 @@ select option:checked{background-color:var(--panel3)}
 .previewCost{font-size:var(--fs-readout-xl);font-weight:var(--fw-heavy);line-height:1.02;margin-top:12px;white-space:nowrap}
 .previewCostNote{color:var(--dim);font-size:var(--fs-12);margin-top:6px}
 .previewPressure{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.previewStatus .previewPressure{margin-block:auto}
 .previewPressureHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;color:var(--dim);font-size:var(--fs-12)}
 .previewPressureHead b{color:var(--fg)}
+.previewPressureHead>span{color:var(--faint);font-size:var(--fs-11);text-transform:uppercase;letter-spacing:.04em}
 .previewPressureBar{height:7px;margin-top:6px;border-radius:var(--radius-pill);background:rgb(var(--tint-rgb)/.07);overflow:hidden}
 .previewPressureBar i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--signal-hi));transition:width .2s}
 .previewRunBudgetSlot .sessionBudget{margin:0;box-shadow:var(--shadow-soft)}
 .previewRunBudgetSlot .sessionBudgetHead{align-items:flex-start;flex-direction:column;gap:8px}
 .previewRunBudgetSlot .sessionBudgetExact{width:100%;justify-content:space-between}
+.previewRunBudgetSlot .sessionBudgetTrack{grid-template-columns:52px minmax(0,1fr) 60px}
 .previewKpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:12px}
 .previewKpi{padding:12px 12px;min-height:92px}
 .previewKpi .v{font-size:var(--fs-20);margin-top:4px;overflow-wrap:anywhere}
 .previewKpi .sm{font-size:var(--fs-11);margin-top:3px}
 .previewStartText{font-size:var(--fs-14);font-weight:var(--fw-bold);line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .sessionChartModule{min-width:0}
-.previewChartColumn{display:grid;align-content:start;gap:12px;min-width:0}
+.previewChartColumn{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-width:0}
 .previewChartColumn .previewTokenSlot{margin-top:0}
 .previewTimes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .previewTimes div{min-width:0}
 .previewTimes span{display:block;color:var(--faint);font-size:var(--fs-11);text-transform:uppercase;letter-spacing:.04em}
-.previewTimes b{display:block;margin-top:4px;color:var(--dim);font-size:var(--fs-11);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.previewTimes b{display:block;margin-top:4px;color:var(--dim);font-size:var(--fs-11);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:pre}
 .previewKpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .previewKpi{min-height:96px}
 .previewKpi .v{font-size:var(--fs-readout-md)}
@@ -1418,7 +1423,6 @@ body.sessionRoute #view-session.sessionDetail .previewRunMeta{gap:6px;margin-bot
 body.sessionRoute #view-session.sessionDetail .previewRunMeta .badge,body.sessionRoute #view-session.sessionDetail .previewRunMeta .repo,body.sessionRoute #view-session.sessionDetail .previewRunMeta .pill,body.sessionRoute #view-session.sessionDetail .sessionDelete{background:rgb(var(--panel-rgb)/.86)}
 body.sessionRoute #view-session.sessionDetail .previewStartStrip{border-color:rgb(var(--signal-rgb)/.18);background:linear-gradient(100deg,rgb(var(--signal-rgb)/.11),rgb(var(--panel2-rgb)/.92) 46%,rgb(var(--aura-rgb)/.05));box-shadow:none}
 body.sessionRoute #view-session.sessionDetail .previewStartLabel{color:var(--session-signal-hi);font-size:var(--fs-11)}
-body.sessionRoute #view-session.sessionDetail .previewRunGrid{gap:14px}
 body.sessionRoute #view-session.sessionDetail .previewChartSlot #session-chart-module>.card{border-color:rgb(var(--signal-rgb)/.15);border-radius:var(--radius-md);background:radial-gradient(circle at 100% 0,rgb(var(--signal-rgb)/.07),transparent 28%),linear-gradient(160deg,rgb(var(--panel-rgb)/.98),rgb(var(--bg-rgb)/.98));box-shadow:none}
 body.sessionRoute #view-session.sessionDetail .previewChartSlot .chart{border-color:rgb(var(--tint-rgb)/.07);border-radius:var(--radius-sm);background:linear-gradient(180deg,rgb(var(--bg-rgb)/.72),rgb(var(--bg-deep-rgb)/.5))}
 body.sessionRoute #view-session.sessionDetail .previewStatus{padding:18px;border-color:rgb(var(--signal-rgb)/.24);border-radius:var(--radius-md);background:radial-gradient(circle at 96% 5%,rgb(var(--signal-hi-rgb)/.16),transparent 34%),radial-gradient(circle at 8% 100%,rgb(var(--aura-rgb)/.1),transparent 40%),linear-gradient(145deg,rgb(var(--panel2-rgb)/.99),rgb(var(--bg2-rgb)/.99));box-shadow:var(--shadow-soft)}
@@ -1432,7 +1436,7 @@ body.sessionRoute #view-session.sessionDetail .previewPressureBar i{border-radiu
 body.sessionRoute #view-session.sessionDetail .previewTimes{border-top-color:rgb(var(--signal-rgb)/.12)}
 body.sessionRoute #view-session.sessionDetail .previewTimes span{color:var(--faint);font-size:var(--fs-11)}
 body.sessionRoute #view-session.sessionDetail .previewTimes b{overflow:visible;white-space:normal;line-height:1.35}
-body.sessionRoute #view-session.sessionDetail .previewRunBudgetSlot .sessionBudget{border-color:rgb(var(--signal-rgb)/.14);border-radius:var(--radius-md);background:linear-gradient(145deg,rgb(var(--panel-rgb)/.96),rgb(var(--bg-rgb)/.98));box-shadow:none}
+body.sessionRoute #view-session.sessionDetail .previewRunBudgetSlot .sessionBudget{padding:18px;border-color:rgb(var(--signal-rgb)/.14);border-radius:var(--radius-md);background:linear-gradient(145deg,rgb(var(--panel-rgb)/.96),rgb(var(--bg-rgb)/.98));box-shadow:none}
 body.sessionRoute #view-session.sessionDetail .previewTokenSlot .bar{border-color:rgb(var(--signal-rgb)/.16);background:rgb(var(--bg-rgb)/.7)}
 body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:var(--session-signal-hi);text-shadow:none}
 @media(max-width:900px){body.sessionRoute #view-session .logsSummary .logKpis{grid-template-columns:repeat(3,minmax(0,1fr))}body.sessionRoute #view-session .logsSummary .logStat:nth-child(4){border-left:0}body.sessionRoute #view-session .logsSummary .logStat:nth-child(n+4){margin-top:8px;padding-top:12px;border-top:1px solid rgb(var(--tint-rgb)/.08)}}
@@ -2729,6 +2733,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <div class=previewTokenSlot id=preview-token-split-slot></div>
    </div>
    <aside class=previewDecision>
+    <div class=section-h><h2>Session cost</h2><span class=hint>estimate</span></div>
     <section class="card previewStatus" id=preview-status-card>
      <div class=previewStatusTop><span class=previewState id=preview-state>Live</span><span class="previewIdle mono" id=preview-idle>--</span></div>
      <div class="previewCost mono" id=preview-cost>$0.00</div>
@@ -5970,9 +5975,9 @@ function renderCurrentRun(s){
  $('preview-context-pct').textContent=context.window?pct(contextPct):'--';
  $('preview-context-bar').setAttribute('aria-valuenow',String(Math.round(contextPct*100)));
  $('preview-context-bar').querySelector('i').style.width=`${Math.round(contextPct*100)}%`;
- $('preview-started-at').textContent=dt12(timing.start_local)||'--';
+ $('preview-started-at').textContent=(dt12(timing.start_local)||'--').replace(' ','\n');
  $('preview-last-label').textContent=frozen?'Completed':'Last activity';
- $('preview-last-at').textContent=dt12(timing.end_local)||'--';
+ $('preview-last-at').textContent=(dt12(timing.end_local)||'--').replace(' ','\n');
  $('preview-speed').textContent=throughputAvailable&&throughput.available?`${speedFmt(throughput.output_tps)} tok/s`:'--';
 	 $('preview-speed-note').textContent=throughputAvailable&&throughput.available?sessionThroughputNote(throughput):'timing unavailable';
  $('preview-wait').textContent=wait.available?waitFmt(wait.total_s):'--';
