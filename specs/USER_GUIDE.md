@@ -117,7 +117,7 @@ short slides in four chapters:
 A chapter rail on the left shows where you are; click any slide to jump to it.
 Use **→** and **←** to page, **Skip chapter** to move to the next chapter, and
 **Open …** buttons to go to the page a slide describes. Close the tour with the
-✕ button, **Esc**, or **Skip for now**; it does not open by itself again. If you
+✕ button, **Esc**, or **Skip tour**; it does not open by itself again. If you
 used the earlier getting-started checklist, it does not open automatically.
 
 Each slide shows a small preview built from your own local data, labeled
