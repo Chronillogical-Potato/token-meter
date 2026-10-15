@@ -10623,7 +10623,7 @@ console.log(JSON.stringify(out));
         self.assertLess(self.page.index("id=tab-session"), self.page.index("id=tab-daily"))
         self.assertIn("id=s-range", self.page)
         self.assertNotIn("id=learn-glossary", self.page)
-        self.assertIn("Review loop", self.page)
+        self.assertIn("Change one thing, then measure", self.page)
         self.assertIn("if(h==='daily')setHashRoute('spend',{replace:true,apply:false})", self.page)
         self.assertIn("if(h==='spend'||h==='daily'||h==='spend-budgets'||h==='settings-budgets'||h==='budgets')", self.page)
         self.assertIn("if(h==='learn'||h==='learn-agent-access')", self.page)
@@ -10645,7 +10645,7 @@ console.log(JSON.stringify(out));
             "if(h==='spend'||h==='daily'||h==='spend-budgets'",
             "openTopLevelRoute('spend')",
             "{id:'spend',label:'Spend'",
-            "data-learn-route=spend>Open Spend",
+            "data-learn-route=spend>",
             "function renderSpend(xs)",
         ):
             self.assertIn(marker, self.page)
@@ -11018,20 +11018,18 @@ console.log(JSON.stringify({
     def test_non_current_views_keep_visible_copy_terse(self):
         expected_subtitles = {
             "models": ["Cost, speed, and context."],
-            "learn": ["The Token Meter review loop."],
             "capabilities": ["Tools, MCP servers, and skills."],
             "settings": ["Connections, pricing, and updates."],
         }
         boundaries = (
             ("models", "daily"),
-            ("learn", "capabilities"),
             ("capabilities", "settings"),
             ("settings", None),
         )
         for view, next_view in boundaries:
             section = self.page.split(f"id=view-{view}", 1)[1]
             section = section.split(
-                f"id=view-{next_view}" if next_view else "<dialog class=onboardingDialog",
+                f"id=view-{next_view}" if next_view else "<dialog class=welcome",
                 1,
             )[0]
             paragraphs = [
@@ -11357,100 +11355,146 @@ console.log(JSON.stringify({
         self.assertNotIn("id:'read'", commands)
         self.assertNotIn("route:'read'", self.page)
 
-    def test_learn_and_onboarding_prioritize_efficiency_and_budgets(self):
+    def test_onboarding_checklist_and_lesson_dialog_are_retired(self):
         current = self.page.split('<div class="view on" id=view-session>', 1)[1].split(
             '<div class=view id=view-models>', 1
         )[0]
-        current_overview = current.split(
-            '<section id=current-sessions-overview', 1
-        )[1].split('<section id=all-session-history', 1)[0]
-        self.assertIn("id=onboarding-card", current_overview)
-        self.assertLess(current_overview.index("id=onboarding-card"),
-                        current_overview.index("id=current-session-grid"))
-        self.assertNotIn("id=onboarding-card aria-labelledby=onboarding-title aria-live=polite data-current-detail",
-                         current)
-        self.assertLess(current.index("id=onboarding-card"),
-                        current.index("class=previewRunMeta"))
-        for marker in (
-            "id=onboarding-card", "id=onboarding-toggle",
-            "id=onboarding-progress", "id=onboarding-next",
-            "id=onboarding-checklist", "aria-valuemax=6",
+        for retired in (
+            "id=onboarding-card", "id=onboarding-toggle", "id=onboarding-progress",
+            "id=onboarding-next", "id=onboarding-checklist", "id=onboarding-dialog",
             "id=learn-onboarding-status", "id=learn-onboarding-action",
-            "id=onboarding-dialog", "id=onboarding-dialog-title",
-            "id=onboarding-dialog-points", "id=onboarding-dialog-close",
-            "Closing this lesson marks the step complete",
+            "First five minutes", "Closing this lesson marks the step complete",
         ):
-            self.assertIn(marker, self.page)
-        self.assertNotIn("id=command-coach", self.page)
-        self.assertNotIn("id=command-coach-done", self.page)
-        self.assertNotIn("class=learnShortcut", self.page)
-        steps = self.page.split("const ONBOARDING_STEPS=[", 1)[1].split(
-            "const ONBOARDING_STEP_IDS", 1
-        )[0]
-        self.assertEqual(steps.count("id:'"), 6)
-        self.assertEqual(steps.count("lesson:'"), 6)
-        self.assertEqual(steps.count("points:["), 6)
-        for step_id in (
-            "current", "logs", "daily", "models", "efficiency", "budgets",
+            self.assertNotIn(retired, self.page)
+        self.assertNotIn(">Collapse<", current)
+        for retired in (
+            "ONBOARDING_STEPS", "function renderOnboarding(", "function commitOnboardingSteps(",
+            "function openOnboardingLesson(", "function resumeOrRestartOnboarding(",
+            "onboardingCard", "onboardingDialog", "learnOnboarding", "action:'onboarding'",
         ):
-            self.assertIn(f"id:'{step_id}'", steps)
-        for retired in ("capabilities", "palette", "git", "activity"):
-            self.assertNotIn(f"id:'{retired}'", steps)
-            self.assertNotIn(f"route:'{retired}'", steps)
-        self.assertIn("short:'Efficiency'", steps)
-        self.assertIn("short:'Monthly budget'", steps)
-        self.assertIn("route:'efficiency'", steps)
-        self.assertIn("route:'spend-budgets'", steps)
-        for marker in (
-            "const ONBOARDING_KEY='tm_onboarding_v1'",
-            "raw.completed.filter(id=>ONBOARDING_STEP_IDS.has(id))",
-            "card.hidden=complete",
-            "onboardingState.collapsed&&!complete",
-            "completed_at:onboardingState.completedAt||0",
-            "function resumeOrRestartOnboarding()",
-            "complete?'Replay onboarding':'Resume onboarding'",
-            "action:'onboarding'",
-            "command.action==='onboarding'",
-            "function runNavigationCommand(command)",
-            "function openOnboardingLesson(id)",
-            "function finishOnboardingLesson()",
-            "if(id)commitOnboardingSteps([id]);",
-            "setTimeout(()=>openOnboardingLesson(step.id),0)",
-            "if(lessonDialog.open&&event.key==='Escape')",
-        ):
-            self.assertIn(marker, self.page)
-        resume = self.page.split("function resumeOrRestartOnboarding(){", 1)[1].split(
-            "$('onboarding-toggle').onclick", 1
-        )[0]
-        self.assertIn("openCurrentSessions();", resume)
-        self.assertNotIn("goToLatestSession();", resume)
-        self.assertIn("The six-step guide is back in Current sessions.", resume)
-        self.assertNotIn("onboardingPaletteLessonArmed", self.page)
-        self.assertNotIn("Open command palette", steps)
-        self.assertNotIn("function markOnboardingRoute(", self.page)
-        self.assertNotIn("function onboardingStepForRoute(", self.page)
-        self.assertNotIn("commitOnboardingSteps([step.id]);", self.page)
-        self.assertNotIn("onboarding-dismiss", self.page)
-        self.assertNotIn("Dismiss onboarding", self.page)
+            self.assertNotIn(retired, self.page)
 
+    def test_welcome_overlay_is_one_full_page_modal_with_five_panels(self):
+        dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
+        self.assertIn("aria-modal=true", dialog)
+        self.assertIn("aria-labelledby=welcome-label", dialog)
+        self.assertIn('<button class=welcomeClose id=welcome-close type=button aria-label="Close welcome"', dialog)
+        self.assertIn("aria-hidden=true>&#10005;</span>", dialog)
+        self.assertIn("id=welcome-skip type=button>Skip for now</button>", dialog)
+        for control in ("id=welcome-back", "id=welcome-next", "id=welcome-dots", "id=welcome-status"):
+            self.assertIn(control, dialog)
+        panels = re.findall(r"data-welcome-panel=(\w+)", dialog)
+        self.assertEqual(panels, ["cost", "trust", "privacy", "levers", "budget"])
+        for heading in (
+            "What did this session just cost?",
+            "Can I trust the number?",
+            "Five levers move the bill",
+            "Set a monthly budget",
+        ):
+            self.assertIn(heading, dialog)
+        self.assertIn("id=welcome-privacy-title>Your traces never leave this Mac.", dialog)
+        self.assertIn("When context climbs, compact or start fresh.", dialog)
+        self.assertIn("Compare with it. Get the invoice from your provider.", dialog)
+        for preview in ("cost", "trust", "privacy", "levers", "budget"):
+            self.assertIn(f"id=welcome-preview-{preview}", dialog)
+        self.assertIn("data-welcome-route=spend-budgets", dialog)
+        self.assertIn("data-welcome-route=learn", dialog)
+        for marker in (
+            "const WELCOME_KEY='tm_welcome_v1'",
+            "const LEGACY_ONBOARDING_KEY='tm_onboarding_v1'",
+            "function openWelcome(",
+            "function closeWelcome(",
+            "function maybeAutoShowWelcome()",
+            "$('welcome-dialog').addEventListener('cancel'",
+            "$('welcome-dialog').addEventListener('close'",
+            "if(command.action==='welcome'){openWelcome(0);return;}",
+            "{id:'welcome',label:'Open welcome tour'",
+            "this machine",
+        ):
+            self.assertIn(marker, self.page)
+        self.assertIn("maybeAutoShowWelcome();", self.page.split("function applyLiveState(state){", 1)[1].split("\n}", 1)[0])
+        css = self.page[self.page.index("<style>"):self.page.index("</style>")]
+        self.assertIn(".welcome{", css)
+        self.assertRegex(css, r"@media\(prefers-reduced-motion:reduce\)\{[^\n]*\.welcome")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_welcome_auto_show_migrates_the_legacy_onboarding_state(self):
+        script = f"""
+const fs=require('fs');
+const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
+function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
+eval(page.slice(page.indexOf("const WELCOME_KEY="),page.indexOf("function readWelcomeStore(")).replace(/^const /gm,'var '));
+eval(extract('readWelcomeStore'));eval(extract('welcomeShouldAutoShow'));eval(extract('markWelcomeSeen'));
+let localStorage;
+function run(entries,{{throwRead=false,throwWrite=false}}={{}}){{
+ const stored=new Map(entries);
+ localStorage={{getItem:key=>{{if(throwRead)throw Error('blocked');return stored.get(key)??null;}},setItem:(key,value)=>{{if(throwWrite)throw Error('quota');stored.set(key,String(value));}}}};
+ const before=welcomeShouldAutoShow();
+ markWelcomeSeen();
+ const saved=stored.has(WELCOME_KEY)?JSON.parse(stored.get(WELCOME_KEY)):null;
+ return {{before,after:throwRead?null:welcomeShouldAutoShow(),saved:saved&&{{seen:saved.seen,stamped:Number(saved.dismissed_at)>0}},legacy:stored.get(LEGACY_ONBOARDING_KEY)??null}};
+}}
+const legacy=value=>[[LEGACY_ONBOARDING_KEY,JSON.stringify(value)]];
+process.stdout.write(JSON.stringify({{
+ fresh:run([]),
+ seen:run([[WELCOME_KEY,JSON.stringify({{seen:true,dismissed_at:1}})]]),
+ corrupt:run([[WELCOME_KEY,'{{nope']]),
+ legacyStep:run(legacy({{completed:['current'],collapsed:false,completed_at:0}})),
+ legacyCollapsed:run(legacy({{completed:[],collapsed:true,completed_at:0}})),
+ legacyFinished:run(legacy({{completed:[],collapsed:false,completed_at:1700000000000}})),
+ legacyUntouched:run(legacy({{completed:[],collapsed:false,completed_at:0}})),
+ readBlocked:run([],{{throwRead:true}}),
+ writeBlocked:run([],{{throwWrite:true}}),
+}}));
+"""
+        payload = json.loads(subprocess.run(
+            ["node", "-e", script], capture_output=True, text=True, check=True,
+        ).stdout)
+        seen = {"seen": True, "stamped": True}
+        self.assertEqual(payload["fresh"], {"before": True, "after": False, "saved": seen, "legacy": None})
+        self.assertFalse(payload["seen"]["before"])
+        self.assertTrue(payload["corrupt"]["before"])
+        for key in ("legacyStep", "legacyCollapsed", "legacyFinished"):
+            with self.subTest(case=key):
+                self.assertFalse(payload[key]["before"])
+                self.assertIsNotNone(payload[key]["legacy"], "the legacy key stays readable")
+        self.assertTrue(payload["legacyUntouched"]["before"])
+        self.assertEqual(payload["readBlocked"]["before"], False)
+        self.assertEqual(payload["writeBlocked"], {"before": True, "after": True, "saved": None, "legacy": None})
+
+    def test_learn_is_the_education_home_in_the_approved_order(self):
         learn = self.page.split("<div class=view id=view-learn>", 1)[1].split(
             "<div class=view id=view-capabilities>", 1
         )[0]
-        self.assertNotIn("learnShortcutGrid", learn)
-        self.assertNotIn("Command palette", learn)
-        self.assertNotIn("Review Tools", learn)
-        self.assertNotIn("Capability loading", learn)
-        self.assertNotIn("Git", learn)
-        for title, route, action in (
-            ("Session run", "summary", "Open Run"),
-            ("Repeated patterns", "sessions-all", "Open all sessions"),
-            ("Spend review", "spend", "Open Spend"),
-            ("Model comparison", "models", "Open Models"),
-            ("Efficiency review", "efficiency", "Open Efficiency"),
-            ("Monthly budget", "spend-budgets", "Open Budgets"),
+        self.assertIn("<h1>Learn</h1>", learn)
+        self.assertIn("<p class=spectrumPageSubtitle>Spend tokens like money. Measure what you get back.</p>", learn)
+        self.assertIn("id=learn-replay-welcome type=button>Replay welcome</button>", learn)
+        order = [
+            "id=learn-value", "id=learn-money", "id=learn-trust", "id=learn-questions",
+            "id=learn-levers", "id=learn-loop", "id=learn-agent-access",
+        ]
+        positions = [learn.index(marker) for marker in order]
+        self.assertEqual(positions, sorted(positions))
+        for heading in (
+            "Usage is not value", "Where the money goes", "Can I trust it?",
+            "Questions you already have", "Five levers move the bill", "Change one thing, then measure",
         ):
-            self.assertIn(title, learn)
-            self.assertIn(f"data-learn-route={route}>{action}", learn)
+            self.assertIn(heading, learn)
+        for preview in ("value", "money", "trust", "levers"):
+            self.assertIn(f"id=learn-preview-{preview}", learn)
+        questions = learn.split("id=learn-questions", 1)[1].split("id=learn-levers", 1)[0]
+        for route in (
+            "sessions", "spend-budgets", "spend", "models", "capabilities",
+            "efficiency", "subagents", "git", "sessions-compare", "sessions-all",
+        ):
+            self.assertIn(f"data-learn-route={route}>", questions)
+        self.assertNotIn("data-learn-route=work", questions)
+        self.assertIn("cost per successful result", learn)
+        self.assertIn("Start a fresh session with a short handoff.", learn)
+        self.assertNotIn("Review loop", learn)
+        self.assertIn("$('view-learn').addEventListener('click'", self.page)
+        self.assertIn("$('learn-replay-welcome').onclick=()=>openWelcome(0);", self.page)
+        self.assertIn("if($('view-learn').classList.contains('on'))renderLearn(LATEST);", self.page)
 
     def test_all_sessions_supports_app_project_and_time_range_filters(self):
         for marker in ("id=g-app", "id=g-project", "id=g-time", "App filter",
@@ -12609,7 +12653,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             "Tools, MCP servers, and skills.",
             "Local token efficiency.",
             "Pushed code &times; covered spend.",
-            "The Token Meter review loop.",
+            "Spend tokens like money. Measure what you get back.",
             "Connections, pricing, and updates.",
         ):
             self.assertIn(marker, self.page)
@@ -12635,7 +12679,7 @@ const ticks=async(count=8)=>{{while(count--)await Promise.resolve();}};
             re.DOTALL,
         )
         self.assertEqual(
-            titles, ["Sessions", "Subagents", "Models", "Spend", "Efficiency", "Git"],
+            titles, ["Sessions", "Subagents", "Models", "Spend", "Efficiency", "Git", "Learn"],
         )
         self.assertTrue(all(len(title) <= 12 for title in titles))
 
