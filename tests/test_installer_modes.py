@@ -320,6 +320,162 @@ class InstallerModeTests(unittest.TestCase):
             "TEST_INSTALL_ROOT": str(install_root),
         }, install_root, command_log
 
+    def assert_plain_progress(self, stdout, *, menubar):
+        # Captured (non-terminal) output gets plain lines: no spinner frames
+        # or carriage returns, but a visible start and finish for each wait.
+        self.assertNotIn("\r", stdout)
+        self.assertIn(
+            "Indexing local agent history (first run can take a few minutes)\u2026\n",
+            stdout,
+        )
+        self.assertRegex(stdout, r"\u2713 Server ready \(\d+s\)\n")
+        building = "Building the menu bar companion (first build compiles Swift, ~1 min)\u2026\n"
+        if menubar:
+            self.assertIn(building, stdout)
+            self.assertRegex(stdout, r"\u2713 Menu bar companion ready \(\d+s\)\n")
+            self.assertLess(stdout.index("Server ready"), stdout.index(building))
+        self.assertLess(
+            stdout.index("Server ready"), stdout.index("Token Meter installation complete.")
+        )
+
+    def run_installer_on_terminal(self, relative_path, env):
+        import pty
+
+        primary, secondary = pty.openpty()
+        try:
+            process = subprocess.Popen(
+                ["bash", str(ROOT / relative_path)],
+                stdin=subprocess.DEVNULL,
+                stdout=secondary,
+                stderr=subprocess.PIPE,
+                env=env,
+            )
+            os.close(secondary)
+            secondary = None
+            chunks = []
+            while True:
+                try:
+                    chunk = os.read(primary, 4096)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            stderr = process.stderr.read().decode()
+            process.stderr.close()
+            returncode = process.wait(timeout=30)
+        finally:
+            if secondary is not None:
+                os.close(secondary)
+            os.close(primary)
+        return returncode, b"".join(chunks).decode(), stderr
+
+    def test_installers_draw_and_clear_a_spinner_on_a_terminal(self):
+        for platform, relative_path in (("Darwin", "scripts/install"), ("Linux", "scripts/install-linux")):
+            with self.subTest(installer=relative_path), tempfile.TemporaryDirectory() as tmp:
+                workspace = Path(tmp)
+                env, _, _ = self.installer_environment(workspace, platform)
+                env.pop("BASH_ENV")
+                # Hold readiness back for two polls so at least one frame draws.
+                polls = workspace / "polls"
+                self.write_executable(
+                    workspace / "bin" / "curl",
+                    f"""
+                    #!/usr/bin/env bash
+                    if [[ "${{*: -1}}" == */health ]]; then
+                      count=$(( $(cat {str(polls)!r} 2>/dev/null || echo 0) + 1 ))
+                      echo "$count" > {str(polls)!r}
+                      if (( count < 3 )); then exit 7; fi
+                      printf '{{"ok": true, "state_ready": true, "page_path": "%s/page.html"}}\n' "$TEST_INSTALL_ROOT"
+                    else
+                      printf '{{"ok": true}}\n'
+                    fi
+                    """,
+                )
+                env["TOKEN_METER_READINESS_TIMEOUT_SECONDS"] = "20"
+
+                returncode, output, stderr = self.run_installer_on_terminal(relative_path, env)
+
+                self.assertEqual(returncode, 0, stderr)
+                self.assertRegex(output, "\r[\u280b\u2819\u2839\u2838\u283c\u2834\u2826\u2827\u2807\u280f] Indexing local agent history \\d+s")
+                ready = output.index("\u2713 Server ready (")
+                # The spinner line is blanked with spaces and the cursor returned
+                # to column 0 before the finish line is printed.
+                self.assertRegex(output[:ready], r"\r +\r$")
+                self.assertIn("Token Meter installation complete.", output)
+
+    def test_installer_timeout_stops_the_progress_ticker_and_keeps_failure_output(self):
+        for platform, relative_path in (("Darwin", "scripts/install"), ("Linux", "scripts/install-linux")):
+            with self.subTest(installer=relative_path), tempfile.TemporaryDirectory() as tmp:
+                workspace = Path(tmp)
+                env, _, _ = self.installer_environment(workspace, platform)
+                env.pop("BASH_ENV")
+                self.write_executable(workspace / "bin" / "curl", "#!/bin/sh\nexit 7\n")
+                env["TOKEN_METER_READINESS_TIMEOUT_SECONDS"] = "2"
+
+                # capture_output only returns once every writer, including a
+                # leaked background ticker, has closed the pipe.
+                result = subprocess.run(
+                    ["bash", str(ROOT / relative_path)],
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                    timeout=30,
+                )
+
+                self.assertEqual(result.returncode, 1)
+                self.assertTrue(
+                    result.stderr.rstrip().endswith(
+                        "Token Meter installation failed: the local server did not finish "
+                        "indexing within 2s at http://127.0.0.1:8722/health."
+                    ),
+                    result.stderr,
+                )
+                self.assertNotIn("\r", result.stdout)
+                self.assertIn("Indexing local agent history", result.stdout)
+                self.assertNotIn("Server ready", result.stdout)
+
+    def test_failed_menubar_build_replays_its_output_and_removes_temp_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, _, _ = self.installer_environment(workspace, "Darwin")
+            env.pop("BASH_ENV")
+            temp_dir = workspace / "tmp"
+            temp_dir.mkdir()
+            env["TMPDIR"] = str(temp_dir)
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                """
+                #!/usr/bin/env bash
+                [[ " $* " == *" -typecheck "* ]] && exit 0
+                printf 'COMPILER-STDOUT\\n'
+                printf 'COMPILER-STDERR\\n' >&2
+                exit 1
+                """,
+            )
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=60,
+            )
+
+            self.assertEqual(result.returncode, 1, result.stderr)
+            failure = "Token Meter installation failed: the native companion cannot build"
+            # The compiler's own stdout and stderr are replayed after the spinner
+            # line is cleared, and stderr lands before the installer's failure line.
+            self.assertIn("COMPILER-STDOUT\n", result.stdout)
+            self.assertIn("COMPILER-STDERR", result.stderr)
+            self.assertIn(failure, result.stderr)
+            self.assertLess(result.stderr.index("COMPILER-STDERR"), result.stderr.index(failure))
+            building = result.stdout.index("Building the menu bar companion")
+            self.assertLess(building, result.stdout.index("COMPILER-STDOUT"))
+            self.assertNotIn("\r", result.stdout)
+            self.assertNotIn("Menu bar companion ready", result.stdout)
+            self.assertEqual(sorted(temp_dir.glob("token-meter-menubar-check.*")), [])
+
     def git(self, *arguments, cwd):
         return subprocess.run(
             ["git", *arguments],
@@ -506,6 +662,7 @@ exit 0
             self.assertTrue((launch_agents / "com.token-meter.server.plist").is_file())
             self.assertTrue((launch_agents / "com.token-meter.menubar.plist").is_file())
             self.assertEqual((install_root / "INSTALL_MODE").read_text(), "full\n")
+            self.assert_plain_progress(result.stdout, menubar=True)
             self.assertIn(
                 "bootstrap gui/", "\n".join(
                     line for line in command_log.read_text().splitlines()
@@ -532,6 +689,7 @@ exit 0
             self.assertTrue((systemd_dir / "token-meter-server.service").is_file())
             self.assertTrue((systemd_dir / "token-meter-tray.service").is_file())
             self.assertEqual((install_root / "INSTALL_MODE").read_text(), "full\n")
+            self.assert_plain_progress(result.stdout, menubar=False)
             self.assertIn(
                 "is-active --quiet token-meter-tray.service",
                 command_log.read_text(),

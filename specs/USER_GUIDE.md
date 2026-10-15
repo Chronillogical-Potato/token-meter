@@ -101,6 +101,41 @@ and select it from **Sessions**.
 
 ## Daily Workflows
 
+### Welcome and Learn
+
+The first time the dashboard opens, a full-page welcome tour explains how AI
+usage turns into cost in 12 short slides, in four chapters. Each slide is named
+after the Token Meter page it teaches, so the tour and the dashboard use the
+same words:
+
+1. **The basics:** Tokens (you pay for every token, counted on your computer)
+   and Model pricing (not every token costs the same).
+2. **While you work:** Current sessions (context in use; long chats cost more),
+   the Menu bar companion, and Compare (change one thing, run again).
+3. **Review and find waste:** Spend, Models, Efficiency, Tools, and Subagents.
+4. **Do better:** Agent connection (ask your AI agent about spending) and Get
+   started (four habits, starting with a monthly budget).
+
+If you open a page from the full-screen tour, a **Back to the tour** button
+(and browser Back) returns you to the same slide.
+
+Each slide shows a real piece of the dashboard filled with simple example
+numbers, marked **Example**, so they are never mistaken for yours. Numbered
+markers on the picture match a short numbered list beside it. Each slide
+explains one idea, and most link to the page where you can see your own
+numbers.
+
+A chapter rail on the left shows where you are; click any slide to jump to it.
+Use **→** and **←** to page, **Skip chapter** to move to the next chapter, and
+**Open …** buttons to go to the page a slide describes. Close the tour with the
+✕ button, **Esc**, or **Skip tour**; it does not open by itself again. If you
+used the earlier getting-started checklist, it does not open automatically.
+
+**Learn** shows the same slides as an inline deck and remembers the slide you
+were on. **Play as full screen** opens the tour at that slide. Reopen the tour
+any time with the ⌘K command **Open welcome tour**; if you left it partway, it
+offers **Resume where you left off** or **Start over**.
+
 ### Sessions
 
 **Current sessions** shows recently active runs. **All sessions** searches

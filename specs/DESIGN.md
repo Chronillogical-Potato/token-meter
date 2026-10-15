@@ -468,6 +468,11 @@ Components own identity (color, type, tracking, surface), not layout.
 | Trend delta | `.trendDelta` inside `.valueWithDelta`, rendered by `renderTrendDelta()` | Rise or fall to the right of a number: a 20px mono arrow and percent over a 12px `vs prior …` label. `data-tone` is `improving` (good) or `degrading` (bad), or neutral when empty. It wraps beneath the number only when the column is too narrow | `<div class=valueWithDelta><div class=v>…</div><div class=trendDelta><strong>↑ 8.5%</strong><span>vs prior 30 days</span></div></div>` |
 | Reference scale | `.readoutScale`, rendered by `readoutScaleHtml()` | Where one value sits against a typical value: an 8px track, a dithered fill and marker up to the value, and a tick at the typical value. The scale runs from 0 to at least twice the typical value. `data-tone=high` (1.5× typical or more) switches the tone to `--warn`; pass `toned:false` for counts where more is not a concern | `<span class=readoutScale role=img aria-label="…" style="--at:62%;--typ:40%"><i class=readoutScaleFill></i><i class=readoutScaleTypical></i><i class=readoutScaleMark></i></span>` |
 | Reading caption | `.readoutCaption`, text from `typicalCaption()` | One plain-language line under a number, prefixed with a signal `›`, such as `2.1× your typical day of $2.30` | `<span class=readoutCaption>…</span>` |
+| Gap bridge | `.chartGapBridge`, runs from `chartGapRuns()`, markup from `chartGapBridge()` | A thin `--faint` dotted line joining the last day with data to the next day with data across days that have none. Ratio and speed charts (Efficiency sparklines, Models speed and trend lines) draw solid lines only through consecutive days with data, a dot for a day with no neighbours, and nothing before the first or after the last day with data. A missing day is never plotted as zero, and its hover reads `No data` | `<line class=chartGapBridge x1="…" y1="…" x2="…" y2="…"/>` |
+| Concept frame | `.conceptFrame`, rendered by `conceptFrameHtml()` | One explained frame in the welcome tour and on Learn: spectrum card surface, a `.conceptFrameHead` uppercase label row with one `Example` `.chip` at its right edge, a `.conceptFrameStage` (`role=img` with a plain-language `aria-label`) that holds a real dashboard component filled with sample values, and a `<figcaption>` legend. `[data-callout]` inside the stage anchors positioned markers | `<figure class=conceptFrame><div class=conceptFrameHead><span>Session card</span><span class=chip>Example</span></div><div class=conceptFrameStage role=img aria-label="…">…</div><figcaption><ol class=frameLegend role=list>…</ol></figcaption></figure>` |
+| Frame callout | `.frameCallout`, rendered by `calloutHtml()` | A 24px numbered marker on the active gradient with a dark ring, so it reads on any component. Inline by default, beside the value it explains; `data-at=tr`, `tl`, `t`, `r`, or `l` pins it to an edge of the nearest `[data-callout]`. It is a `<mark>` (no product rule styles that tag) and is `aria-hidden`; the legend carries the words | `<mark class=frameCallout aria-hidden=true>1</mark>` |
+| Frame legend | `.frameLegend` | The numbered explanation under a frame: an ordered list whose items repeat the marker, then one line of at most 12 words | `<ol class=frameLegend role=list><li><mark class=frameCallout aria-hidden=true>1</mark><span>…</span></li></ol>` |
+| Level bar | `.levelBar`, rendered by `levelBarHtml()` | A pill track filled to `--fill` with the active gradient; `data-tone=warn` switches to `--warn`; an optional `<b>` tick at `--mark` (for example, a projection). Fills only from real values, never decoratively | `<span class=levelBar role=img aria-label="…" style="--fill:62%"><i></i></span>` |
 
 **Readable numbers.** A block leads with one main number. When the page
 already has history to compare against, it adds a `.readoutScale` and a
@@ -494,6 +499,57 @@ To add one: write its rules as `:where(.name …)`, add the name to
 `ZERO_SPECIFICITY_COMPONENTS` in the contract test, use it in markup, and
 describe it here. For script-rendered components, add one shared render helper
 (like `renderTrendDelta()`) instead of per-screen copies.
+
+### Welcome tour and Learn deck
+
+The tour is one registry, `DECK_CHAPTERS` and `DECK_SLIDES`: 12 slides in four
+chapters (The basics, While you work, Review and find waste, Do better). Each
+slide's rail label and kicker is the Token Meter page or term it teaches. It
+explains concepts for anyone, a PM, a designer, or a new engineer, at about a
+grade-7 reading level. The same registry renders in two hosts, so copy lives in
+one place:
+
+- **Welcome overlay.** A full-viewport modal `<dialog class=welcome>` over the
+  shared `--spectrum-page` atmosphere. A top-right round ✕ button
+  (`aria-label="Close welcome"`), Esc, and **Skip tour** all dismiss it.
+- **Learn deck.** `.deck.deckInline` on the Learn page, inside a bordered panel.
+  Its footer sticks to the bottom of the viewport so Next stays in reach.
+  **Play as full screen** opens the overlay at the current slide.
+
+Each host is a `.deck`: a 212px chapter rail (`.deckRail`, chapter headings with
+`.deckStep` slide buttons marked ✓ done, ● current, ○ upcoming; each step label
+fits one line), a stage, and a footer with **Skip chapter**, the
+`7 / 14 · about 2 min left` counter, and Back / Next.
+
+A slide holds one idea and explains it with a frame. On the left: a kicker, a
+display headline of at most 8 plain words, an optional one-sentence body of at
+most 14 words, and at most one `Open <page>` button. On the right: a
+`.conceptFrame` showing a real dashboard component (session card, companion
+menu, Spend day bars and budget bar, Models spend bar, Efficiency line,
+Tools review rows, Subagents cost row, Compare cards) with the same classes and
+styles as the product. Frames hold simple made-up sample values chosen to make
+the idea obvious, never the user's data, and each carries one `Example` chip.
+One to three `.frameCallout` markers sit on the part that matters, and the
+`.frameLegend` explains each in at most 12 words. Jargon is said in plain words
+first, with the technical term at most once in parentheses, for example
+"Re-reading (cache read)". One list slide (Get started: four habits) shows rows
+instead of a frame; it carries no sample numbers and no Example chip.
+
+Frame markup functions take no arguments, so no live value can reach them. The
+deck reads two live facts, only for behavior: the platform names the companion's
+place (menu bar, notification area, or tray), and a configured budget turns the
+last call to action into **Review your budget**. Where a product rule is scoped
+to its page, it is widened with `:is(<page scope>,.conceptFrame)` so the frame
+gets the same style; frame-only fitting (height, columns, stillness) lives in
+one `:where(.conceptFrame)` block at the end of the stylesheet. Tests hold every
+slide to the word budgets, require the Example chip and matching marker and
+legend numbers on every frame, and render frames with and without rich state to
+prove they never change. At 1180px and below the frame stacks under the copy and
+the action button moves beside the headline; no slide scrolls inside the
+overlay at 1440×900 or 1024×768. In the overlay's last slide, Done is a
+secondary button so the slide's own call to action is the only primary. Slides
+enter with one short rise per change, and every motion is removed under
+`prefers-reduced-motion`.
 
 ### Readability floor
 

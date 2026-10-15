@@ -88,9 +88,21 @@ fieldset.field{border:0;padding:0;margin:0}.segments{display:grid;grid-template-
    <section class=controlDock id=performance-controls aria-label="Performance controls">
    <fieldset class=field id=range-controls><legend>Period</legend><div class=segments><button type=button data-range=7>7D</button><button class=on type=button data-range=30>30D</button><button type=button data-range=90>90D</button></div></fieldset>
    <label class=field><span>Name</span><input id=builder-name maxlength=40 autocomplete=off placeholder="Optional"></label>
+   <label class=field><span>Headline</span><select id=headline-select><option value=auto>Auto</option><option value=none>None</option></select></label>
    <div class=toggleGroup>
     <label class=toggle><span>Usage charts</span><input id=include-usage type=checkbox checked></label>
    </div>
+   <fieldset class=field id=stat-controls><legend>Stats · up to 5</legend><div class=toggleGroup>
+    <label class=toggle><span>Active days</span><input type=checkbox data-stat=active_days checked></label>
+    <label class=toggle><span>Output efficiency</span><input type=checkbox data-stat=efficiency_change checked></label>
+    <label class=toggle><span>Fastest model</span><input type=checkbox data-stat=speed_champion checked></label>
+    <label class=toggle><span>AI sessions</span><input type=checkbox data-stat=sessions checked></label>
+    <label class=toggle><span>Equiv. spend</span><input type=checkbox data-stat=covered_spend checked></label>
+    <label class=toggle><span>Longest session</span><input type=checkbox data-stat=marathon_session></label>
+    <label class=toggle><span>Output pace</span><input type=checkbox data-stat=output_pace></label>
+    <label class=toggle><span>Tool calls</span><input type=checkbox data-stat=tool_calls></label>
+    <label class=toggle><span>Models used</span><input type=checkbox data-stat=models></label>
+   </div></fieldset>
    <div class=stateGroup><p id=status role=status aria-live=polite>Loading local recap evidence…</p></div>
    <div class=actions><button id=reset type=button>Reset</button><button id=retry type=button hidden>Retry</button><button id=download type=button disabled>Download PNG</button></div>
    </section>
@@ -103,7 +115,7 @@ fieldset.field{border:0;padding:0;margin:0}.segments{display:grid;grid-template-
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const builderRecapState={range:30,name:'',includeUsage:true,payload:null,request:0,controller:null,loading:false,error:'',rendered:false,logoError:false};
+const builderRecapState={range:30,name:'',includeUsage:true,headline:'auto',stats:defaultPosterStats(),payload:null,request:0,controller:null,loading:false,error:'',rendered:false,logoError:false};
 function safeArray(value){return Array.isArray(value)?value:[];}
 function sanitizeBuilderName(value){return String(value??'').replace(/[\u0000-\u001f\u007f]+/g,' ').replace(/\s+/g,' ').trim().slice(0,40);}
 function compactNumber(value){
@@ -143,10 +155,102 @@ function ellipsize(ctx,value,maxWidth){
  while(result.length&&ctx.measureText(`${result}…`).width>maxWidth)result=result.slice(0,-1);
  return `${result}…`;
 }
-function fitText(ctx,value,maxWidth,start=120,min=34){
+function fitText(ctx,value,maxWidth,start=120,min=34,family='-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'){
  let size=start;
- while(size>min){ctx.font=`900 ${size}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;if(ctx.measureText(String(value)).width<=maxWidth)break;size-=2;}
+ while(size>min){ctx.font=`900 ${size}px ${family}`;if(ctx.measureText(String(value)).width<=maxWidth)break;size-=2;}
  return size;
+}
+// Returns the draw x that puts the glyph ink (not the advance box) on `edge`, so
+// large display numerals line up with small labels on the same content margin.
+// Call after setting font and textAlign; falls back to `edge` without metrics.
+function inkX(ctx,text,edge,align){
+ const metrics=ctx.measureText(String(text)),offset=Number(align==='right'?metrics&&metrics.actualBoundingBoxRight:metrics&&metrics.actualBoundingBoxLeft);
+ if(!Number.isFinite(offset))return edge;
+ return align==='right'?edge-offset:edge+offset;
+}
+function posterStatLimit(){return 5;}
+function defaultPosterStats(){return ['active_days','efficiency_change','speed_champion','sessions','covered_spend'];}
+function posterStatCatalog(){
+ return [
+  {id:'active_days',label:'ACTIVE DAYS'},{id:'efficiency_change',label:'OUTPUT EFFICIENCY'},
+  {id:'speed_champion',label:'FASTEST MODEL'},{id:'sessions',label:'AI SESSIONS'},
+  {id:'covered_spend',label:'EQUIV. SPEND'},{id:'marathon_session',label:'LONGEST SESSION'},
+  {id:'output_pace',label:'OUTPUT PACE'},{id:'tool_calls',label:'TOOL CALLS'},{id:'models',label:'MODELS USED'},
+ ];
+}
+function findRecapStat(payload,id){return [...safeArray(payload&&payload.spotlights),...safeArray(payload&&payload.supporting)].find(stat=>stat&&typeof stat==='object'&&stat.id===id)||null;}
+// Selected stat cells in catalog order. Unavailable evidence is omitted (never a
+// measured zero) so the remaining columns redistribute across the row.
+function posterStatCells(payload,options,limit){
+ options=options||{};
+ const chosen=Array.isArray(options.stats)?options.stats.map(String):defaultPosterStats(),max=limit===undefined?posterStatLimit():limit;
+ const range=[7,30,90].includes(Number(payload&&payload.range_days))?Number(payload.range_days):30,cells=[];
+ posterStatCatalog().forEach(entry=>{
+  if(!chosen.includes(entry.id)||cells.length>=max)return;
+  if(entry.id==='active_days'){
+   const active=safeArray(payload&&payload.activity_days).filter(day=>day&&day.recorded_session===true).length,streak=findRecapStat(payload,'build_streak');
+   cells.push({id:entry.id,label:entry.label,value:`${active}/${range}`,sub:streak&&streak.available===true&&formatStat(streak)!=='—'?`${formatStat(streak)} DAY STREAK`:''});return;
+  }
+  const stat=findRecapStat(payload,entry.id);if(!stat||stat.available!==true)return;
+  const formatted=entry.id==='covered_spend'?formatSpend(stat):formatStat(stat);if(formatted==='—')return;
+  let value=formatted,sub='';
+  if(entry.id==='speed_champion'||entry.id==='output_pace')value=`${formatted} TOK/S`;
+  if(entry.id==='efficiency_change')value=`${formatted.replace(/([KM])$/,' $1')}/$`;
+  if(entry.id==='covered_spend')sub='ESTIMATE';
+  if(entry.id==='speed_champion'&&options.includeUsage!==false)sub=safeArray(stat.leaders).map(item=>String(item&&item.model||'').toUpperCase()).filter(Boolean)[0]||'';
+  cells.push({id:entry.id,label:entry.label,value,sub});
+ });
+ return cells;
+}
+function resolveHeadline(payload,choice,shown){
+ if(choice==='none')return null;
+ const list=safeArray(payload&&payload.headlines).filter(item=>item&&typeof item==='object'&&item.id&&item.title&&item.value).map(item=>({id:String(item.id).slice(0,32),title:String(item.title).slice(0,48),value:String(item.value).slice(0,16),detail:String(item.detail||'').slice(0,64)}));
+ if(choice!=='auto')return list.find(item=>item.id===choice)||list[0]||null;
+ // Auto prefers a headline the rest of the poster does not already state.
+ const repeated=new Set(safeArray(shown));
+ return list.find(item=>!repeated.has(item.id))||list[0]||null;
+}
+// Stacks paper blocks with one gap from the spacing scale: the largest step whose
+// equal top/bottom padding is at least the gap itself, then centers the stack.
+function paperLayout(blocks,top,height){
+ const scale=[48,40,32,24,16],content=blocks.reduce((sum,block)=>sum+block.height,0),gaps=Math.max(0,blocks.length-1);
+ const gap=scale.find(step=>(height-content-gaps*step)/2>=step)||scale[scale.length-1];
+ let y=top+Math.max(0,Math.floor((height-content-gaps*gap)/2));const placed={};
+ blocks.forEach(block=>{placed[block.key]={top:y,height:block.height};y+=block.height+gap;});
+ return {gap,blocks:placed};
+}
+function headlineBandHeight(){return 96;}
+function statRowHeight(cells){return cells.some(cell=>cell.sub)?80:56;}
+function usageBlockHeight(rows){return [0,90,144,190][Math.max(0,Math.min(3,rows))];}
+function drawHeadlineBand(ctx,headline,top,P,condensed){
+ const c=P.rgb,left=72,width=936,height=headlineBandHeight(),light='#f8f5ec';
+ setTracking(ctx,'0px');ctx.textAlign='left';
+ ctx.fillStyle=gradientFill(ctx,left,top,left+width,top+height,[[0,c(P.hero[0])],[.55,c(P.hero[1])],[1,c(P.hero[2])]]);fillRoundedRect(ctx,left,top,width,height,10);
+ ctx.fillStyle=gradientFill(ctx,0,top+24,0,top+72,[[0,c(P.hi)],[.5,c(P.a)],[1,c(P.b)]]);fillRoundedRect(ctx,left+24,top+24,4,48,2);
+ const valueEdge=left+48,valueSize=fitText(ctx,headline.value,300,64,40,condensed);
+ ctx.font=`900 ${valueSize}px ${condensed}`;ctx.fillStyle=gradientFill(ctx,0,top+24,0,top+70,[[0,'#ffffff'],[1,c(P.hi)]]);
+ ctx.fillText(headline.value,inkX(ctx,headline.value,valueEdge,'left'),top+70);
+ const textEdge=valueEdge+Math.ceil(ctx.measureText(headline.value).width)+32,textWidth=left+width-24-textEdge,title=headline.title.toUpperCase();
+ setTracking(ctx,'.6px');const titleSize=fitText(ctx,title,textWidth,26,18);ctx.font=`900 ${titleSize}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;ctx.fillStyle=light;ctx.fillText(ellipsize(ctx,title,textWidth),textEdge,top+44);
+ setTracking(ctx,'1.3px');ctx.font='800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillStyle=P.dim;ctx.fillText(ellipsize(ctx,headline.detail.toUpperCase(),textWidth),textEdge,top+70);setTracking(ctx,'0px');
+ return {left,top,width,height,valueEdge,textEdge,valueY:top+70,titleY:top+44,detailY:top+70};
+}
+// Equal columns span the full content measure (72 to 1008). Values share one
+// baseline and one size: the row steps down together before any value ellipsizes.
+function drawStatRow(ctx,cells,top,P,condensed){
+ const c=P.rgb,ink='#07171f',muted='#5c6a6f',left=72,right=1008,gutter=32,count=cells.length,height=statRowHeight(cells);
+ if(!count)return [];
+ const width=(right-left-gutter*(count-1))/count,valueY=top+28,labelY=top+56,subY=top+80;
+ const size=Math.min(...cells.map(cell=>fitText(ctx,cell.value,width,36,24,condensed)));
+ return cells.map((cell,index)=>{
+  const start=left+index*(width+gutter),x=Math.round(start),cellWidth=Math.round(start+width)-x;
+  if(index){ctx.fillStyle=gradientFill(ctx,0,top-8,0,top+height+8,[[0,'rgba(7,23,31,.03)'],[.45,'rgba(7,23,31,.17)'],[1,'rgba(7,23,31,.03)']]);ctx.fillRect(Math.round(start-gutter/2),top-8,1,height+16);}
+  ctx.font=`900 ${size}px ${condensed}`;const value=ellipsize(ctx,cell.value,cellWidth);
+  ctx.fillStyle=gradientFill(ctx,x,valueY-28,x,valueY+22,[[0,ink],[1,c(P.deep)]]);ctx.fillText(value,inkX(ctx,value,x,'left'),valueY);
+  ctx.fillStyle=muted;setTracking(ctx,'1.3px');ctx.font='900 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText(ellipsize(ctx,cell.label,cellWidth),x,labelY);setTracking(ctx,'0px');
+  if(cell.sub){ctx.fillStyle=c(P.paperB);ctx.font='900 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText(ellipsize(ctx,cell.sub,cellWidth),x,subY);}
+  return {id:cell.id,x,width:cellWidth,valueY,labelY,subY,size};
+ });
 }
 function supportingStats(payload,options){
  options=options||{};
@@ -249,7 +353,7 @@ function drawBuilderRecap(canvas,payload,options){
  setTracking(ctx,'1.6px');ctx.font='800 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillStyle=P.dim;ctx.fillText(`LAST ${range} DAYS`,72,196);
  if(month&&year){ctx.textAlign='right';ctx.fillText(`${month} ${year}`,1008,196);ctx.textAlign='left';}
  setTracking(ctx,'0px');
- if(name){const nameSize=fitText(ctx,name.toUpperCase(),700,44,24);ctx.fillStyle=light;ctx.font=`900 ${nameSize}px "Arial Narrow","Avenir Next Condensed",-apple-system,sans-serif`;ctx.fillText(name.toUpperCase(),72,250);}
+ if(name){const nameSize=fitText(ctx,name.toUpperCase(),700,44,24);ctx.fillStyle=light;ctx.font=`900 ${nameSize}px "Arial Narrow","Avenir Next Condensed",-apple-system,sans-serif`;ctx.fillText(name.toUpperCase(),inkX(ctx,name.toUpperCase(),72,'left'),250);}
  const leadLabel='LINES PUSHED',leadValue=formatStat(lead),hasCurrent=lead.available===true&&Number.isFinite(Number(lead.current)),heroValue=leadValue,condensed='"Arial Narrow","Avenir Next Condensed",-apple-system,sans-serif';
  const commitValue=formatStat(commitStat),hasCommits=commitStat.available===true&&Number.isFinite(Number(commitStat.current));
  ctx.fillStyle=gradientFill(ctx,72,0,180,0,[[0,cyan],[1,c(P.a,.15)]]);ctx.fillRect(72,282,108,3);
@@ -258,8 +362,8 @@ function drawBuilderRecap(canvas,payload,options){
  ctx.textAlign='right';ctx.fillText('COMMITS',1008,314);ctx.textAlign='left';setTracking(ctx,'0px');
  // The hero fits the left column only; the right 250px stays reserved for
  // commits so a long line count can never run into it.
- const heroSize=fitText(ctx,heroValue,660,176,100);ctx.fillStyle=gradientFill(ctx,58,340,58,486,[[0,'#ffffff'],[.5,c(P.pale)],[1,c(P.hi)]]);ctx.font=`900 ${heroSize}px ${condensed}`;ctx.fillText(heroValue,58,486);
- const commitSize=fitText(ctx,commitValue,250,96,44);ctx.fillStyle=gradientFill(ctx,1008,392,1008,486,[[0,c(P.pale)],[1,c(P.hi)]]);ctx.font=`900 ${commitSize}px ${condensed}`;ctx.textAlign='right';ctx.fillText(commitValue,1008,486);ctx.textAlign='left';
+ const heroSize=fitText(ctx,heroValue,660,176,100);ctx.fillStyle=gradientFill(ctx,58,340,58,486,[[0,'#ffffff'],[.5,c(P.pale)],[1,c(P.hi)]]);ctx.font=`900 ${heroSize}px ${condensed}`;ctx.fillText(heroValue,inkX(ctx,heroValue,72,'left'),486);
+ const commitSize=fitText(ctx,commitValue,250,96,44);ctx.fillStyle=gradientFill(ctx,1008,392,1008,486,[[0,c(P.pale)],[1,c(P.hi)]]);ctx.font=`900 ${commitSize}px ${condensed}`;ctx.textAlign='right';ctx.fillText(commitValue,inkX(ctx,commitValue,1008,'right'),486);ctx.textAlign='left';
  const currentSummary=hasCurrent?`Current lines pushed ${leadValue} lines.`:'Current lines pushed unavailable.';
  const commitSummary=hasCommits?`Commits pushed ${commitValue}.`:'Commits pushed unavailable.';
  if(!hasCurrent){ctx.fillStyle=P.faint;ctx.font='900 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText('GIT EVIDENCE UNAVAILABLE',72,528);}
@@ -272,29 +376,27 @@ function drawBuilderRecap(canvas,payload,options){
   if(on){ctx.fillStyle='rgba(248,245,236,.9)';ctx.fillRect(left,top,cellWidth,2);}
  });
  ctx.fillStyle=gradientFill(ctx,24,0,1080,0,[[0,sky],[.32,cyan],[.72,cobalt],[1,violet]]);ctx.fillRect(24,710,1056,10);
- const features=supportingStats(payload,{...options,leadId:lead.id}),labels={efficiency_change:'OUTPUT EFFICIENCY',speed_champion:'FASTEST MODEL',sessions:'AI SESSIONS'};
- const streak=safeArray(payload&&payload.spotlights).find(stat=>stat&&stat.id==='build_streak'&&stat.available===true);
+ const features=supportingStats(payload,{...options,leadId:lead.id});
  const spend=safeArray(payload&&payload.supporting).find(stat=>stat&&stat.id==='covered_spend');
- const columns=[{value:`${active}/${range}`,label:'ACTIVE DAYS',sub:streak?`${formatStat(streak)} DAY STREAK`:''}];
- features.forEach(stat=>{
-  const formatted=formatStat(stat),value=formatted==='—'?formatted:stat.id==='speed_champion'?`${formatted} TOK/S`:stat.id==='efficiency_change'?`${formatted.replace(/([KM])$/,' $1')}/$`:formatted;
-  const leader=options.includeUsage!==false&&stat.id==='speed_champion'?safeArray(stat.leaders).map(item=>String(item&&item.model||'').toUpperCase()).filter(Boolean)[0]||'':'';
-  columns.push({value,label:labels[stat.id]||String(stat.label||'STAT').toUpperCase(),sub:leader});
- });
- columns.push({value:formatSpend(spend),label:'EQUIV. SPEND',sub:''});
- columns.forEach((column,index)=>{
-  const x=72+index*187;
-  if(index){ctx.fillStyle=gradientFill(ctx,0,754,0,896,[[0,'rgba(7,23,31,.03)'],[.45,'rgba(7,23,31,.17)'],[1,'rgba(7,23,31,.03)']]);ctx.fillRect(x-26,754,1,142);}
-  ctx.fillStyle=gradientFill(ctx,x,780,x,830,[[0,ink],[1,c(P.deep)]]);ctx.font=`900 36px ${condensed}`;ctx.fillText(ellipsize(ctx,column.value,168),x,808);
-  ctx.fillStyle=muted;setTracking(ctx,'1.3px');ctx.font='900 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText(ellipsize(ctx,column.label,168),x,840);setTracking(ctx,'0px');
-  if(column.sub){ctx.fillStyle=c(P.paperB);ctx.font='900 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';ctx.fillText(ellipsize(ctx,column.sub,168),x,884);}
- });
- ctx.fillStyle=gradientFill(ctx,72,0,1008,0,[[0,c(P.paperA)],[.3,ink],[1,'rgba(7,23,31,.12)']]);ctx.fillRect(72,928,936,3);
- const usage=payload&&payload.usage||{},agentRows=safeArray(usage.agents),modelRows=safeArray(usage.models),hasUsage=agentRows.length>0||modelRows.length>0;
- if(options.includeUsage!==false&&hasUsage){
-  if(agentRows.length)drawUsageGroup(ctx,'MOST-USED AGENT',agentRows,72,978,430,c(P.paperA),c(P.paperB));
-  if(modelRows.length)drawUsageGroup(ctx,'GO-TO MODEL',modelRows,578,978,430,c(P.paperB),c(P.paperA));
-  if(agentRows.length&&modelRows.length){ctx.fillStyle=gradientFill(ctx,0,958,0,1188,[[0,'rgba(7,23,31,.03)'],[.45,'rgba(7,23,31,.17)'],[1,'rgba(7,23,31,.03)']]);ctx.fillRect(540,958,1,230);}
+ const cells=posterStatCells(payload,options);
+ const usage=payload&&payload.usage||{},agentRows=safeArray(usage.agents),modelRows=safeArray(usage.models),hasUsage=agentRows.length>0||modelRows.length>0,showUsage=options.includeUsage!==false&&hasUsage;
+ const shown=[...(showUsage&&agentRows.length?['identity']:[]),...(cells.some(cell=>cell.id==='active_days'&&cell.sub)?['streak']:[])];
+ const headline=resolveHeadline(payload,options.headline===undefined?'auto':String(options.headline),shown);
+ // The paper field (720-1220) stacks the headline, stat row, rule, and usage
+ // groups on one spacing-scale gap; every block spans the 72-1008 content measure.
+ const blocks=[];
+ if(headline)blocks.push({key:'headline',height:headlineBandHeight()});
+ if(cells.length)blocks.push({key:'stats',height:statRowHeight(cells)});
+ if(showUsage){blocks.push({key:'rule',height:3});blocks.push({key:'usage',height:usageBlockHeight(Math.max(Math.min(3,agentRows.length),Math.min(3,modelRows.length)))});}
+ const paper=paperLayout(blocks,720,500),layout={gap:paper.gap,blocks:paper.blocks,headline:null,stats:[]};
+ if(headline)layout.headline=drawHeadlineBand(ctx,headline,paper.blocks.headline.top,P,condensed);
+ if(cells.length)layout.stats=drawStatRow(ctx,cells,paper.blocks.stats.top,P,condensed);
+ if(showUsage){
+  const rule=paper.blocks.rule,block=paper.blocks.usage,titleY=block.top+10;
+  ctx.fillStyle=gradientFill(ctx,72,0,1008,0,[[0,c(P.paperA)],[.3,ink],[1,'rgba(7,23,31,.12)']]);ctx.fillRect(72,rule.top,936,3);
+  if(agentRows.length)drawUsageGroup(ctx,'MOST-USED AGENT',agentRows,72,titleY,430,c(P.paperA),c(P.paperB));
+  if(modelRows.length)drawUsageGroup(ctx,'GO-TO MODEL',modelRows,578,titleY,430,c(P.paperB),c(P.paperA));
+  if(agentRows.length&&modelRows.length){ctx.fillStyle=gradientFill(ctx,0,block.top-8,0,block.top+block.height+8,[[0,'rgba(7,23,31,.03)'],[.45,'rgba(7,23,31,.17)'],[1,'rgba(7,23,31,.03)']]);ctx.fillRect(540,block.top-8,1,block.height+16);}
  }
  ctx.fillStyle=gradientFill(ctx,1000,1220,1080,1350,[[0,sky],[.5,cyan],[1,cobalt]]);ctx.fillRect(1000,1220,80,130);
  ctx.fillStyle=gradientFill(ctx,0,0,1080,0,[[0,c(P.a,.7)],[.55,c(P.hi,.28)],[1,c(P.c,0)]]);ctx.fillRect(24,1220,1056,1);
@@ -304,10 +406,11 @@ function drawBuilderRecap(canvas,payload,options){
  const sessions=features.find(stat=>stat.id==='sessions'),sessionsSummary=sessions&&sessions.available===true?`AI sessions ${formatStat(sessions)}.`:'AI sessions unavailable.';
  const spendSummary=spend&&spend.available===true?`Covered equivalent spend ${formatSpend(spend)}, an estimate.`:'Covered equivalent spend unavailable.';
  const rhythmSummary=groupSize>1?`Rhythm chart groups ${groupSize} days per bar.`:'Rhythm chart shows one day per bar.';
- const identitySummary=name?`Name ${name}. `:'',summary=`${range}-day Builder Field Sheet. ${identitySummary}${currentSummary} ${commitSummary} ${active} active days. ${rhythmSummary} ${sessionsSummary} ${spendSummary}`;
+ const headlineSummary=headline?`Headline ${headline.title}: ${headline.value} ${headline.detail}. `:'';
+ const identitySummary=name?`Name ${name}. `:'',summary=`${range}-day Builder Field Sheet. ${identitySummary}${headlineSummary}${currentSummary} ${commitSummary} ${active} active days. ${rhythmSummary} ${sessionsSummary} ${spendSummary}`;
  const usageSummary=options.includeUsage===false?'Usage charts excluded.':!hasUsage?'Usage charts unavailable.':`Agent usage: ${agentNames.join(', ')||'unavailable'}. Models: ${modelNames.join(', ')||'unavailable'}; runtime-scoped model usage.`;
  canvas.setAttribute('aria-label',`${summary} ${usageSummary}`);
- return {summary};
+ return {summary,layout};
 }
 function drawPlaceholder(canvas,label){
  canvas.width=1080;canvas.height=1350;const ctx=canvas.getContext('2d',{willReadFrequently:true}),P=cardPalette(),c=P.rgb;
@@ -323,7 +426,7 @@ window.addEventListener('storage',event=>{
  if(builderRecapState.payload&&!builderRecapState.loading)renderPreview();
 });
 function setStatus(message,kind=''){const status=$('status');status.textContent=message;status.dataset.kind=kind;}
-function builderOptions(){return {name:builderRecapState.name,includeUsage:builderRecapState.includeUsage,logo:$('performance-card-logo')};}
+function builderOptions(){return {name:builderRecapState.name,includeUsage:builderRecapState.includeUsage,headline:builderRecapState.headline,stats:Array.isArray(builderRecapState.stats)?builderRecapState.stats.slice():defaultPosterStats(),logo:$('performance-card-logo')};}
 function showLogoFailure(){
  builderRecapState.logoError=true;builderRecapState.rendered=false;$('download').disabled=true;
  if(builderRecapState.loading||builderRecapState.error||!builderRecapState.payload)return false;
@@ -340,6 +443,19 @@ function renderControls(payload){
  document.querySelectorAll('[data-range]').forEach(button=>button.classList.toggle('on',Number(button.dataset.range)===builderRecapState.range));
  $('builder-name').value=builderRecapState.name;
  const usage=payload&&payload.usage||{},usageAvailable=safeArray(usage.agents).length>0||safeArray(usage.models).length>0;$('include-usage').disabled=!usageAvailable;$('include-usage').checked=builderRecapState.includeUsage&&usageAvailable;
+ const select=$('headline-select');
+ if(select){
+  const headlines=safeArray(payload&&payload.headlines).filter(item=>item&&item.id&&item.title&&item.value),choice=String(builderRecapState.headline||'auto');
+  select.textContent='';
+  [{value:'auto',label:'Auto'},...headlines.map(item=>({value:String(item.id),label:`${String(item.title)} · ${String(item.value)}`})),{value:'none',label:'None'}].forEach(entry=>{const option=document.createElement('option');option.value=entry.value;option.textContent=entry.label;select.appendChild(option);});
+  select.value=choice==='none'||headlines.some(item=>String(item.id)===choice)?choice:'auto';select.disabled=!payload;
+ }
+ const inputs=[...document.querySelectorAll('[data-stat]')];
+ if(inputs.length){
+  const chosen=Array.isArray(builderRecapState.stats)?builderRecapState.stats:defaultPosterStats(),available=new Set(posterStatCells(payload,{stats:posterStatCatalog().map(entry=>entry.id),includeUsage:true},Infinity).map(cell=>cell.id));
+  const shown=chosen.filter(id=>available.has(id)).length;
+  inputs.forEach(input=>{const id=input.dataset.stat,on=chosen.includes(id)&&available.has(id);input.checked=on;input.disabled=!available.has(id)||(!on&&shown>=posterStatLimit());});
+ }
 }
 function renderPreview(){
  const download=$('download');download.disabled=true;builderRecapState.rendered=false;
@@ -355,7 +471,7 @@ async function loadRecap(range=30){
  try{const response=await fetch(`/builder-recap?range=${range}`,{cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('request');const payload=await response.json();if(request!==builderRecapState.request||controller.signal.aborted)return false;if(!payload||payload.ok!==true)throw new Error('payload');builderRecapState.payload=payload;builderRecapState.loading=false;renderControls(payload);return renderPreview();}
  catch(error){if(request!==builderRecapState.request||controller.signal.aborted||error&&error.name==='AbortError')return false;builderRecapState.loading=false;builderRecapState.error='request';builderRecapState.payload=null;renderControls(null);drawPlaceholder($('poster'),'PREVIEW UNAVAILABLE');$('retry').hidden=false;setStatus('Unable to load the builder recap. Try again.','error');return false;}
 }
-function resetRecap(){builderRecapState.name='';builderRecapState.includeUsage=true;$('builder-name').value='';$('include-usage').checked=true;return loadRecap(30);}
+function resetRecap(){builderRecapState.name='';builderRecapState.includeUsage=true;builderRecapState.headline='auto';builderRecapState.stats=defaultPosterStats();$('builder-name').value='';$('include-usage').checked=true;return loadRecap(30);}
 function recapFilename(){const day=String(builderRecapState.payload&&builderRecapState.payload.current&&builderRecapState.payload.current.end_day||new Date().toISOString().slice(0,10));return `token-meter-builder-field-sheet-${builderRecapState.range}d-${day}.png`;}
 function downloadRecap(){
  if(!builderRecapState.rendered||builderRecapState.loading||builderRecapState.error){$('download').disabled=true;return;}
@@ -364,6 +480,8 @@ function downloadRecap(){
 document.querySelectorAll('[data-range]').forEach(button=>button.addEventListener('click',()=>loadRecap(Number(button.dataset.range))));
 $('builder-name').addEventListener('input',event=>{builderRecapState.name=sanitizeBuilderName(event.target.value);renderPreview();});
 $('include-usage').addEventListener('change',event=>{builderRecapState.includeUsage=event.target.checked;renderControls(builderRecapState.payload);renderPreview();});
+$('headline-select').addEventListener('change',event=>{builderRecapState.headline=String(event.target.value||'auto');renderPreview();});
+document.querySelectorAll('[data-stat]').forEach(input=>input.addEventListener('change',event=>{const id=input.dataset.stat,current=builderRecapState.stats.filter(item=>item!==id);builderRecapState.stats=event.target.checked?[...current,id]:current;renderControls(builderRecapState.payload);renderPreview();}));
 $('reset').addEventListener('click',resetRecap);$('retry').addEventListener('click',()=>builderRecapState.logoError&&!builderRecapState.error?retryLogo():loadRecap(builderRecapState.range));$('download').addEventListener('click',downloadRecap);
 $('performance-card-logo').addEventListener('load',handleLogoLoad);$('performance-card-logo').addEventListener('error',showLogoFailure);
 drawPlaceholder($('poster'),'LOADING');loadRecap(30);

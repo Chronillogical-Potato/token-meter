@@ -3,6 +3,7 @@
 import datetime
 import math
 import re
+import statistics
 import time
 
 
@@ -160,6 +161,20 @@ def _in_window(day, start, end):
     return day is not None and start <= day <= end
 
 
+def _cache_available(value):
+    availability = (value or {}).get("availability")
+    return not isinstance(availability, dict) or availability.get("cache") is not False
+
+
+def _cache_covered_input(row, daily):
+    """Input tokens whose cache-read split was measured, matching aggregates."""
+    if "cache_covered_input_tokens" in daily:
+        return max(0, int(_number(daily.get("cache_covered_input_tokens"))))
+    if _cache_available(daily) and _cache_available(row):
+        return max(0, int(_number(daily.get("input_tokens"))))
+    return 0
+
+
 def _period_rollup(rows, start, end):
     """Aggregate only normalized, dated evidence in one inclusive period."""
     result = {
@@ -170,6 +185,7 @@ def _period_rollup(rows, start, end):
         "runtime_sessions": {}, "model_executions": {}, "speed": {},
         "session_output": {}, "session_runtime": {}, "tools": {}, "daily_total": 0,
         "paired_days": 0, "timing_total": 0, "tool_total": 0,
+        "day_paired": {}, "cache_read": 0, "cache_input": 0,
     }
     for index, row in enumerate(rows or []):
         row = row if isinstance(row, dict) else {}
@@ -207,6 +223,14 @@ def _period_rollup(rows, start, end):
                 result["paired_output"] += output
                 result["paired_cost"] += cost
                 result["paired_days"] += 1
+                paired = result["day_paired"].setdefault(day, [0, 0.0])
+                paired[0] += output
+                paired[1] += cost
+            cache_input = _cache_covered_input(row, daily)
+            if cache_input > 0:
+                result["cache_input"] += cache_input
+                result["cache_read"] += min(
+                    cache_input, max(0, int(_number(daily.get("cache_read_tokens")))))
             if output > 0:
                 result["session_output"][session_id] = result["session_output"].get(session_id, 0) + output
             executions = max(0, int(_number(daily.get("executions"))))
@@ -486,6 +510,87 @@ def _supporting_stats(current, previous, spotlight_family):
             if stat["available"] and stat["family"] != spotlight_family]
 
 
+_IDENTITY_MIN_SESSIONS = 3
+_IDENTITY_MIN_SHARE = (3, 5)  # 60%, compared in integers
+_STREAK_MIN_DAYS = 3
+_BEST_WEEK_MIN_RATIO = 1.1
+
+
+def _floor_percent(numerator, denominator):
+    """Whole percent rounded down so a headline never overstates a share."""
+    return int(numerator * 100 // denominator) if denominator > 0 else 0
+
+
+def _identity_headline(current):
+    total = len(current["sessions"])
+    if total < _IDENTITY_MIN_SESSIONS:
+        return None
+    ranked = sorted(((len(sessions), runtime)
+                     for runtime, sessions in current["runtime_sessions"].items()),
+                    key=lambda item: (-item[0], item[1]))
+    if not ranked or ranked[0][0] * _IDENTITY_MIN_SHARE[1] < total * _IDENTITY_MIN_SHARE[0]:
+        return None
+    count, runtime = ranked[0]
+    family = re.split(r"[ -]", runtime, maxsplit=1)[0]
+    article = "An" if family[:1].upper() in "AEIOU" else "A"
+    return {"id": "identity", "title": f"{article} {family} person",
+            "value": f"{_floor_percent(count, total)}%",
+            "detail": f"of sessions on {runtime}"}
+
+
+def _best_week_headline(current, range_days, end):
+    weeks = []
+    for index in range(range_days // 7):
+        week_end = end - datetime.timedelta(days=7 * index)
+        week_start = week_end - datetime.timedelta(days=6)
+        output = cost = 0
+        for day, (day_output, day_cost) in current["day_paired"].items():
+            if week_start <= day <= week_end:
+                output += day_output
+                cost += day_cost
+        if output > 0 and cost > 0:
+            weeks.append(output / cost)
+    if len(weeks) < 2:
+        return None
+    median = statistics.median(weeks)
+    ratio = max(weeks) / median if median > 0 else 0
+    if ratio < _BEST_WEEK_MIN_RATIO:
+        return None
+    return {"id": "best_week", "title": "Best week",
+            "value": f"{math.floor(ratio * 10) / 10:.1f}×",
+            "detail": "output per $ vs. your median week · estimate"}
+
+
+def _streak_headline(current):
+    days = _streak(current["active_days"])
+    if days < _STREAK_MIN_DAYS:
+        return None
+    return {"id": "streak", "title": "Longest streak", "value": f"{days} days",
+            "detail": "consecutive active days"}
+
+
+def _cache_headline(current):
+    if current["cache_input"] <= 0 or current["cache_read"] <= 0:
+        return None
+    percent = _floor_percent(current["cache_read"], current["cache_input"])
+    if percent < 1:
+        return None
+    return {"id": "cache_share", "title": "Cache-powered", "value": f"{percent}%",
+            "detail": "of input tokens read from cache"}
+
+
+def _headlines(current, range_days, end):
+    """Up to four self-referential claims, in poster auto-selection priority.
+
+    Each claim is computed only from this builder's own local evidence and is
+    omitted when that evidence is missing; nothing compares against other people.
+    """
+    candidates = (_identity_headline(current),
+                  _best_week_headline(current, range_days, end),
+                  _streak_headline(current), _cache_headline(current))
+    return [item for item in candidates if item is not None]
+
+
 def _choose_default_spotlight(spotlights):
     by_id = {stat["id"]: stat for stat in spotlights}
     for stat_id in ("efficiency_change", "efficiency_record", "build_streak",
@@ -566,6 +671,7 @@ def build_builder_recap(session_rows, git_days, range_days, *, today=None,
         "spotlight_default": spotlight_default,
         "spotlights": spotlights,
         "supporting": supporting,
+        "headlines": _headlines(current, range_days, current_end),
         "activity_days": _activity_days(session_rows, git_days, current_start, current_end),
         "stack": {
             "runtimes": sorted(current["runtimes"]),
