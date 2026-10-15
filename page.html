@@ -1489,6 +1489,8 @@ body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:
 :is(.welcomeClose,.welcomeSkip,.deckSkip,.deckStep,.deckPrimary,.leverRow):focus-visible{outline:2px solid var(--signal-hi);outline-offset:2px}
 :is(.welcomeSkip,.deckSkip){padding:8px 4px;border:0;border-radius:var(--radius-sm);background:none;color:var(--dim);font:inherit;font-size:var(--fs-13);font-weight:var(--fw-semibold);cursor:pointer}
 :is(.welcomeSkip,.deckSkip):hover{color:var(--fg)}
+.tourReturn{position:fixed;right:24px;bottom:24px;z-index:40;display:inline-flex;align-items:center;gap:8px;box-shadow:var(--spectrum-glow)}
+.tourReturn[hidden]{display:none}
 .deck{display:grid;grid-template-columns:212px minmax(0,1fr);min-width:0;min-height:0}
 .deckInline{min-height:560px;border:1px solid var(--spectrum-border);border-radius:var(--radius-lg);background:rgb(var(--panel-rgb)/.42);overflow:clip}
 .deckInline .deckRail{position:sticky;top:0;align-self:start;max-height:100vh;border-right:0}
@@ -3349,6 +3351,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   </div>
 	 </div>
 </div>
+<button class="tbtn tourReturn" id=tour-return type=button hidden><span aria-hidden=true>←</span> Back to the tour</button>
 <dialog class=welcome id=welcome-dialog aria-modal=true aria-labelledby=welcome-label aria-describedby=welcome-deck-status>
  <header class=welcomeTop><div class=welcomeBrand><b id=welcome-label>Welcome to Token Meter</b></div><div class=welcomeTopActions><button class=welcomeSkip id=welcome-skip type=button>Skip tour</button><button class=welcomeClose id=welcome-close type=button aria-label="Close welcome" title="Close (Esc)"><span aria-hidden=true>&#10005;</span></button></div></header>
  <div class=deck id=welcome-deck data-deck-host=welcome></div>
@@ -4129,6 +4132,7 @@ function renderLearn(state=LATEST){
 function openWelcome(index=null,{auto=false,returnFocus=null,fromLearn=false}={}){
  const dialog=$('welcome-dialog'),other=document.querySelector('dialog[open]');
  if(other&&other!==dialog){if(auto)return false;other.close();}
+ showTourReturn(null);
  const start=welcomeStartSlide(index);
  welcomeFromLearn=fromLearn;
  showDeckSlide('welcome',start.index,{animate:false,offer:start.offer});
@@ -4136,11 +4140,23 @@ function openWelcome(index=null,{auto=false,returnFocus=null,fromLearn=false}={}
  requestAnimationFrame(()=>(start.offer?dialog.querySelector('[data-deck-action=resume]'):$('welcome-deck-next'))?.focus());
  return true;
 }
+// Leaving the tour through one of its links keeps a way back to the same slide.
+let tourReturn=null;
+function showTourReturn(value){
+ tourReturn=value;
+ $('tour-return').hidden=!value;
+}
+function returnToTour(){
+ const value=tourReturn;
+ showTourReturn(null);
+ if(value)openWelcome(value.index);
+}
 function closeWelcome({route='',target=''}={}){
  const dialog=$('welcome-dialog');
  welcomeLeaving=!!route;
+ const from=dialog.open&&route?{index:deckHosts.welcome.index,hash:location.hash}:null;
  if(dialog.open)dialog.close();
- if(route)openDeckRoute(route,target);
+ if(route){openDeckRoute(route,target);if(from)showTourReturn(from);}
 }
 function maybeAutoShowWelcome(){
  if(welcomeAutoChecked)return;
@@ -4183,6 +4199,8 @@ $('welcome-dialog').addEventListener('close',()=>{
  if(!welcomeLeaving&&target?.focus&&target.isConnected&&target.offsetParent!==null)target.focus();
  welcomeLeaving=false;
 });
+$('tour-return').onclick=returnToTour;
+window.addEventListener('popstate',()=>{if(tourReturn&&location.hash===tourReturn.hash)returnToTour();});
 $('learn-play').onclick=()=>openWelcome(deckHosts.learn.index,{fromLearn:true});
 
 const THEMES=[

@@ -8833,6 +8833,13 @@ process.stdout.write(JSON.stringify(results));
             self.page,
         )
 
+    def test_leaving_the_tour_through_a_link_offers_a_way_back(self):
+        self.assertIn('<button class="tbtn tourReturn" id=tour-return type=button hidden>', self.page)
+        self.assertIn("if(route){openDeckRoute(route,target);if(from)showTourReturn(from);}", self.page)
+        self.assertIn("$('tour-return').onclick=returnToTour;", self.page)
+        self.assertIn("window.addEventListener('popstate',()=>{if(tourReturn&&location.hash===tourReturn.hash)returnToTour();});", self.page)
+        self.assertIn(" showTourReturn(null);\n const start=welcomeStartSlide(index);", self.page)
+
     def test_git_spend_headers_explain_covered_spend(self):
         tip = "Covered spend: estimated spend from sessions with cost evidence in these projects."
         for attr in ("data-delivery-model-sort=covered_cost", "data-delivery-sort=covered_cost"):
