@@ -75,7 +75,10 @@ class MarketingSiteContractTests(unittest.TestCase):
         )
         self.assertEqual(
             [location.text for location in locations],
-            ["https://splunk.github.io/token-meter/"],
+            [
+                "https://splunk.github.io/token-meter/",
+                "https://splunk.github.io/token-meter/token-optimization.html",
+            ],
         )
 
     def test_llms_txt_is_concise_factual_and_points_to_canonical_docs(self):
@@ -322,6 +325,110 @@ check(2);
         )
 
 
+ARTICLE_URL = "https://splunk.github.io/token-meter/token-optimization.html"
+ATTRIBUTION = "one engineer's laptop, estimated at public list prices"
+
+
+class FindingsAndArticleContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.index = (SITE / "index.html").read_text(encoding="utf-8")
+        cls.article = (SITE / "token-optimization.html").read_text(encoding="utf-8")
+        cls.readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        cls.llms = (SITE / "llms.txt").read_text(encoding="utf-8")
+        cls.parser = _SiteParser()
+        cls.parser.feed(cls.article)
+
+    def test_readme_teases_findings_after_honest_numbers(self):
+        honest = self.readme.index("**Honest numbers.**")
+        findings = self.readme.index("## Things your bill won't tell you")
+        quick_start = self.readme.index("## Quick Start")
+        self.assertLess(honest, findings)
+        self.assertLess(findings, quick_start)
+        section = self.readme[findings:quick_start]
+        self.assertEqual(len(re.findall(r"^- ", section, re.M)), 4)
+        self.assertIn(ATTRIBUTION, section.lower())
+        self.assertIn(
+            f"[Read: Five levers that move your coding-agent bill]({ARTICLE_URL})",
+            section,
+        )
+
+    def test_index_findings_strip_links_to_the_article(self):
+        hero = self.index.index('<section class="hero"')
+        strip = self.index.index('<section class="findings-section" id="findings"')
+        product = self.index.index('<section class="proof-section"')
+        self.assertLess(hero, strip)
+        self.assertLess(strip, product)
+        section = self.index[strip:product]
+        self.assertEqual(section.count('class="finding"'), 3)
+        self.assertIn('href="token-optimization.html"', section)
+        self.assertIn(ATTRIBUTION, section.lower())
+        nav = self.index.split('class="site-nav"', 1)[1].split("</nav>", 1)[0]
+        footer = self.index.split('class="footer-links"', 1)[1].split("</div>", 1)[0]
+        self.assertIn('href="token-optimization.html"', nav)
+        self.assertIn('href="token-optimization.html"', footer)
+        self.assertIn(f"]({ARTICLE_URL})", self.llms)
+
+    def test_article_has_metadata_landmarks_and_one_heading(self):
+        for metadata in (
+            "<title>Five levers that move your coding-agent bill — Token Meter</title>",
+            f'rel="canonical" href="{ARTICLE_URL}"',
+            f'property="og:url" content="{ARTICLE_URL}"',
+            'property="og:type" content="article"',
+            'property="og:image" content="https://splunk.github.io/token-meter/images/dashboard.png"',
+            'name="twitter:card" content="summary_large_image"',
+            'rel="icon" type="image/svg+xml" href="favicon.svg"',
+            'rel="describedby" href="llms.txt"',
+            'name="description" content="',
+        ):
+            self.assertIn(metadata, self.article)
+        self.assertEqual(len(re.findall(r"<h1\b", self.article)), 1)
+        for landmark in ("<header", "<nav", "<main", "<footer", "<article"):
+            self.assertIn(landmark, self.article)
+        self.assertIn('href="#main-content"', self.article)
+        for href in self.parser.links:
+            if href.startswith("#"):
+                self.assertIn(href[1:], self.parser.ids, href)
+
+    def test_article_covers_the_five_levers_in_order_with_caveats(self):
+        body = self.article.split('class="article-body"', 1)[1]
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body))
+        positions = [
+            text.index(lever) for lever in (
+                "Why small token shares cost the most",
+                "Model and reasoning", "Task context", "Prompt caching",
+                "Outcome-focused prompts", "Avoid rework",
+                "Change one thing, then measure", "Can I trust these numbers",
+            )
+        ]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn(ATTRIBUTION, text.lower())
+        self.assertIn("git clone https://github.com/splunk/token-meter.git", text)
+        words = len(re.sub(r"<script.*?</script>|<head>.*?</head>", "",
+                           self.article, flags=re.S).split())
+        self.assertGreater(words, 1000)
+
+    def test_article_uses_only_local_assets(self):
+        references = set(self.parser.stylesheets + self.parser.scripts)
+        references.update(image["src"] for image in self.parser.images)
+        self.assertEqual(
+            sorted(references),
+            sorted({"styles.css", "tab-controller.js", "script.js",
+                    "images/logo-splunk-acc-rgb-w.png"}),
+        )
+        for reference in references:
+            self.assertTrue((SITE / reference).is_file(), reference)
+        for href in self.parser.links:
+            if href.startswith(("#", "https://", "http://127.0.0.1")):
+                continue
+            target = href.split("#", 1)[0]
+            if target in ("", "./"):
+                target = "index.html"
+            self.assertTrue((SITE / target).is_file(), href)
+        self.assertNotRegex(self.article, r"\son[a-z]+=\"")
+        self.assertNotIn("docs/talk", self.article)
+
+
 class GitHubPagesBranchSourceContractTests(unittest.TestCase):
     def test_exact_branch_source_contains_every_local_reference(self):
         approved_images = (
@@ -352,7 +459,8 @@ class GitHubPagesBranchSourceContractTests(unittest.TestCase):
         self.assertEqual(
             sorted(str(Path(path).relative_to("docs")) for path in tracked_site_files),
             sorted(
-                [".nojekyll", "index.html", "styles.css", "tab-controller.js",
+                [".nojekyll", "index.html", "token-optimization.html",
+                 "styles.css", "tab-controller.js",
                  "script.js", "favicon.svg", "robots.txt", "sitemap.xml",
                  "llms.txt"]
                 + ["images/" + image for image in approved_images]

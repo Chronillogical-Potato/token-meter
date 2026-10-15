@@ -37,6 +37,7 @@
         <a href="#efficiency">Efficiency</a>
         <a href="#privacy">Privacy</a>
         <a href="#install">Install</a>
+        <a href="token-optimization.html">Five levers</a>
       </nav>
       <a class="repo-link" href="https://github.com/splunk/token-meter" target="_blank" rel="noopener noreferrer">
         GitHub <span aria-hidden="true">↗</span>
@@ -117,6 +118,22 @@
           <span>Cost</span><i></i><span>Tokens</span><i></i><span>Context</span><i></i><span>Time</span><i></i><span>Execution</span><i></i>
           <span>Cost</span><i></i><span>Tokens</span><i></i><span>Context</span><i></i><span>Time</span><i></i><span>Execution</span><i></i>
         </div>
+      </div>
+    </section>
+
+    <section class="findings-section" id="findings" aria-labelledby="findings-title">
+      <div class="shell findings-layout">
+        <header class="findings-heading" data-reveal>
+          <p class="section-index">Field notes / Findings</p>
+          <h2 id="findings-title">Things your bill won't tell you.</h2>
+          <p>Surfaced by Token Meter on one engineer's laptop, estimated at public list prices.</p>
+        </header>
+        <ol class="findings-list" data-reveal>
+          <li class="finding"><strong>6% → 55%</strong><p>Cache writes were 6% of tokens and 55% of the dollars on Claude Opus 5.5.</p></li>
+          <li class="finding"><strong>83,907</strong><p>Tokens of tool definitions loaded into prompts and never called.</p></li>
+          <li class="finding"><strong>$6.04 → $0.96</strong><p>Cost per subagent run, a month after switching to short, narrowly scoped tasks.</p></li>
+        </ol>
+        <a class="text-link findings-link" href="token-optimization.html">Read the five levers <span aria-hidden="true">→</span></a>
       </div>
     </section>
 
@@ -257,7 +274,7 @@
           <h2 id="efficiency-title">Efficiency, with the evidence beside it.</h2>
           <div class="efficiency-intro">
             <p>Compare four signals across covered, comparable work. Token Meter keeps the limits attached, so a missing value never becomes a score.</p>
-            <a class="text-link efficiency-link" href="https://github.com/splunk/token-meter/blob/main/README.md#check-token-efficiency" target="_blank" rel="noopener noreferrer">How Token Meter reads efficiency <span aria-hidden="true">↗</span></a>
+            <a class="text-link efficiency-link" href="https://github.com/splunk/token-meter/blob/main/README.md#check-efficiency" target="_blank" rel="noopener noreferrer">How Token Meter reads efficiency <span aria-hidden="true">↗</span></a>
           </div>
         </header>
 
@@ -338,6 +355,7 @@
       <div class="footer-links">
         <a href="https://github.com/splunk/token-meter" target="_blank" rel="noopener noreferrer">GitHub</a>
         <a href="https://github.com/splunk/token-meter/blob/main/README.md" target="_blank" rel="noopener noreferrer">Docs</a>
+        <a href="token-optimization.html">Five levers</a>
         <a href="https://github.com/splunk/token-meter/blob/main/specs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
         <a href="https://github.com/splunk/token-meter/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT</a>
       </div>

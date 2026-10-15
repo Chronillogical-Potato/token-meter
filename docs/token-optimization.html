@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0b09">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Why cache writes and rework cost more than they look, and five levers that lower a coding-agent bill: model and reasoning, task context, prompt caching, outcome-focused prompts, and avoiding rework.">
+  <meta property="og:title" content="Five levers that move your coding-agent bill">
+  <meta property="og:description" content="Real numbers from one engineer's laptop, estimated at public list prices, and how to measure each lever locally with Token Meter.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://splunk.github.io/token-meter/token-optimization.html">
+  <meta property="og:image" content="https://splunk.github.io/token-meter/images/dashboard.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Five levers that move your coding-agent bill">
+  <meta name="twitter:description" content="Cache writes, unused tool definitions, reasoning effort, and rework: what moves a coding-agent bill and how to measure it locally.">
+  <meta name="twitter:image" content="https://splunk.github.io/token-meter/images/dashboard.png">
+  <title>Five levers that move your coding-agent bill — Token Meter</title>
+  <link rel="canonical" href="https://splunk.github.io/token-meter/token-optimization.html">
+  <link rel="describedby" href="llms.txt">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="article-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="Token Meter home">
+        <span class="brand-mark" aria-hidden="true">&gt;</span>
+        <span class="brand-name">Token Meter</span>
+        <span class="brand-partner"><span class="brand-divider" aria-hidden="true"></span><img class="splunk-logo" src="images/logo-splunk-acc-rgb-w.png" alt="Splunk" width="50" height="20"></span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="index.html#product">Product</a>
+        <a href="index.html#capabilities">Signals</a>
+        <a href="index.html#efficiency">Efficiency</a>
+        <a href="index.html#privacy">Privacy</a>
+        <a href="index.html#install">Install</a>
+        <a href="token-optimization.html" aria-current="page">Five levers</a>
+      </nav>
+      <a class="repo-link" href="https://github.com/splunk/token-meter" target="_blank" rel="noopener noreferrer">
+        GitHub <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <article class="article" aria-labelledby="article-title">
+      <header class="article-hero">
+        <div class="shell">
+          <p class="section-index">Field notes / Token optimization</p>
+          <h1 id="article-title">Five levers that move your coding-agent bill</h1>
+          <p class="article-lede">The chat says “Done.” The bill says more. Here is where the money in a coding-agent session actually goes, and five changes that move it.</p>
+          <p class="article-meta">Every number on this page comes from one engineer's laptop, estimated at public list prices. About eight minutes to read.</p>
+        </div>
+      </header>
+
+      <div class="shell article-layout">
+        <nav class="article-toc" aria-label="On this page">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#done">The chat says done</a></li>
+            <li><a href="#token-prices">Why small shares cost the most</a></li>
+            <li><a href="#levers">The five levers</a></li>
+            <li><a href="#measure">Change one thing</a></li>
+            <li><a href="#trust">Can I trust these numbers?</a></li>
+            <li><a href="#start">Measure your own</a></li>
+          </ol>
+        </nav>
+
+        <div class="article-body">
+          <section id="done" aria-labelledby="done-title">
+            <h2 id="done-title">The chat says done. The bill says more.</h2>
+            <p>A coding agent ends a task with a short message. It doesn't tell you how many model calls it made, how much context it carried into each one, which tools it loaded and ignored, or whether the second half of the session was spent undoing the first.</p>
+            <p>Those details decide the cost. Token Meter reads the session logs that agents already write to your disk and prices each request at public list prices, so you can see them. The findings below come from a few months of that data on one machine. Your numbers will differ. The patterns are worth checking for yourself.</p>
+          </section>
+
+          <section id="token-prices" aria-labelledby="token-prices-title">
+            <h2 id="token-prices-title">Why small token shares cost the most</h2>
+            <p>Not every token costs the same. A request to a model is billed in four parts, and the prices differ by up to a hundred times. These are the list prices for Claude Opus 5.5:</p>
+
+            <div class="article-table-wrap">
+              <table class="article-table">
+                <caption>Claude Opus 5.5 list price per million tokens</caption>
+                <thead>
+                  <tr><th scope="col">Token type</th><th scope="col">What it is</th><th scope="col" class="num">Price</th><th scope="col" class="num">vs. cache read</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">Cache read</th><td>Context the provider already stored and serves again</td><td class="num">$0.20</td><td class="num">1×</td></tr>
+                  <tr><th scope="row">Fresh input</th><td>New input that isn't cached</td><td class="num">$4</td><td class="num">20×</td></tr>
+                  <tr><th scope="row">Cache write</th><td>Input stored in the prompt cache for reuse</td><td class="num">$5–8</td><td class="num">25–40×</td></tr>
+                  <tr><th scope="row">Output</th><td>Text, code, and reasoning the model writes</td><td class="num">$20</td><td class="num">100×</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p>Over 30 days on Opus 5.5, about $1,423 at list price, the split looked like this:</p>
+
+            <figure class="share-chart" aria-labelledby="share-chart-caption">
+              <div class="share-row">
+                <span class="share-label">Tokens</span>
+                <div class="share-bar" aria-hidden="true">
+                  <span class="share-seg share-read" style="--share: 94%"></span>
+                  <span class="share-seg share-write" style="--share: 6%"></span>
+                  <span class="share-seg share-output" style="--share: 0.3%"></span>
+                </div>
+              </div>
+              <div class="share-row">
+                <span class="share-label">Dollars</span>
+                <div class="share-bar" aria-hidden="true">
+                  <span class="share-seg share-read" style="--share: 33%"></span>
+                  <span class="share-seg share-write" style="--share: 55%"></span>
+                  <span class="share-seg share-output" style="--share: 11%"></span>
+                </div>
+              </div>
+              <ul class="share-legend">
+                <li><i class="share-read" aria-hidden="true"></i>Cache reads: 94% of tokens, about a third of dollars</li>
+                <li><i class="share-write" aria-hidden="true"></i>Cache writes: 6% of tokens, 55% of dollars</li>
+                <li><i class="share-output" aria-hidden="true"></i>Output: 0.3% of tokens, 11% of dollars</li>
+              </ul>
+              <figcaption id="share-chart-caption">Share of tokens and share of estimated dollars by token type, 30 days on Claude Opus 5.5. Fresh input made up the small remainder.</figcaption>
+            </figure>
+
+            <p>Cache reads did their job: almost all the tokens, a third of the money. The surprise was cache writes. At 25 times the price of a read, 6% of the tokens took more than half the bill.</p>
+            <p>Cache writes pile up in long sessions whose context keeps shifting. When anything early in the prompt changes, everything after it has to be written to the cache again. Caching makes repeated input cheap. It doesn't make irrelevant input useful.</p>
+          </section>
+
+          <section id="levers" aria-labelledby="levers-title">
+            <h2 id="levers-title">The five levers</h2>
+            <p>Each lever below has one number from the same laptop, one thing to try this week, and the place in Token Meter where the change shows up.</p>
+
+            <section class="lever" id="lever-model" aria-labelledby="lever-model-title">
+              <p class="lever-index">Lever 01</p>
+              <h3 id="lever-model-title">Model and reasoning</h3>
+              <p>Which model runs the task, and how much reasoning effort it spends. Reasoning tokens are billed as output, the most expensive kind.</p>
+              <p class="lever-evidence"><strong>The number:</strong> xhigh reasoning effort went from 70% of spend in July to 22% in September. In a side-by-side run of the same prompt, Opus cost 5.1 times as much as Haiku, and $0.21 of the $0.33 gap was cache writes.</p>
+              <p><strong>What to do Monday:</strong> Send routine work, such as renames, small fixes, and test runs, to a cheaper model at medium effort. Keep the top model and high effort for tasks where the path is unclear or a mistake is expensive. If you switch models partway through a task, start a fresh session with a short handoff note. The new model can't reuse the old model's cache, so carrying the whole history over means writing all of it again.</p>
+              <p><strong>Where to see it:</strong> <em>Models</em> groups each model by reasoning effort. <em>Sessions → Compare</em> puts up to four runs side by side, with model, effort, and cost split by token type.</p>
+            </section>
+
+            <section class="lever" id="lever-context" aria-labelledby="lever-context-title">
+              <p class="lever-index">Lever 02</p>
+              <h3 id="lever-context-title">Task context</h3>
+              <p>Everything loaded before the agent starts working: instructions, tool and MCP definitions, skills, files, and earlier turns. You pay for it on every call.</p>
+              <p class="lever-evidence"><strong>The number:</strong> 83,907 tokens of tool definitions were loaded into prompts and never called. Separately, subagent cost per run fell from $6.04 in August to $0.96 in September, as runs became shorter and more narrowly scoped.</p>
+              <p><strong>What to do Monday:</strong> Turn off MCP servers and skill packs a project doesn't use. Give each subagent one specific job and only the files it needs. When most of a session's context is history the current step no longer needs, compact it or start fresh.</p>
+              <p><strong>Where to see it:</strong> <em>Tools</em> lists definitions that were loaded and not called. Treat “no use observed” as a prompt to review, not proof that a tool is useless. <em>Efficiency</em> tracks context load, and <em>Subagents</em> shows cost per run for each role.</p>
+            </section>
+
+            <section class="lever" id="lever-caching" aria-labelledby="lever-caching-title">
+              <p class="lever-index">Lever 03</p>
+              <h3 id="lever-caching-title">Prompt caching</h3>
+              <p>Providers store a repeated prompt prefix so later calls can read it cheaply. Writing to the cache costs more than plain input, so a cache only pays off when the prefix stays the same long enough to be read many times.</p>
+              <p class="lever-evidence"><strong>The number:</strong> cache writes were 55% of the Opus 5.5 bill.</p>
+              <p><strong>What to do Monday:</strong> Keep the start of the prompt stable. Avoid editing instruction files or changing the tool list in the middle of a session. Put material that changes often near the end. Cache entries also expire after a few idle minutes (five by default on Anthropic's API), and the next call writes them again, so a session left idle and resumed many times pays for repeated writes.</p>
+              <p><strong>Where to see it:</strong> each session shows cache writes beside cache reads. <em>Efficiency</em> tracks the cache hit ratio over time.</p>
+            </section>
+
+            <section class="lever" id="lever-prompts" aria-labelledby="lever-prompts-title">
+              <p class="lever-index">Lever 04</p>
+              <h3 id="lever-prompts-title">Outcome-focused prompts</h3>
+              <p>Telling the agent what finished looks like, instead of describing activity.</p>
+              <p class="lever-evidence"><strong>The number:</strong> 15% of 1,964 follow-up messages were pushback: corrections, redirections, and requests to redo work.</p>
+              <p><strong>What to do Monday:</strong> Name the outcome, limit the scope, and say how to test it. For example:</p>
+              <pre class="article-code"><code>Fix the failing date test in tests/test_dates.py.
+Change only the date parser module.
+Done means the test suite passes with no other test changes.</code></pre>
+              <p><strong>Where to see it:</strong> run the same task once with your usual prompt and once with an outcome-focused one, then open both in <em>Sessions → Compare</em>. Executions, active time, and cost sit next to each other.</p>
+            </section>
+
+            <section class="lever" id="lever-rework" aria-labelledby="lever-rework-title">
+              <p class="lever-index">Lever 05</p>
+              <h3 id="lever-rework-title">Avoid rework</h3>
+              <p>Rework is the expensive part of a session. Each correction in a long session re-reads the whole context before the agent writes a word.</p>
+              <p class="lever-evidence"><strong>The number:</strong> sessions that recovered after pushback cost $33 on average. Sessions accepted without pushback cost $6.</p>
+              <p><strong>What to do Monday:</strong> If a session goes off track twice, stop pushing. Start a new one with a short handoff: the goal, what was tried, what failed, and the next step. For larger changes, review the agent's plan before it writes code.</p>
+              <p><strong>Where to see it:</strong> sort <em>Sessions → All sessions</em> by cost and open the most expensive runs to see executions and peak context. Token Meter doesn't decide whether a session succeeded. That call is yours.</p>
+            </section>
+          </section>
+
+          <section id="measure" aria-labelledby="measure-title">
+            <h2 id="measure-title">Change one thing, then measure</h2>
+            <p>Pick two or three tasks you repeat often. They become your personal benchmark. Change one lever, run a task again, and compare the runs on four measures:</p>
+            <ol class="article-steps">
+              <li><strong>Cost per successful result.</strong> Cost per session misleads if half the sessions fail.</li>
+              <li><strong>Quality.</strong> Did the result pass review and tests without changes?</li>
+              <li><strong>Elapsed time.</strong> A cheaper model that takes twice as long may not be a saving.</li>
+              <li><strong>Correction effort.</strong> How many times you had to step in.</li>
+            </ol>
+            <p>Keep a change only if it holds up on all four.</p>
+            <p>The same laptop shows why one change at a time matters. From June to September, output per dollar rose 73% after three changes: dropping Opus 4.8, cutting xhigh effort from 70% to 22% of spend, and moving routine work to a cheaper model at medium effort. In October, 98% of spend moved to Opus 5.5. Context load rose, cache writes reached 55% of the bill, and output per dollar fell 30%. A model that is cheaper per token cost more per result for this workload. The drop showed up as a number first, and the number pointed to the lever to check.</p>
+          </section>
+
+          <section id="trust" aria-labelledby="trust-title">
+            <h2 id="trust-title">Can I trust these numbers?</h2>
+            <p>Use them to compare, not to reconcile an invoice.</p>
+            <ul class="article-list">
+              <li>Costs are estimates at public list prices. Contract discounts, subscription plans, and gateway rates aren't visible to Token Meter.</li>
+              <li>Only sessions stored on this machine count. Web chat, CI runs, and other laptops are not included.</li>
+              <li>When a model has no known price, or a runtime doesn't report a value, it is shown as unavailable rather than counted as zero.</li>
+              <li>The figures in this article come from one engineer's laptop, estimated at public list prices, between June and October 2026. A different workload will produce a different split.</li>
+            </ul>
+            <p>For the amount you actually owe, use your provider's console. For deciding what to change next, compare sessions, models, and trends on your own machine.</p>
+          </section>
+
+          <section id="start" class="article-cta" aria-labelledby="start-title">
+            <h2 id="start-title">Measure your own</h2>
+            <p>Token Meter runs locally, needs no API keys, and works on the history your agents have already written. On macOS or Linux:</p>
+            <pre class="article-code"><code>git clone https://github.com/splunk/token-meter.git
+./token-meter/scripts/install</code></pre>
+            <p>Then open <code>http://127.0.0.1:8722</code>. Windows (beta) instructions are on the <a class="article-link" href="index.html#install">install page</a>.</p>
+            <a class="closing-link" href="https://github.com/splunk/token-meter" target="_blank" rel="noopener noreferrer">Get Token Meter on GitHub <span aria-hidden="true">↗</span></a>
+          </section>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div class="footer-brand"><span aria-hidden="true">&gt;</span><div><strong>Token Meter</strong><small>Local-first observability for AI coding agents</small></div></div>
+      <div class="footer-links">
+        <a href="https://github.com/splunk/token-meter" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/splunk/token-meter/blob/main/README.md" target="_blank" rel="noopener noreferrer">Docs</a>
+        <a href="token-optimization.html" aria-current="page">Five levers</a>
+        <a href="https://github.com/splunk/token-meter/blob/main/specs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
+        <a href="https://github.com/splunk/token-meter/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT</a>
+      </div>
+      <p class="footer-note"><span>Built in the open by</span> <img class="splunk-logo" src="images/logo-splunk-acc-rgb-w.png" alt="Splunk" width="23" height="9"></p>
+    </div>
+  </footer>
+
+  <script src="tab-controller.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
