@@ -8841,7 +8841,9 @@ const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.
 function block(start){{let i=page.indexOf(start);if(i<0)throw Error(start);let open=page.indexOf(start.endsWith('[')?'[':'{{',i),depth=0,close=start.endsWith('[')?']':'}}',o=page[open];for(let j=open;j<page.length;j++){{if(page[j]===o)depth++;else if(page[j]===close&&--depth===0)return page.slice(i,j+1);}}}}
 eval(block('const TOKEN_TYPES=[').replace(/^const /,'var '));
 eval(page.slice(page.indexOf('const HIGH_EFFORTS='),page.indexOf(';',page.indexOf('const HIGH_EFFORTS='))+1).replace(/^const /,'var '));
+eval(page.match(/^const finiteOrNull=.*$/m)[0].replace(/^const /,'var '));
 eval(block('function learnEvidence('));
+const learnOutputTrend=()=>null,localDateKey=()=>'2026-10-15';
 const currentSessionModelName=value=>String(value||'');
 const budgetMonthLabel=value=>String(value||'');
 const runtimeId=()=>'',runtimeLabel=()=>'';
@@ -8877,7 +8879,7 @@ process.stdout.write(JSON.stringify({{output:evidence.price&&evidence.price.rows
         self.assertIn("row.model===mix.model&&(mix.providers||[]).includes(row.provider)&&priced(row)", self.page)
         self.assertIn("row.model===topModel.model&&(topModel.providers||[]).includes(row.provider)&&priced(row)", self.page)
         # The welcome tour opened from the palette returns focus to where the palette opened.
-        self.assertIn("const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});", self.page)
+        self.assertIn("const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(null,{returnFocus});", self.page)
         self.assertNotIn("WELCOME_PANELS[2].title=", self.page)
 
     def test_selected_session_columns_share_top_and_bottom_edges(self):
@@ -10704,7 +10706,7 @@ console.log(JSON.stringify(out));
             "if(h==='spend'||h==='daily'||h==='spend-budgets'",
             "openTopLevelRoute('spend')",
             "{id:'spend',label:'Spend'",
-            "data-learn-route=spend>",
+            "{label:'Open Spend',route:'spend-budgets'}",
             "function renderSpend(xs)",
         ):
             self.assertIn(marker, self.page)
@@ -11317,7 +11319,7 @@ console.log(JSON.stringify({
         ):
             self.assertNotIn(removed, settings)
         self.assertNotIn('href="#learn-agent-access"', settings)
-        self.assertIn("id=learn-agent-access", self.page)
+        self.assertIn("<p class=miniPreviewNote id=${host}-agent-access>", self.page)
         self.assertIn("Connections stay local and read-only.", settings)
         self.assertNotIn("Language signals", settings)
         self.assertIn(
@@ -11433,127 +11435,282 @@ console.log(JSON.stringify({
         ):
             self.assertNotIn(retired, self.page)
 
-    def test_welcome_overlay_is_one_full_page_modal_with_five_panels(self):
+    def _tour_script(self, body):
+        """Runs the tour's DOM-free block (storage, evidence, slide markup) in Node with the page's own formatters."""
+        page_path = json.dumps(str(Path(meter.__file__).with_name('page.html')))
+        return f"""
+const fs=require('fs');
+const page=fs.readFileSync({page_path},'utf8');
+const helpers=page.match(/^const (f|compactNumber|money|wholeMoney|pct|countWord|esc)=.*$/gm).join('\\n').replace(/^const /gm,'var ');
+eval(helpers);
+var LATEST=null,RUNTIME_CATALOG={{claude:{{label:'Claude'}},codex:{{label:'Codex'}}}};
+var runtimeId=s=>String(s?.provider||'unknown-runtime'),runtimeLabel=s=>String(s?.label||s?.provider||''),currentSessionModelName=v=>String(v||'');
+var budgetMonthLabel=m=>m?'October 2026':'This month',appBadgeClass=s=>`app-${{s.provider}}`,runtimeBadgeContent=(s,label)=>label;
+var localDateKey=d=>`${{d.getFullYear()}}-${{String(d.getMonth()+1).padStart(2,'0')}}-${{String(d.getDate()).padStart(2,'0')}}`;
+var learnOutputTrend=xs=>xs?.model_stats?.trend||null;
+var stored=new Map(),blocked={{read:false,write:false}};
+var localStorage={{getItem:key=>{{if(blocked.read)throw Error('blocked');return stored.get(key)??null;}},setItem:(key,value)=>{{if(blocked.write)throw Error('quota');stored.set(key,String(value));}}}};
+const start=page.indexOf('// deck-pure-start'),end=page.indexOf('// deck-pure-end');
+if(start<0||end<0)throw Error('missing deck-pure block');
+eval(page.slice(start,end).replace(/^const /gm,'var '));
+const richState={{
+ total_tokens:82702828,total_cost:38.59,turns:703,subagent_turns:566,provider:'claude',primary_model:'claude-opus-5-5',source:{{provider:'claude',label:'Claude'}},
+ availability:{{cost:true,tokens:true,cache:true}},context:{{latest:112214,peak:325998,window:0}},timing:{{duration_available:true,duration:'1h 38m'}},
+ capabilities:{{skills:{{loaded:77,used:4}}}},
+ tokens:{{input:1431,cache_write:2376040,cache_read:79788174,output:537183}},cost:{{input:.0057,cache_write:11.88,cache_read:15.96,output:10.74}},
+ xsession:{{
+  total_sessions:2179,providers:[{{provider:'claude',sessions:900}},{{provider:'codex',sessions:1279}}],
+  model_mix:[{{model:'gpt-5.6-sol',runtime:'Codex',providers:['codex'],cost:4278}},{{model:'claude-opus-5-5',runtime:'Claude-3P',providers:['claude'],cost:1781}}],
+  model_pricing:{{unit:'per 1M tokens',models:[{{provider:'claude',model:'claude-opus-5-5',prices:{{cache_read:.5,input:5,cache_write:6.25,output:25}}}}]}},
+  model_stats:{{first_day:'2026-06-13',models:[],trend:{{week:4400,delta:{{text:'↓ 30.3% vs prior 7 days',direction:'down'}},months:[{{label:'Jun',value:4183}},{{label:'Oct',value:6492,partial:true}}]}}}},
+  provenance:{{reported_sessions:1638,estimated_sessions:40,unavailable_sessions:1}},
+  capabilities:{{summary:{{definitions:{{unused_eager_definition_tokens:83907}},skills:{{enabled:210,used:75}}}}}},
+  agent_usage:{{totals:{{agents:646,cost_covered_agents:640,known_cost:1001.45}}}},
+  budget:{{month:'2026-10',configured:true,budget:8940,spend:1792.7,percent:.2,projection_ready:true,projected_spend:3704.9,lower_bound:true,state:'on_track'}},
+ }},
+}};
+const richGit={{overall:{{availability:{{spend_per_1k:true}},spend_per_1k:31.72,changed_lines:24000}}}};
+{body}
+"""
+
+    def _run_tour(self, body):
+        completed = subprocess.run(
+            ["node", "-e", self._tour_script(body)], capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        return json.loads(completed.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_registry_has_thirteen_slides_in_four_chapters(self):
+        payload = self._run_tour("""
+process.stdout.write(JSON.stringify({
+ chapters:DECK_CHAPTERS.map(c=>c.title),
+ slides:DECK_SLIDES.map(s=>[s.chapter,s.id]),
+ complete:DECK_SLIDES.every(s=>['rail','kicker','title','body','takeaway'].every(k=>typeof s[k]==='string'&&s[k].trim())&&typeof s.preview==='function'),
+ time:[deckTimeLeft(0),deckTimeLeft(6),deckTimeLeft(10),deckTimeLeft(12)],
+}));
+""")
+        self.assertEqual(payload["chapters"], ["Why", "How it works", "Your questions", "Do better"])
+        self.assertEqual(payload["slides"], [
+            ["why", "value"], ["why", "money"],
+            ["how", "glance"], ["how", "traces"], ["how", "trust"], ["how", "privacy"],
+            ["questions", "spending"], ["questions", "where"], ["questions", "working"],
+            ["better", "levers"], ["better", "loop"], ["better", "agent"], ["better", "start"],
+        ])
+        self.assertTrue(payload["complete"])
+        self.assertEqual(payload["time"], ["about 4 min", "about 2 min left", "under a minute left", "under a minute left"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_both_tour_hosts_render_the_same_slides(self):
+        payload = self._run_tour("""
+const evidence=[learnEvidence({}),learnEvidence(richState,richGit)];
+const same=DECK_SLIDES.map((slide,i)=>evidence.every(ev=>
+ deckCopyHtml(i,ev,'welcome').replaceAll('welcome-','HOST-')===deckCopyHtml(i,ev,'learn').replaceAll('learn-','HOST-')&&
+ deckPreviewHtml(i,ev,'welcome').replaceAll('welcome-','HOST-')===deckPreviewHtml(i,ev,'learn').replaceAll('learn-','HOST-')));
+process.stdout.write(JSON.stringify({same,agentNote:deckPreviewHtml(11,evidence[1],'learn').includes('id=learn-agent-access'),
+ cta:[deckCopyHtml(12,evidence[0],'welcome').includes('>Set a monthly budget<'),deckCopyHtml(12,evidence[1],'welcome').includes('>Review your budget<')]}));
+""")
+        self.assertEqual(payload["same"], [True] * 13)
+        self.assertTrue(payload["agentNote"])
+        self.assertEqual(payload["cta"], [True, True])
+        dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
+        learn = self.page.split("<div class=view id=view-learn>", 1)[1].split("<div class=view id=view-capabilities>", 1)[0]
+        self.assertIn('<div class=deck id=welcome-deck data-deck-host=welcome></div>', dialog)
+        self.assertIn('<div class="deck deckInline" id=learn-deck data-deck-host=learn></div>', learn)
+        for host in (dialog, learn):
+            self.assertNotIn("<h2", host, "slide copy lives in DECK_SLIDES, not in host markup")
+            self.assertNotIn("takeaway", host)
+        self.assertIn("function renderWelcome(state=LATEST){paintDeck('welcome',state);}", self.page)
+        self.assertIn("if(ensureDeck('learn'))paintDeck('learn',state);", self.page)
+        for retired in ("WELCOME_PANELS", "data-welcome-panel", "learnQuestion", "learnBlock", "learn-replay-welcome", "welcomeDot"):
+            self.assertNotIn(retired, self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_talk_numbers_are_labeled_and_never_presented_as_yours(self):
+        payload = self._run_tour("""
+const evidence=[learnEvidence({}),learnEvidence(richState,richGit)];
+const talkParts=html=>[...html.matchAll(/data-source=talk>([\\s\\S]*?)<\\/(?:div|span|td|th)>/g)].map(m=>m[1]);
+const rows=DECK_SLIDES.map((slide,i)=>{
+ const html=evidence.map(ev=>deckPreviewHtml(i,ev,'learn'));
+ const figures=html.flatMap(h=>[...h.matchAll(/<div class=evidenceFigure data-source=(\\w+)>([\\s\\S]*?)<\\/div>/g)].map(m=>[m[1],m[2]]));
+ return {id:slide.id,talk:slide.talk,
+  chips:html.map(h=>(h.match(/class="chip talkChip">From the talk</g)||[]).length),
+  notes:html.map(h=>h.includes('One engineer’s laptop, estimated at public list prices.')),
+  figuresOk:figures.every(([source,inner])=>source==='talk'?inner.includes('talkChip')&&!inner.includes('yoursChip'):!inner.includes('talkChip')),
+  talkStable:JSON.stringify(talkParts(html[0]))===JSON.stringify(talkParts(html[1])),
+  yoursCount:(html[1].match(/data-source=yours/g)||[]).length};
+});
+process.stdout.write(JSON.stringify(rows));
+""")
+        for row in payload:
+            with self.subTest(slide=row["id"]):
+                if row["talk"]:
+                    self.assertTrue(all(count > 0 for count in row["chips"]))
+                    self.assertEqual(row["notes"], [True, True])
+                    self.assertTrue(row["talkStable"], "talk numbers must not change with the user's data")
+                else:
+                    self.assertEqual(row["chips"], [0, 0])
+                    self.assertEqual(row["notes"], [False, False])
+                self.assertTrue(row["figuresOk"])
+        by_id = {row["id"]: row for row in payload}
+        for slide in ("value", "money", "where", "working", "levers", "loop"):
+            self.assertTrue(by_id[slide]["talk"])
+            self.assertGreater(by_id[slide]["yoursCount"], 0, "talk slides show the user's own number beside the talk's")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_rail_states_and_skip_chapter_targets(self):
+        payload = self._run_tour("""
+const rail=deckRailHtml(6);
+process.stdout.write(JSON.stringify({
+ skip:DECK_SLIDES.map((_,i)=>deckChapterSkipTarget(i)),
+ steps:[...rail.matchAll(/data-deck-go=(\\d+) data-state=(\\w+)/g)].map(m=>m[2]),
+ chapters:[...rail.matchAll(/class=deckChapter data-state=(\\w+)/g)].map(m=>m[1]),
+ current:(rail.match(/aria-current=step/g)||[]).length,
+ glyphs:[rail.includes('aria-hidden=true>✓</i>'),rail.includes('aria-hidden=true>●</i>'),rail.includes('aria-hidden=true>○</i>')],
+}));
+""")
+        self.assertEqual(payload["skip"], [2, 2, 6, 6, 6, 6, 9, 9, 9, -1, -1, -1, -1])
+        self.assertEqual(payload["steps"], ["done"] * 6 + ["current"] + ["upcoming"] * 6)
+        self.assertEqual(payload["chapters"], ["done", "done", "current", "upcoming"])
+        self.assertEqual(payload["current"], 1)
+        self.assertEqual(payload["glyphs"], [True, True, True])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_welcome_resume_and_auto_show_matrix(self):
+        payload = self._run_tour("""
+function run(entries,{read=false,write=false,requested=null,act=null}={}){
+ stored=new Map(entries);blocked={read,write};
+ const auto=welcomeShouldAutoShow(),start=welcomeStartSlide(requested);
+ if(act)act();
+ let saved=null;try{saved=JSON.parse(stored.get(WELCOME_KEY));}catch(error){}
+ return {auto,start,saved:saved&&{seen:saved.seen,stamped:Number(saved.dismissed_at)>0,last_slide:saved.last_slide}};
+}
+const welcome=value=>[[WELCOME_KEY,typeof value==='string'?value:JSON.stringify(value)]];
+const legacy=value=>[[LEGACY_ONBOARDING_KEY,JSON.stringify(value)]];
+process.stdout.write(JSON.stringify({
+ fresh:run([],{act:()=>markWelcomeSeen(0)}),
+ progressing:run([],{act:()=>recordWelcomeSlide(4)}),
+ resume:run(welcome({seen:true,dismissed_at:1,last_slide:6})),
+ midTourReload:run(welcome({seen:false,last_slide:3})),
+ explicit:run(welcome({seen:true,dismissed_at:1,last_slide:6}),{requested:2}),
+ finished:run(welcome({seen:true,dismissed_at:1,last_slide:0})),
+ outOfRange:run(welcome({seen:true,dismissed_at:1,last_slide:99})),
+ negative:run(welcome({seen:true,dismissed_at:1,last_slide:-2})),
+ fractional:run(welcome({seen:true,dismissed_at:1,last_slide:2.5})),
+ corrupt:run(welcome('{nope')),
+ seenKeepsSeen:run(welcome({seen:true,dismissed_at:5,last_slide:1}),{act:()=>recordWelcomeSlide(8)}),
+ closeAt:run([],{act:()=>markWelcomeSeen(7)}),
+ legacyStep:run(legacy({completed:['current'],collapsed:false,completed_at:0})),
+ legacyCollapsed:run(legacy({completed:[],collapsed:true,completed_at:0})),
+ legacyFinished:run(legacy({completed:[],collapsed:false,completed_at:1700000000000})),
+ legacyUntouched:run(legacy({completed:[],collapsed:false,completed_at:0})),
+ readBlocked:run([],{read:true,act:()=>{recordWelcomeSlide(3);markWelcomeSeen(3);}}),
+ writeBlocked:run([],{write:true,act:()=>{recordWelcomeSlide(3);markWelcomeSeen(3);saveLearnSlide(3);}}),
+ learn:(()=>{stored=new Map([[LEARN_SLIDE_KEY,'9']]);blocked={read:false,write:false};const a=readLearnSlide();stored.set(LEARN_SLIDE_KEY,'x');const b=readLearnSlide();blocked.read=true;const c=readLearnSlide();return [a,b,c];})(),
+}));
+""")
+        start = lambda index, offer: {"index": index, "offer": offer}
+        self.assertEqual(payload["fresh"], {"auto": True, "start": start(0, False), "saved": {"seen": True, "stamped": True, "last_slide": 0}})
+        self.assertEqual(payload["progressing"]["saved"], {"seen": False, "stamped": False, "last_slide": 4})
+        self.assertEqual(payload["resume"]["start"], start(6, True))
+        self.assertFalse(payload["resume"]["auto"])
+        self.assertTrue(payload["midTourReload"]["auto"], "a tour never closed reopens on the next launch")
+        self.assertEqual(payload["midTourReload"]["start"], start(3, True))
+        self.assertEqual(payload["explicit"]["start"], start(2, False))
+        for case in ("finished", "outOfRange", "negative", "fractional", "corrupt"):
+            with self.subTest(case=case):
+                self.assertEqual(payload[case]["start"], start(0, False))
+        self.assertTrue(payload["corrupt"]["auto"])
+        self.assertEqual(payload["seenKeepsSeen"]["saved"], {"seen": True, "stamped": True, "last_slide": 8})
+        self.assertEqual(payload["closeAt"]["saved"], {"seen": True, "stamped": True, "last_slide": 7})
+        for case in ("legacyStep", "legacyCollapsed", "legacyFinished"):
+            with self.subTest(case=case):
+                self.assertFalse(payload[case]["auto"])
+        self.assertTrue(payload["legacyUntouched"]["auto"])
+        self.assertEqual(payload["readBlocked"]["auto"], False)
+        self.assertEqual(payload["readBlocked"]["start"], start(0, False))
+        self.assertEqual(payload["writeBlocked"], {"auto": True, "start": start(0, False), "saved": None})
+        self.assertEqual(payload["learn"], [9, 0, 0])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_tour_controls_page_skip_chapters_and_close_the_overlay(self):
+        payload = self._run_tour(f"""
+function extract(name){{let s=page.indexOf(`function ${{name}}(`);if(s<0)throw Error(`missing ${{name}}`);let i=page.indexOf('){{',s)+1,d=0;for(;i<page.length;i++){{if(page[i]==='{{')d++;else if(page[i]==='}}'&&--d===0)return page.slice(s,i+1);}}}}
+const els={{}};
+var document={{activeElement:null,querySelector:()=>null}};
+var $=id=>els[id]||(els[id]={{id,dataset:{{}},innerHTML:'',textContent:'',hidden:false,disabled:false,className:'',scrollTop:0,open:false,contains:()=>false,querySelector:()=>null,focus(){{}},scrollIntoView(){{}},close(){{this.open=false;closed.push(this.id);}}}});
+var requestAnimationFrame=fn=>fn(),deliveryPayload=null,closed=[],routes=[];
+var openTopLevelRoute=route=>routes.push(route);
+eval(['paintPreview','deckShellHtml','ensureDeck','paintDeck','showDeckSlide','openDeckRoute','deckAction','closeWelcome','deckKey'].map(extract).join('\\n'));
+eval(page.slice(page.indexOf('const deckHosts='),page.indexOf(';',page.indexOf('const deckHosts='))+1).replace(/^const /,'var '));
+const log=[];
+showDeckSlide('welcome',0);log.push(deckHosts.welcome.index);
+deckAction('welcome','skip-chapter');log.push(deckHosts.welcome.index);
+deckAction('welcome','skip-chapter');log.push(deckHosts.welcome.index);
+deckAction('welcome','skip-chapter');log.push(deckHosts.welcome.index);
+const skipDisabled=$('welcome-deck-skip-chapter').disabled;
+deckAction('welcome','skip-chapter');log.push(deckHosts.welcome.index);
+deckAction('welcome','back');log.push(deckHosts.welcome.index);
+const recorded=JSON.parse(stored.get(WELCOME_KEY)).last_slide;
+const arrows=[];const key=k=>({{key:k,preventDefault(){{}},target:null}});
+deckKey('welcome',key('ArrowRight'));arrows.push(deckHosts.welcome.index);deckKey('welcome',key('ArrowLeft'));arrows.push(deckHosts.welcome.index);
+showDeckSlide('welcome',12);const doneLabel=[$('welcome-deck-next').textContent,$('welcome-deck-next').className];
+$('welcome-dialog').open=true;deckAction('welcome','next');
+showDeckSlide('learn',12);const learnLast=$('learn-deck-next').textContent;deckAction('learn','next');
+showDeckSlide('welcome',5,{{offer:true}});const offerFoot=$('welcome-deck-foot').hidden,offerStage=$('welcome-deck-stage').innerHTML;
+deckAction('welcome','restart');
+$('welcome-dialog').open=true;closeWelcome({{route:'settings',target:'agent-access'}});
+process.stdout.write(JSON.stringify({{log,skipDisabled,recorded,arrows,doneLabel,closed,learnAfterLast:deckHosts.learn.index,learnLast,offerFoot,offerResume:offerStage.includes('data-deck-action=resume')&&offerStage.includes('data-deck-action=restart'),afterRestart:[deckHosts.welcome.index,deckHosts.welcome.offer],routes,counter:$('welcome-deck-count').textContent}}));
+""")
+        self.assertEqual(payload["log"], [0, 2, 6, 9, 9, 8])
+        self.assertTrue(payload["skipDisabled"])
+        self.assertEqual(payload["recorded"], 8)
+        self.assertEqual(payload["arrows"], [9, 8])
+        self.assertEqual(payload["doneLabel"], ["Done", "tbtn"])
+        self.assertEqual(payload["closed"], ["welcome-dialog", "welcome-dialog"])
+        self.assertEqual(payload["learnLast"], "Back to start")
+        self.assertEqual(payload["learnAfterLast"], 0)
+        self.assertTrue(payload["offerFoot"])
+        self.assertTrue(payload["offerResume"])
+        self.assertEqual(payload["afterRestart"], [0, False])
+        self.assertEqual(payload["routes"], ["settings"])
+        self.assertEqual(payload["counter"], "1 / 13 · about 4 min")
+
+    def test_welcome_overlay_and_learn_deck_shells(self):
         dialog = self.page.split("<dialog class=welcome id=welcome-dialog", 1)[1].split("</dialog>", 1)[0]
         self.assertIn("aria-modal=true", dialog)
         self.assertIn("aria-labelledby=welcome-label", dialog)
         self.assertIn('<button class=welcomeClose id=welcome-close type=button aria-label="Close welcome"', dialog)
         self.assertIn("aria-hidden=true>&#10005;</span>", dialog)
         self.assertIn("id=welcome-skip type=button>Skip for now</button>", dialog)
-        for control in ("id=welcome-back", "id=welcome-next", "id=welcome-dots", "id=welcome-status"):
-            self.assertIn(control, dialog)
-        panels = re.findall(r"data-welcome-panel=(\w+)", dialog)
-        self.assertEqual(panels, ["cost", "trust", "privacy", "levers", "budget"])
-        for heading in (
-            "What did this session just cost?",
-            "Can I trust the number?",
-            "Five levers move the bill",
-            "Set a monthly budget",
-        ):
-            self.assertIn(heading, dialog)
-        self.assertIn("id=welcome-privacy-title>Your traces never leave this Mac.", dialog)
-        self.assertIn("When context climbs, compact or start fresh.", dialog)
-        self.assertIn("Compare with it. Get the invoice from your provider.", dialog)
-        for preview in ("cost", "trust", "privacy", "levers", "budget"):
-            self.assertIn(f"id=welcome-preview-{preview}", dialog)
-        self.assertIn("data-welcome-route=spend-budgets", dialog)
-        self.assertIn("data-welcome-route=learn", dialog)
         for marker in (
-            "const WELCOME_KEY='tm_welcome_v1'",
-            "const LEGACY_ONBOARDING_KEY='tm_onboarding_v1'",
-            "function openWelcome(",
-            "function closeWelcome(",
-            "function maybeAutoShowWelcome()",
-            "$('welcome-dialog').addEventListener('cancel'",
-            "$('welcome-dialog').addEventListener('close'",
-            "if(command.action==='welcome'){const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});return;}",
+            "$('welcome-close').onclick=()=>closeWelcome();",
+            "$('welcome-skip').onclick=()=>closeWelcome();",
+            "$('welcome-dialog').addEventListener('cancel',event=>{event.preventDefault();closeWelcome();});",
+            "markWelcomeSeen(index>=DECK_SLIDES.length-1?0:index);",
+            "if($('welcome-dialog').open){handleWelcomeKey(event);return;}",
+            "handleLearnDeckKey(event);",
+            "if(welcomeShouldAutoShow())openWelcome(null,{auto:true});",
+            "data-deck-action=skip-chapter>Skip chapter</button>",
             "{id:'welcome',label:'Open welcome tour'",
-            "this machine",
+            "if(command.action==='welcome'){const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(null,{returnFocus});return;}",
+            "$('learn-play').onclick=()=>openWelcome(deckHosts.learn.index,{fromLearn:true});",
+            "if(h==='learn-agent-access')showDeckSlide('learn',DECK_SLIDES.findIndex(slide=>slide.id==='agent'),{animate:false});",
         ):
             self.assertIn(marker, self.page)
         self.assertIn("maybeAutoShowWelcome();", self.page.split("function applyLiveState(state){", 1)[1].split("\n}", 1)[0])
-        css = self.page[self.page.index("<style>"):self.page.index("</style>")]
-        self.assertIn(".welcome{", css)
-        self.assertRegex(css, r"@media\(prefers-reduced-motion:reduce\)\{[^\n]*\.welcome")
-
-    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
-    def test_welcome_auto_show_migrates_the_legacy_onboarding_state(self):
-        script = f"""
-const fs=require('fs');
-const page=fs.readFileSync({json.dumps(str(Path(meter.__file__).with_name('page.html')))},'utf8');
-function extract(name){{let start=page.indexOf(`function ${{name}}(`);if(start<0)throw Error(`missing ${{name}}`);let i=page.indexOf('{{',start),depth=0;for(;i<page.length;i++){{if(page[i]==='{{')depth++;else if(page[i]==='}}'&&--depth===0)return page.slice(start,i+1);}}throw Error(`unclosed ${{name}}`);}}
-eval(page.slice(page.indexOf("const WELCOME_KEY="),page.indexOf("function readWelcomeStore(")).replace(/^const /gm,'var '));
-eval(extract('readWelcomeStore'));eval(extract('welcomeShouldAutoShow'));eval(extract('markWelcomeSeen'));
-let localStorage;
-function run(entries,{{throwRead=false,throwWrite=false}}={{}}){{
- const stored=new Map(entries);
- localStorage={{getItem:key=>{{if(throwRead)throw Error('blocked');return stored.get(key)??null;}},setItem:(key,value)=>{{if(throwWrite)throw Error('quota');stored.set(key,String(value));}}}};
- const before=welcomeShouldAutoShow();
- markWelcomeSeen();
- const saved=stored.has(WELCOME_KEY)?JSON.parse(stored.get(WELCOME_KEY)):null;
- return {{before,after:throwRead?null:welcomeShouldAutoShow(),saved:saved&&{{seen:saved.seen,stamped:Number(saved.dismissed_at)>0}},legacy:stored.get(LEGACY_ONBOARDING_KEY)??null}};
-}}
-const legacy=value=>[[LEGACY_ONBOARDING_KEY,JSON.stringify(value)]];
-process.stdout.write(JSON.stringify({{
- fresh:run([]),
- seen:run([[WELCOME_KEY,JSON.stringify({{seen:true,dismissed_at:1}})]]),
- corrupt:run([[WELCOME_KEY,'{{nope']]),
- legacyStep:run(legacy({{completed:['current'],collapsed:false,completed_at:0}})),
- legacyCollapsed:run(legacy({{completed:[],collapsed:true,completed_at:0}})),
- legacyFinished:run(legacy({{completed:[],collapsed:false,completed_at:1700000000000}})),
- legacyUntouched:run(legacy({{completed:[],collapsed:false,completed_at:0}})),
- readBlocked:run([],{{throwRead:true}}),
- writeBlocked:run([],{{throwWrite:true}}),
-}}));
-"""
-        payload = json.loads(subprocess.run(
-            ["node", "-e", script], capture_output=True, text=True, check=True,
-        ).stdout)
-        seen = {"seen": True, "stamped": True}
-        self.assertEqual(payload["fresh"], {"before": True, "after": False, "saved": seen, "legacy": None})
-        self.assertFalse(payload["seen"]["before"])
-        self.assertTrue(payload["corrupt"]["before"])
-        for key in ("legacyStep", "legacyCollapsed", "legacyFinished"):
-            with self.subTest(case=key):
-                self.assertFalse(payload[key]["before"])
-                self.assertIsNotNone(payload[key]["legacy"], "the legacy key stays readable")
-        self.assertTrue(payload["legacyUntouched"]["before"])
-        self.assertEqual(payload["readBlocked"]["before"], False)
-        self.assertEqual(payload["writeBlocked"], {"before": True, "after": True, "saved": None, "legacy": None})
-
-    def test_learn_is_the_education_home_in_the_approved_order(self):
-        learn = self.page.split("<div class=view id=view-learn>", 1)[1].split(
-            "<div class=view id=view-capabilities>", 1
-        )[0]
+        learn = self.page.split("<div class=view id=view-learn>", 1)[1].split("<div class=view id=view-capabilities>", 1)[0]
         self.assertIn("<h1>Learn</h1>", learn)
         self.assertIn("<p class=spectrumPageSubtitle>Spend tokens like money. Measure what you get back.</p>", learn)
-        self.assertIn("id=learn-replay-welcome type=button>Replay welcome</button>", learn)
-        order = [
-            "id=learn-value", "id=learn-money", "id=learn-trust", "id=learn-questions",
-            "id=learn-levers", "id=learn-loop", "id=learn-agent-access",
-        ]
-        positions = [learn.index(marker) for marker in order]
-        self.assertEqual(positions, sorted(positions))
-        for heading in (
-            "Usage is not value", "Where the money goes", "Can I trust it?",
-            "Questions you already have", "Five levers move the bill", "Change one thing, then measure",
-        ):
-            self.assertIn(heading, learn)
-        for preview in ("value", "money", "trust", "levers"):
-            self.assertIn(f"id=learn-preview-{preview}", learn)
-        questions = learn.split("id=learn-questions", 1)[1].split("id=learn-levers", 1)[0]
-        for route in (
-            "sessions", "spend-budgets", "spend", "models", "capabilities",
-            "efficiency", "subagents", "git", "sessions-compare", "sessions-all",
-        ):
-            self.assertIn(f"data-learn-route={route}>", questions)
-        self.assertNotIn("data-learn-route=work", questions)
-        self.assertIn("cost per successful result", learn)
-        self.assertIn("Start a fresh session with a short handoff.", learn)
-        self.assertNotIn("Review loop", learn)
-        self.assertIn("$('view-learn').addEventListener('click'", self.page)
-        self.assertIn("$('learn-replay-welcome').onclick=()=>openWelcome(0);", self.page)
-        self.assertIn("if($('view-learn').classList.contains('on'))renderLearn(LATEST);", self.page)
+        self.assertIn("id=learn-play type=button>Play as full screen</button>", learn)
+        self.assertNotIn("learnSection", learn)
+        css = self.page[self.page.index("<style>"):self.page.index("</style>")]
+        self.assertIn(".welcome{", css)
+        self.assertRegex(css, r"@media\(prefers-reduced-motion:reduce\)\{[^\n]*\.deckEnter")
+        self.assertIn(".deck{display:grid;grid-template-columns:212px minmax(0,1fr)", css)
+        self.assertIn("const WELCOME_HOST=DECK_PLATFORM==='mac'?'Mac':'machine';", self.page)
+        self.assertIn("const TOKENOMICS_URL='https://www.splunk.com/en_us/products/tokenomics.html';", self.page)
+        self.assertIn('target=_blank rel="noopener noreferrer">Read about Tokenomics', self.page)
 
     def test_all_sessions_supports_app_project_and_time_range_filters(self):
         for marker in ("id=g-app", "id=g-project", "id=g-time", "App filter",
@@ -11780,7 +11937,7 @@ process.stdout.write(JSON.stringify({{same,mixed}}));
                        "id=agent-dialog", "/agent-access/status", "/agent-access/toggle",
                        "class=\"card settingsMap\""):
             self.assertIn(marker, self.page)
-        self.assertIn("id=learn-agent-access", self.page)
+        self.assertIn("<p class=miniPreviewNote id=${host}-agent-access>", self.page)
         self.assertIn("No prompts, messages, reasoning, tool content", self.page)
         for tool in ("mcp__tokenmeter__check", "mcp__tokenmeter__usage",
                      "mcp__tokenmeter__capabilities"):
@@ -11849,7 +12006,6 @@ process.stdout.write(JSON.stringify({{same,mixed}}));
         for marker in (
             "id=learn-model-guide",
             "Compare model speed without fooling yourself",
-            "Ask your agent",
             "Should I keep this run going?",
             "Why was the last phase expensive?",
             "What should I change before the next phase?",

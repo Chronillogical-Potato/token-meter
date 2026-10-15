@@ -469,10 +469,11 @@ Components own identity (color, type, tracking, surface), not layout.
 | Reference scale | `.readoutScale`, rendered by `readoutScaleHtml()` | Where one value sits against a typical value: an 8px track, a dithered fill and marker up to the value, and a tick at the typical value. The scale runs from 0 to at least twice the typical value. `data-tone=high` (1.5× typical or more) switches the tone to `--warn`; pass `toned:false` for counts where more is not a concern | `<span class=readoutScale role=img aria-label="…" style="--at:62%;--typ:40%"><i class=readoutScaleFill></i><i class=readoutScaleTypical></i><i class=readoutScaleMark></i></span>` |
 | Reading caption | `.readoutCaption`, text from `typicalCaption()` | One plain-language line under a number, prefixed with a signal `›`, such as `2.1× your typical day of $2.30` | `<span class=readoutCaption>…</span>` |
 | Gap bridge | `.chartGapBridge`, runs from `chartGapRuns()`, markup from `chartGapBridge()` | A thin `--faint` dotted line joining the last day with data to the next day with data across days that have none. Ratio and speed charts (Efficiency sparklines, Models speed and trend lines) draw solid lines only through consecutive days with data, a dot for a day with no neighbours, and nothing before the first or after the last day with data. A missing day is never plotted as zero, and its hover reads `No data` | `<line class=chartGapBridge x1="…" y1="…" x2="…" y2="…"/>` |
-| Mini preview | `.miniPreview` | A compact card-surface visual beside explanatory copy (welcome panels, Learn sections): spectrum card surface, `.miniPreviewHead` uppercase label row (an `Example` `.chip` sits at its right edge when values are samples), `.miniPreviewNote` secondary line | `<div class=miniPreview><div class=miniPreviewHead><span>Label</span><span class=chip>Example</span></div>…<p class=miniPreviewNote>…</p></div>` |
+| Mini preview | `.miniPreview` | A compact card-surface visual beside explanatory copy (tour slides in the welcome overlay and on Learn): spectrum card surface, `.miniPreviewHead` uppercase label row (an `Example` `.chip` sits at its right edge when values are samples), `.miniPreviewNote` secondary line | `<div class=miniPreview><div class=miniPreviewHead><span>Label</span><span class=chip>Example</span></div>…<p class=miniPreviewNote>…</p></div>` |
 | Mark list | `.markList` | A checklist of what is and is not counted. `data-mark=yes` (good ✓), `no` (bad ✕, dimmed text), or `skip` (neutral –). Each row carries visually hidden state text, so the meaning never relies on color or glyph | `<ul class=markList><li data-mark=yes><i aria-hidden=true>✓</i><span><span class=srOnly>Included: </span>…</span></li></ul>` |
 | Level bar | `.levelBar`, rendered by `levelBarHtml()` | A pill track filled to `--fill` with the active gradient; `data-tone=warn` switches to `--warn`; an optional `<b>` tick at `--mark` (for example, a projection). Fills only from real values, never decoratively | `<span class=levelBar role=img aria-label="…" style="--fill:62%"><i></i></span>` |
 | Takeaway | `.takeaway` | One action line after explanatory copy: signal left rule, faint signal fill, an uppercase `Takeaway` label, then the line | `<div class=takeaway><span>Takeaway</span><b>…</b></div>` |
+| Evidence figure | `.evidenceFigure`, rendered by `figureHtml()` | One labeled number in a tour preview: a source chip (`Yours`, `Example`, or `From the talk`), a mono heavy value, and a secondary note. `data-source` is `yours`, `example`, or `talk`, so a talk number can never pass as the user's | `<div class=evidenceFigure data-source=yours><span class="chip yoursChip">Yours</span><b>55%</b><small>of spend on one model</small></div>` |
 
 **Readable numbers.** A block leads with one main number. When the page
 already has history to compare against, it adds a `.readoutScale` and a
@@ -500,17 +501,35 @@ To add one: write its rules as `:where(.name …)`, add the name to
 describe it here. For script-rendered components, add one shared render helper
 (like `renderTrendDelta()`) instead of per-screen copies.
 
-### Welcome overlay
+### Welcome tour and Learn deck
 
-The first-launch welcome is a full-viewport modal `<dialog class=welcome>` over
-the shared `--spectrum-page` atmosphere, not a card inside a route. Five panels
-pair a display headline, one or two sentences, and a `.takeaway` on the left
-with a live `.miniPreview` on the right; they stack below 900px. A top-right
-round ✕ button (`aria-label="Close welcome"`), Esc, and **Skip for now** all
-dismiss it. The footer holds Skip, a dot pager, and Back / Next; the final panel
-demotes Done to a secondary button so its own call to action is the only primary.
-Panels rise in once per change and every motion is removed under
-`prefers-reduced-motion`. Learn reuses the same previews and components.
+The tour is one registry, `DECK_CHAPTERS` and `DECK_SLIDES`: 13 slides in four
+chapters (Why, How it works, Your questions, Do better). The same registry
+renders in two hosts, so copy lives in one place:
+
+- **Welcome overlay.** A full-viewport modal `<dialog class=welcome>` over the
+  shared `--spectrum-page` atmosphere. A top-right round ✕ button
+  (`aria-label="Close welcome"`), Esc, and **Skip for now** all dismiss it.
+- **Learn deck.** `.deck.deckInline` on the Learn page, inside a bordered panel.
+  Its footer sticks to the bottom of the viewport so Next stays in reach.
+  **Play as full screen** opens the overlay at the current slide.
+
+Each host is a `.deck`: a 212px chapter rail (`.deckRail`, chapter headings with
+`.deckStep` slide buttons marked ✓ done, ● current, ○ upcoming), a stage, and a
+footer with **Skip chapter**, the `7 / 13 · about 2 min left` counter, and Back /
+Next. A slide pairs a display headline, one or two sentences, a `.takeaway`, and
+`Open <page>` buttons on the left with a live `.miniPreview` on the right. At
+1180px and below the preview stacks under the copy and the takeaway moves beside
+the headline. In the overlay's last slide, Done is a secondary button so the
+slide's own call to action is the only primary.
+
+Numbers follow one rule. The user's number carries a `Yours` chip (`Example`
+before any session has tokens). A number from the talk carries a violet
+`From the talk` chip (`.chip.talkChip`), its value renders in `--aura-pale`, and
+the preview ends with the footnote *One engineer's laptop, estimated at public
+list prices.* The talk's monthly output-per-dollar chart marks its peak and
+drop; the user's own months stay neutral. Slides enter with one short rise per
+change, and every motion is removed under `prefers-reduced-motion`.
 
 ### Readability floor
 

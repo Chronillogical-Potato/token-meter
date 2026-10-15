@@ -103,21 +103,33 @@ and select it from **Sessions**.
 
 ### Welcome and Learn
 
-The first time the dashboard opens, a full-page welcome walks through five
-short panels: what a session costs, whether the number can be trusted, where
-your data goes, five levers that move the bill, and setting a monthly budget.
-Each panel shows a small preview built from your own local data. Before any
-session has tokens, the previews show example values marked **Example**.
-Close it with the ✕ button, **Esc**, or **Skip for now**; it does not open by
-itself again. Reopen it from **Learn → Replay welcome** or the ⌘K command
-**Open welcome tour**. If you used the earlier getting-started checklist, the
-welcome does not open automatically.
+The first time the dashboard opens, a full-page welcome tour walks through 13
+short slides in four chapters:
 
-**Learn** is the reference version of the same ideas: why usage is not value,
-where the money goes by token type (list prices and your latest session's share
-of tokens versus cost), what the estimate can and cannot see, the questions each
-page answers, the five levers with your numbers where available, and how to
-test one change at a time.
+1. **Why:** usage is not value, and how token prices work.
+2. **How it works:** the companion and the dashboard, reading the traces your
+   agents already wrote, whether you can trust the number, and privacy.
+3. **Your questions:** what you are spending, where it goes, and whether it is
+   paying off.
+4. **Do better:** five levers, changing one thing at a time, asking your agent
+   through the Token Meter MCP, and three steps to get started.
+
+A chapter rail on the left shows where you are; click any slide to jump to it.
+Use **→** and **←** to page, **Skip chapter** to move to the next chapter, and
+**Open …** buttons to go to the page a slide describes. Close the tour with the
+✕ button, **Esc**, or **Skip for now**; it does not open by itself again. If you
+used the earlier getting-started checklist, it does not open automatically.
+
+Each slide shows a small preview built from your own local data, labeled
+**Yours**. Before any session has tokens, previews show sample values marked
+**Example**. Some slides also show numbers from the Token Meter talk, labeled
+**From the talk**: they come from one engineer's laptop, estimated at public list
+prices, and are there to explain the idea, not to describe your usage.
+
+**Learn** shows the same slides as an inline deck and remembers the slide you
+were on. **Play as full screen** opens the tour at that slide. Reopen the tour
+any time with the ⌘K command **Open welcome tour**; if you left it partway, it
+offers **Resume where you left off** or **Start over**.
 
 ### Sessions
 
