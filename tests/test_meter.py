@@ -8315,6 +8315,130 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(payload["calendar"], ["2026-05-01", "2026-05-02", "2026-05-03"])
         self.assertEqual([round(point["value"], 6) for point in payload["sparse"]], [10.0, 30.0])
 
+    CHART_GAP_HARNESS = r"""
+const fs=require('fs');
+const page=fs.readFileSync(__PAGE__,'utf8');
+function extract(name){let start=page.indexOf(`function ${name}(`);if(start<0)throw Error(`missing ${name}`);let i=page.indexOf('{',start),depth=0;for(;i<page.length;i++){if(page[i]==='{')depth++;else if(page[i]==='}'&&--depth===0)return page.slice(start,i+1);}throw Error(`unclosed ${name}`);}
+function load(names){names.forEach(name=>eval(`globalThis.${name}=${extract(name)}`));}
+function attrs(html,tag,cls){return [...html.matchAll(new RegExp(`<${tag} class=${cls} ([^>]*)/?>`,'g'))].map(match=>Object.fromEntries([...match[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(pair=>[pair[1],pair[2]])));}
+"""
+
+    def run_chart_gap_harness(self, body):
+        script = self.CHART_GAP_HARNESS.replace(
+            "__PAGE__", json.dumps(str(Path(meter.__file__).with_name("page.html"))),
+        ) + body
+        result = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_chart_gap_runs_split_daily_points_and_bridge_only_interior_gaps(self):
+        payload = self.run_chart_gap_harness(r"""
+load(['chartGapRuns','chartGapBridge']);
+const runs=chartGapRuns([{index:1},{index:2},{index:4},{index:6},{index:7}]);
+process.stdout.write(JSON.stringify({
+ segments:runs.segments.map(run=>run.map(point=>point.index)),
+ bridges:runs.bridges.map(pair=>pair.map(point=>point.index)),
+ edges:chartGapRuns([{index:3},{index:4}]),
+ empty:chartGapRuns([]),
+ bridge:chartGapBridge(1,2.25,30,40),
+}));
+""")
+        self.assertEqual(payload["segments"], [[1, 2], [4], [6, 7]])
+        self.assertEqual(payload["bridges"], [[2, 4], [4, 6]])
+        self.assertEqual(payload["edges"]["bridges"], [])
+        self.assertEqual(len(payload["edges"]["segments"]), 1)
+        self.assertEqual(payload["empty"], {"segments": [], "bridges": []})
+        self.assertEqual(
+            payload["bridge"],
+            '<line class=chartGapBridge x1="1.0" y1="2.3" x2="30.0" y2="40.0"/>',
+        )
+        self.assertIn(":where(.chartGapBridge){", self.page)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_efficiency_chart_bridges_gaps_marks_isolated_days_and_never_plots_zero(self):
+        payload = self.run_chart_gap_harness(r"""
+load(['chartGapRuns','chartGapBridge','efficiencyChartPointerIndex','efficiencyChartKeyIndex','efficiencyChartMetricPresentation','efficiencyChartInspection','efficiencyChartAnnouncement','efficiencyChartSmoothPath','renderEfficiencyChart']);
+class AttrNode{constructor(){this.attrs={};}setAttribute(name,value){this.attrs[name]=String(value);}}
+class InspectNode extends AttrNode{constructor(){super();this.line=new AttrNode();this.dot=new AttrNode();}querySelector(selector){return selector==='line'?this.line:this.dot;}}
+class SvgNode extends AttrNode{constructor(parent){super();this.parentElement=parent;this.dataset={};this.inspect=null;}set innerHTML(value){this.html=value;this.inspect=new InspectNode();}get innerHTML(){return this.html;}querySelector(selector){return selector==='.efficiencyChartInspect'?this.inspect:null;}getBoundingClientRect(){return {left:0,width:520};}matches(){return false;}}
+const tip={hidden:true,textContent:'',style:{}},status={textContent:''};
+const svg=new SvgNode({querySelector(selector){return selector==='.efficiencyChartTip'?tip:status;}});
+globalThis.$=()=>svg;globalThis.esc=value=>String(value);globalThis.pct=value=>`${Math.round(value*100)}%`;globalThis.compactNumber=value=>String(Math.round(value));
+const values=[null,10,20,null,15,null,30,25,null];
+const trend=values.map((value,index)=>({day:`2026-08-${String(index+1).padStart(2,'0')}`,metrics:{output_per_dollar:value}}));
+renderEfficiencyChart('chart',trend,'output_per_dollar','Output per covered dollar');
+const html=svg.innerHTML,x=index=>9+index*502/8,y=value=>10+70-(value/30)*70;
+svg.onfocus();svg.onkeydown({key:'Home',preventDefault(){}});const leading=tip.textContent;
+['ArrowRight','ArrowRight','ArrowRight'].forEach(key=>svg.onkeydown({key,preventDefault(){}}));const gap=tip.textContent;
+process.stdout.write(JSON.stringify({
+ bridges:attrs(html,'line','chartGapBridge'),
+ expectedBridges:[[x(2),y(20),x(4),y(15)],[x(4),y(15),x(6),y(30)]].map(row=>row.map(value=>value.toFixed(1))),
+ dots:attrs(html,'circle','efficiencyChartDot').map(dot=>[dot.cx,dot.cy]),
+ expectedIsolated:[x(4).toFixed(1),y(15).toFixed(1)],
+ lines:attrs(html,'path','efficiencyChartLine').map(path=>path.d),
+ baseline:(10+70).toFixed(1),
+ missingX:[0,3,5,8].map(index=>x(index).toFixed(1)),
+ leading,gap,
+}));
+""")
+        self.assertEqual(
+            [[b["x1"], b["y1"], b["x2"], b["y2"]] for b in payload["bridges"]],
+            payload["expectedBridges"],
+        )
+        self.assertIn(payload["expectedIsolated"], payload["dots"])
+        self.assertEqual(len(payload["lines"]), 2, "only multi-day runs draw a solid line")
+        for path in payload["lines"]:
+            coordinates = re.findall(r"(-?\d+\.\d)\s(-?\d+\.\d)", path)
+            self.assertNotIn(payload["baseline"], [y for _, y in coordinates])
+            for missing_x in payload["missingX"]:
+                self.assertNotIn(missing_x, [x for x, _ in coordinates])
+        self.assertEqual(payload["leading"], "Aug 1 · No data")
+        self.assertEqual(payload["gap"], "Aug 4 · No data")
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_model_speed_and_trend_charts_bridge_gaps_instead_of_smoothing_through_them(self):
+        payload = self.run_chart_gap_harness(r"""
+load(['chartGapRuns','chartGapBridge','modelSpeedSeries','modelSpeedBasis','modelSpeedDefaultKeys','modelSmoothPath','renderModelSpeedChart','modelTrendRowHasUsage','modelTrendPaint','modelTokensPerExecution','drawModelTrend']);
+eval(page.slice(page.indexOf('const metricAvailable='),page.indexOf('\n',page.indexOf('const metricAvailable='))).replace(/^const /,'globalThis.'));
+const nodes={};
+function node(id){return nodes[id]||(nodes[id]={id,style:{},dataset:{},textContent:'',innerHTML:'',offsetWidth:100,offsetHeight:40,setAttribute(){},parentElement:{getBoundingClientRect(){return {left:0,top:0,width:1040};}},querySelectorAll:()=>[]});}
+Object.assign(globalThis,{$:node,esc:value=>String(value),f:value=>String(value),countWord:(n,word)=>word,setLogHtml(){},speedFmt:value=>value.toFixed(1),waitFmt:String,compactNumber:value=>String(Math.round(value)),modelScopeLabel:()=>'all',modelRangeLabel:()=>'8 days',modelRange:'8',modelSpeedSelection:null,MODEL_SPEED_MAX_SERIES:8,MODEL_SPEED_EXTRA_COLORS:['c2'],modelRankedColors:top=>new Map(top.map(group=>[group.key,'c1'])),CHART:{lbl:'lbl',grid:'grid',ink:'ink'},svgTextPx:()=>12,MODEL_OUTPUT_BAR_FILL:'bar',MODEL_OUTPUT_BAR_STROKE:'barStroke',modelTrendMetric:'speed'});
+const start=page.indexOf('const MODEL_TREND_METRICS=');eval('globalThis.MODEL_TREND_METRICS='+page.slice(start+'const MODEL_TREND_METRICS='.length,page.indexOf('\n};',start)+3));
+const days=['d0','d1','d2','d3','d4','d5','d6','d7'],timed=[1,2,4,6];
+const daily=timed.map(index=>({day:days[index],timed_output_tokens:100*(index+1),timed_seconds:10,timed_samples:1}));
+const group={key:'g',model:'m',runtime:'Codex',estimated:false,daily,window:{available:true,output_tps:10}};
+const speedHits=[];node('m-speedchart-svg').querySelectorAll=()=>days.map((_,index)=>{const hit={dataset:{speedDay:String(index)}};speedHits.push(hit);return hit;});
+renderModelSpeedChart([group],[group],[group],{days});
+const speed=node('m-speedchart-svg').innerHTML,speedTip=node('m-speedchart-tip');
+speedHits[3].onpointerenter({clientX:10,clientY:10});const speedGapTip=speedTip.style.display==='block'?speedTip.innerHTML:'hidden';
+const trendHits=[];node('m-chart').querySelectorAll=()=>days.map(()=>{const hit={};trendHits.push(hit);return hit;});
+const point=index=>timed.includes(index)?{day:days[index],executions:1,output_tokens:100,availability:{tokens:true},perf:{available:true,output_tps:index+1}}:{day:days[index],perf:{available:false}};
+drawModelTrend({days,series:[{id:'g',model:'m · Codex',color:'c1',estimated:false,points:days.map((_,index)=>point(index))}]});
+const trend=node('m-chart').innerHTML,trendTip=node('m-chart-tip');
+trendHits[0].onpointerenter({clientX:10,clientY:10});const trendGapTip=trendTip.style.display==='block'?trendTip.innerHTML:'hidden';
+process.stdout.write(JSON.stringify({
+ speedBridges:attrs(speed,'line','chartGapBridge').length,
+ speedCurves:(speed.match(/<path d="M[^"]*"/g)||[]).map(path=>(path.match(/ C/g)||[]).length),
+ speedDots:(speed.match(/<circle /g)||[]).length,
+ speedGapTip,
+ trendBridges:attrs(trend,'line','chartGapBridge').length,
+ trendLines:(trend.match(/<path d="M[^"]*"/g)||[]).map(path=>(path.match(/ L/g)||[]).length),
+ trendDots:(trend.match(/<circle /g)||[]).length,
+ trendGapTip,
+}));
+""")
+        self.assertEqual(payload["speedBridges"], 2)
+        self.assertEqual(payload["speedCurves"], [1], "only the d1-d2 run is a solid curve")
+        self.assertEqual(payload["speedDots"], 2, "isolated d4 and d6 render as dots")
+        self.assertIn("No data", payload["speedGapTip"])
+        self.assertIn("d3", payload["speedGapTip"])
+        self.assertEqual(payload["trendBridges"], 2)
+        self.assertEqual(payload["trendLines"], [1])
+        self.assertEqual(payload["trendDots"], 4)
+        self.assertIn("No data", payload["trendGapTip"])
+        self.assertIn("d0", payload["trendGapTip"])
+
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
     def test_models_focus_restore_keeps_the_focused_control_and_scopes_to_its_container(self):
         script = f"""
@@ -9149,6 +9273,8 @@ console.log(JSON.stringify({
             "efficiencyChartMetricPresentation",
             "efficiencyChartInspection",
             "efficiencyChartAnnouncement",
+            "chartGapRuns",
+            "chartGapBridge",
             "efficiencyChartSmoothPath",
             "renderEfficiencyChart",
         )
@@ -9622,7 +9748,7 @@ console.log(JSON.stringify(groups.map(group => colors.get(group.key))));
             "Number(row?.output_tokens||0)>0",
             "Number(row?.executions||0)>0",
             ".filter(item=>modelTrendRowHasUsage(item.row))",
-            "if(!rows.length){hideTip();return;}",
+            "(rows.length?'':'<div class=r><span>No data</span></div>')",
         ):
             self.assertIn(marker, self.page)
         self.assertIn(

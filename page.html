@@ -803,6 +803,7 @@ select option:checked{background-color:var(--panel3)}
 :where(.readoutScale>.readoutScaleMark){position:absolute;top:-2px;bottom:-2px;left:var(--at,0%);width:4px;border-radius:var(--radius-2xs);background:var(--scale-tone);box-shadow:0 0 10px var(--scale-tone);transform:translateX(-50%);transition:left var(--dur-data) var(--ease-out)}
 :where(.readoutCaption){display:block;margin-top:6px;color:var(--soft);font-size:var(--fs-12);font-weight:var(--fw-medium);line-height:1.35}
 :where(.readoutCaption)[hidden]{display:none}
+:where(.chartGapBridge){fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:2 4;stroke-linecap:round}
 :where(.readoutCaption)::before{content:"› ";color:var(--signal);font-family:var(--font-mono);font-weight:var(--fw-heavy)}
 @media(prefers-reduced-motion:reduce){:where(.readoutScale>i){transition:none}}
 .badge.codex{color:var(--provider-codex);border-color:rgb(var(--provider-codex-rgb)/.42);background:rgb(var(--provider-codex-rgb)/.08)}
@@ -7947,6 +7948,13 @@ function efficiencyChartInspection(sample,key){
 function efficiencyChartAnnouncement(detail,announce){
  return announce?`${detail.date} · ${detail.value}`:'';
 }
+function chartGapRuns(points){
+ const segments=[];let segment=[];
+ (points||[]).forEach(point=>{if(segment.length&&point.index!==segment.at(-1).index+1){segments.push(segment);segment=[];}segment.push(point);});
+ if(segment.length)segments.push(segment);
+ return {segments,bridges:segments.slice(1).map((run,index)=>[segments[index].at(-1),run[0]])};
+}
+function chartGapBridge(x1,y1,x2,y2,color=''){return `<line class=chartGapBridge x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"${color?` style="stroke:${color};stroke-opacity:.55"`:''}/>`;}
 function efficiencyChartSmoothPath(rows,x,y){
  const points=(rows||[]).map(row=>({x:Number(x(row)),y:Number(y(row.value))})),format=value=>value.toFixed(1);
  if(!points.length)return '';
@@ -7964,9 +7972,9 @@ function renderEfficiencyChart(id,trend,key,label){
  if(status)status.textContent='';
  if(!samples.length){delete svg.dataset.efficiencyHoverRatio;svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.innerHTML=`<text class=efficiencyChartEmpty x=10 y="${Math.round(height/2+4)}">No daily evidence</text>`;svg.setAttribute('aria-label',`${label}: unavailable`);svg.onpointermove=null;svg.onpointerleave=null;svg.onfocus=null;svg.onkeydown=null;svg.onblur=null;return;}
  const maxValue=key==='reasoning_ratio'||key==='cache_hit_ratio'?1:valid.length?Math.max(1,...valid.map(row=>row.value)):1,plotWidth=width-pad.left-pad.right,plotHeight=height-pad.top-pad.bottom,x=row=>pad.left+(samples.length<=1?plotWidth/2:row.index*plotWidth/(samples.length-1)),y=value=>pad.top+plotHeight-(Math.max(0,value)/maxValue)*plotHeight;
- const segments=[];let segment=[];samples.forEach(row=>{if(row.value===null||!Number.isFinite(row.value)){if(segment.length)segments.push(segment);segment=[];}else segment.push(row);});if(segment.length)segments.push(segment);
- const paths=segments.map(rows=>{const line=efficiencyChartSmoothPath(rows,x,y),area=`${line} L${x(rows.at(-1)).toFixed(1)} ${(pad.top+plotHeight).toFixed(1)} L${x(rows[0]).toFixed(1)} ${(pad.top+plotHeight).toFixed(1)} Z`;return `<path class=efficiencyChartArea d="${area}"/><path class=efficiencyChartLine d="${line}"/>`;}).join('');
- const last=valid.at(-1),format=value=>efficiencyChartMetricPresentation(value,key).axis,firstDay=samples[0]?.day?.slice(5)||'',lastDay=samples.at(-1)?.day?.slice(5)||'',latest=last?`<circle class=efficiencyChartDot cx="${x(last).toFixed(1)}" cy="${y(last.value).toFixed(1)}" r="3.5"/>`:'',empty=valid.length?'':`<text class=efficiencyChartEmpty x=10 y="${Math.round(height/2+4)}">No daily evidence</text>`,maxLabel=valid.length?`<text class=efficiencyChartLabel x="${width-pad.right}" y="${pad.top+8}" text-anchor=end>${esc(format(maxValue))}</text>`:'';
+ const last=valid.at(-1),{segments,bridges}=chartGapRuns(valid);
+ const paths=bridges.map(([from,to])=>chartGapBridge(x(from),y(from.value),x(to),y(to.value))).join('')+segments.map(rows=>{if(rows.length===1)return rows[0]===last?'':`<circle class=efficiencyChartDot cx="${x(rows[0]).toFixed(1)}" cy="${y(rows[0].value).toFixed(1)}" r="2.5"/>`;const line=efficiencyChartSmoothPath(rows,x,y),area=`${line} L${x(rows.at(-1)).toFixed(1)} ${(pad.top+plotHeight).toFixed(1)} L${x(rows[0]).toFixed(1)} ${(pad.top+plotHeight).toFixed(1)} Z`;return `<path class=efficiencyChartArea d="${area}"/><path class=efficiencyChartLine d="${line}"/>`;}).join('');
+ const format=value=>efficiencyChartMetricPresentation(value,key).axis,firstDay=samples[0]?.day?.slice(5)||'',lastDay=samples.at(-1)?.day?.slice(5)||'',latest=last?`<circle class=efficiencyChartDot cx="${x(last).toFixed(1)}" cy="${y(last.value).toFixed(1)}" r="3.5"/>`:'',empty=valid.length?'':`<text class=efficiencyChartEmpty x=10 y="${Math.round(height/2+4)}">No daily evidence</text>`,maxLabel=valid.length?`<text class=efficiencyChartLabel x="${width-pad.right}" y="${pad.top+8}" text-anchor=end>${esc(format(maxValue))}</text>`:'';
  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
  svg.innerHTML=`<line class=efficiencyChartGrid x1="${pad.left}" x2="${width-pad.right}" y1="${pad.top}" y2="${pad.top}"/><line class=efficiencyChartGrid x1="${pad.left}" x2="${width-pad.right}" y1="${pad.top+plotHeight}" y2="${pad.top+plotHeight}"/>${paths}${latest}${empty}<text class=efficiencyChartLabel x="${pad.left}" y="${height-2}">${esc(firstDay)}</text><text class=efficiencyChartLabel x="${width-pad.right}" y="${height-2}" text-anchor=end>${esc(lastDay)}</text>${maxLabel}<g class=efficiencyChartInspect visibility=hidden><line class=efficiencyChartInspectLine y1="${pad.top}" y2="${pad.top+plotHeight}"/><circle class=efficiencyChartInspectDot r="4"/></g>`;
  const instruction='Use Left and Right arrow keys to inspect daily values.',summaryLabel=`${last?`${label}: ${valid.length} daily values, latest ${format(last.value)}`:`${label}: unavailable`}. ${instruction}`;
@@ -8138,7 +8146,7 @@ function drawModelTrend(chart){
  let html='';
  for(let i=0;i<=4;i++){const y=MT+PH*i/4;html+=`<line x1="${ML}" x2="${ML+PW}" y1="${y}" y2="${y}" stroke="${CHART.grid}" stroke-width="1"/><text x="${ML-8}" y="${y+4}" text-anchor="end" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${compactNumber(maxOutput*(1-i/4))}</text><text x="${ML+PW+8}" y="${y+4}" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${lineFormat(maxLine*(1-i/4))}</text>`;}
  days.forEach((day,index)=>series.forEach((model,modelIndex)=>{const row=model.points[index],y=outY(row.output_tokens),h=MT+PH-y,barX=x(index)-groupW/2+modelIndex*barW,paint=modelTrendPaint(model.color);html+=`<rect x="${barX}" y="${y}" width="${Math.max(.8,barW-.5)}" height="${Math.max(0,h)}" rx="2" fill="${paint.barFill}" stroke="${paint.barStroke}" stroke-opacity=".78"/>`;}));
- series.forEach(model=>{const paint=modelTrendPaint(model.color);let segment=[];const flush=()=>{if(segment.length>1)html+=`<path d="${segment.map((point,index)=>`${index?'L':'M'}${point[0].toFixed(1)},${point[1].toFixed(1)}`).join(' ')}" fill="none" stroke="${paint.line}" stroke-width="2.5" ${model.estimated?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;segment=[];};model.points.forEach((row,index)=>{if(!lineAvailable(row)){flush();return;}segment.push([x(index),lineY(lineValue(row))]);});flush();model.points.forEach((row,index)=>{if(lineAvailable(row))html+=`<circle cx="${x(index)}" cy="${lineY(lineValue(row))}" r="3.8" fill="${paint.line}" stroke="${CHART.ink}" stroke-width="2"/>`;});});
+ series.forEach(model=>{const paint=modelTrendPaint(model.color),{segments,bridges}=chartGapRuns(model.points.flatMap((row,index)=>lineAvailable(row)?[{index,x:x(index),y:lineY(lineValue(row))}]:[]));bridges.forEach(([from,to])=>{html+=chartGapBridge(from.x,from.y,to.x,to.y,paint.line);});segments.filter(segment=>segment.length>1).forEach(segment=>{html+=`<path d="${segment.map((point,index)=>`${index?'L':'M'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ')}" fill="none" stroke="${paint.line}" stroke-width="2.5" ${model.estimated?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;});model.points.forEach((row,index)=>{if(lineAvailable(row))html+=`<circle cx="${x(index)}" cy="${lineY(lineValue(row))}" r="3.8" fill="${paint.line}" stroke="${CHART.ink}" stroke-width="2"/>`;});});
  const labelEvery=Math.max(1,Math.ceil(days.length/8));
  days.forEach((day,index)=>{const remaining=days.length-1-index,showLabel=index===days.length-1||(index%labelEvery===0&&remaining>=Math.max(2,Math.ceil(labelEvery/2)));if(showLabel)html+=`<text x="${x(index)}" y="${VH-12}" text-anchor="middle" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${esc(day.slice(5))}</text>`;html+=`<rect data-model-day="${esc(day)}" x="${ML+step*index}" y="${MT}" width="${step}" height="${PH}" fill="transparent" pointer-events="all"/>`;});
  html+=`<text x="8" y="12" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">output</text><text x="${VW-8}" y="12" text-anchor="end" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${esc(metric.axis)}</text>`;
@@ -8150,8 +8158,7 @@ function drawModelTrend(chart){
  const show=(event,index)=>{
   cancelTipHide();
   const rect=$('m-chart').parentElement.getBoundingClientRect(),day=days[index],rows=series.map(model=>({model:model.model,color:model.color,row:model.points[index]})).filter(item=>modelTrendRowHasUsage(item.row)),dayChanged=tip.dataset.day!==day;
-  if(!rows.length){hideTip();return;}
-  tip.innerHTML=`<div class=h>${esc(day)}</div>`+rows.map(item=>{
+  tip.innerHTML=`<div class=h>${esc(day)}</div>`+(rows.length?'':'<div class=r><span>No data</span></div>')+rows.map(item=>{
    const outputAvailable=metricAvailable(item.row,'tokens');
    const selectedAvailable=metric.available(item.row);
    return `<div class=modelTipSeries><div class=modelTipName title="${esc(item.model)}"><i class=modelSwatch style="background:${item.color}"></i>${esc(item.model)}</div><div class=modelTipMetrics><span><small>output</small><b>${outputAvailable?compactNumber(item.row.output_tokens||0):'--'}</b></span><span><small>${esc(metric.note)}</small><b>${selectedAvailable?metric.format(metric.value(item.row)):'--'}</b></span></div></div>`;
@@ -8335,7 +8342,7 @@ function renderModelSpeedChart(groups,ranking,top,rangeWindow){
  const step=PW/Math.max(1,days.length),x=index=>ML+step*(index+.5),y=value=>MT+PH-PH*value/max;
  let html='';
  for(let i=0;i<=4;i++){const yy=MT+PH*i/4;html+=`<line x1="${ML}" x2="${ML+PW}" y1="${yy}" y2="${yy}" stroke="${CHART.grid}" stroke-width="1"/><text x="${ML-8}" y="${yy+4}" text-anchor="end" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${esc(speedFmt(max*(1-i/4))==='--'?'0':speedFmt(max*(1-i/4)))}</text>`;}
- series.forEach(item=>{const pts=item.points.map(point=>[x(point.index),y(point.value)]);if(pts.length>1)html+=`<path d="${modelSmoothPath(pts)}" fill="none" stroke="${item.color}" stroke-width="2.4" ${item.estimated?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;else if(pts.length)html+=`<circle cx="${pts[0][0].toFixed(1)}" cy="${pts[0][1].toFixed(1)}" r="3.4" fill="${item.estimated?'none':item.color}" stroke="${item.color}" stroke-width="1.6"/>`;});
+ series.forEach(item=>{const {segments,bridges}=chartGapRuns(item.points);bridges.forEach(([from,to])=>{html+=chartGapBridge(x(from.index),y(from.value),x(to.index),y(to.value),item.color);});segments.forEach(segment=>{const pts=segment.map(point=>[x(point.index),y(point.value)]);if(pts.length>1)html+=`<path d="${modelSmoothPath(pts)}" fill="none" stroke="${item.color}" stroke-width="2.4" ${item.estimated?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;else html+=`<circle cx="${pts[0][0].toFixed(1)}" cy="${pts[0][1].toFixed(1)}" r="3.4" fill="${item.estimated?'none':item.color}" stroke="${item.color}" stroke-width="1.6"/>`;});});
  const labelEvery=Math.max(1,Math.ceil(days.length/8));
  days.forEach((day,index)=>{const remaining=days.length-1-index,showLabel=index===days.length-1||(index%labelEvery===0&&remaining>=Math.max(2,Math.ceil(labelEvery/2)));if(showLabel)html+=`<text x="${x(index)}" y="${VH-10}" text-anchor="middle" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">${esc(day.slice(5))}</text>`;html+=`<rect data-speed-day="${index}" x="${ML+step*index}" y="${MT}" width="${step}" height="${PH}" fill="transparent" pointer-events="all"/>`;});
  html+=`<text x="8" y="12" fill="${CHART.lbl}" font-size="${svgTextPx(svg,VW,VH)}">tok/s</text>`;
@@ -8343,8 +8350,7 @@ function renderModelSpeedChart(groups,ranking,top,rangeWindow){
  const hide=()=>{tip.style.display='none';};
  const show=(event,index)=>{
   const rows=series.map(item=>({item,point:item.points.find(point=>point.index===index)})).filter(row=>row.point);
-  if(!rows.length){hide();return;}
-  tip.innerHTML=`<div class=h>${esc(days[index])}</div>`+rows.map(({item,point})=>`<div class=r><span><i class=modelSwatch style="background:${item.color}"></i>${esc(item.label)}</span><b>${esc(speedFmt(point.value))} tok/s · ${f(point.samples)} ${countWord(point.samples,'sample')}</b></div>`).join('');
+  tip.innerHTML=`<div class=h>${esc(days[index])}</div>`+(rows.length?'':'<div class=r><span>No data</span></div>')+rows.map(({item,point})=>`<div class=r><span><i class=modelSwatch style="background:${item.color}"></i>${esc(item.label)}</span><b>${esc(speedFmt(point.value))} tok/s · ${f(point.samples)} ${countWord(point.samples,'sample')}</b></div>`).join('');
   tip.style.display='block';
   const rect=svg.parentElement.getBoundingClientRect(),pointerX=event.clientX-rect.left,rightX=pointerX+12,leftX=pointerX-tip.offsetWidth-12;
   tip.style.left=(rightX+tip.offsetWidth<=rect.width-8?rightX:Math.max(8,leftX))+'px';tip.style.top=Math.max(8,event.clientY-rect.top-tip.offsetHeight-10)+'px';
