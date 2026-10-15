@@ -125,6 +125,19 @@ from token_meter.domain.tools import (
 from token_meter.services.git_delivery import (
     GitDeliveryLedger, GitDeliveryService, MAX_QUERY_PROJECTS, MAX_REPOSITORIES,
 )
+from token_meter.services.goals import (
+    apply_action as apply_goal_action,
+    native_summary as native_goal_summary,
+    preview as preview_goal,
+    project as project_goals,
+    model_choices as goal_model_choices,
+    normalize_store as normalize_goal_store,
+    model_inventory as goal_model_inventory,
+    session_key as goal_session_key,
+    default_goals as default_goal_records,
+    goal_detail as goal_detail_measurement,
+)
+from token_meter.services.goal_coaching import coach as coach_goal
 from token_meter.models.catalog import (
     ANTHROPIC_PRICE as CLAUDE_PRICE,
     BUILTIN_MODEL_PRICE_HISTORY as _CANONICAL_BUILTIN_MODEL_PRICE_HISTORY,
@@ -1837,6 +1850,160 @@ def set_budget_settings(values, path=None):
         return supplied
 
     return _update_budget_settings(update, path)
+
+
+def goal_agents():
+    return {provider: runtime_display_label(provider) for provider in BUDGET_PROVIDERS}
+
+
+def goal_settings(path=None):
+    """Read local goal records, separate from all public/native projections."""
+    settings = load_json(path or TOKEN_METER_SETTINGS, {})
+    return settings.get("goals") if isinstance(settings, dict) else {}
+
+
+_goal_evidence_cache = {"key": None, "value": None}
+_goal_evidence_lock = threading.Lock()
+
+
+def goal_evidence(cross):
+    """Scoped rows, observed models, and a Git window query; reused until evidence changes."""
+    rows = _xsess.get("internal_rows") or ()
+    active = {goal_session_key(row) for row in cross.get("current_sessions") or ()
+              if row.get("activity_state") == "working"}
+    service = git_delivery_service()
+    key = (id(rows), len(rows), _xsess.get("at"), service.last_checked(),
+           _SOURCE_INVENTORY.get("revision"), _SOURCE_INVENTORY.get("git_delivery_candidates_revision"))
+    with _goal_evidence_lock:
+        if _goal_evidence_cache["key"] != key:
+            _goal_evidence_cache.update(key=key, value=_prepare_goal_evidence(rows, service))
+        models, git_query = _goal_evidence_cache["value"]
+    return rows, active, models, git_query
+
+
+def _prepare_goal_evidence(rows, service):
+    candidates = cached_git_delivery_candidates()[:MAX_REPOSITORIES]
+    labels = sorted({candidate["project"] for candidate in candidates})
+    spend_rows = delivery_spend_rows(rows)
+    results = {}
+
+    def git_query(scope, start, end):
+        key = (start, end)
+        if key not in results:
+            result = service.query_window("", start, end, spend_rows, labels, candidates)
+            results[key] = result
+        checked = (results[key].get("coverage") or {}).get("last_checked")
+        results[key]["stale"] = checked is None or time.time() - float(checked) > GIT_DELIVERY_INTERVAL_S * 2
+        return results[key]
+    return goal_model_inventory(rows), git_query
+
+
+def build_goals(raw, *, cross=None, detail=True, today=None):
+    today = today or datetime.date.today()
+    cross = cross if cross is not None else cross_session()
+    rows, active, _models, git_query = goal_evidence(cross)
+    agents = goal_agents()
+    cache = {}
+    return project_goals(raw, rows, agents, metric_available, git_query, active,
+                         budget_settings(), today, detail=detail, cache=cache)
+
+
+def goals_state(params=None):
+    params = params or {}
+    try:
+        if params.get("models"):
+            rows, _active, models, _git_query = goal_evidence(cross_session())
+            store = normalize_goal_store(goal_settings(), goal_agents())
+            return {"ok": True, **goal_model_choices(rows, models, goal_agents(), store["items"],
+                                                    datetime.date.today(), params.get("runtime", ""),
+                                                    params.get("query", ""))}
+        if params.get("goal"):
+            cross = cross_session()
+            rows, active, _models, git_query = goal_evidence(cross)
+            detail = goal_detail_measurement(goal_settings(), params["goal"], rows, goal_agents(),
+                                             metric_available, git_query, active, budget_settings(),
+                                             datetime.date.today())
+            detail["coaching"] = coach_goal(detail)
+            return detail
+        if params.get("preview"):
+            cross = cross_session()
+            rows, _active, models, git_query = goal_evidence(cross)
+            return preview_goal(params, goal_agents(), models, rows, metric_available,
+                                git_query, datetime.date.today())
+        return build_goals(goal_settings())
+    except ValueError as error:
+        return {"ok": False, "error": str(error)}
+    except (OSError, sqlite3.Error):
+        return {"ok": False, "error": "Goal evidence is temporarily unavailable."}
+
+
+def set_goals_action(action, path=None):
+    """Validate and atomically persist one explicit goal action."""
+    path = path or TOKEN_METER_SETTINGS
+    today = datetime.date.today()
+    try:
+        rows, _active, models, git_query = goal_evidence(cross_session())
+        seeding = isinstance(action, dict) and action.get("operation") == "seed"
+        defaults = default_goal_records(rows, metric_available, git_query, today) if seeding else ()
+        with _budget_settings_lock(path):
+            settings = load_json(path, {})
+            if not isinstance(settings, dict):
+                settings = {}
+            updated = apply_goal_action(settings.get("goals"), action, goal_agents(), models, today,
+                                        defaults=defaults)
+            before = normalize_goal_store(settings.get("goals"), goal_agents())
+            if not seeding or (updated["items"], updated["seeded"]) != (before["items"], before["seeded"]):
+                settings["goals"] = updated
+                atomic_write_text(path, json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+    except ValueError as error:
+        return {"ok": False, "error": str(error)}
+    except (OSError, sqlite3.Error):
+        return {"ok": False, "error": "Token Meter could not save goals."}
+    result = build_goals(updated, today=today)
+    if path == TOKEN_METER_SETTINGS:
+        with _goal_cache_lock:
+            _goal_cache.update(signature=None, native=native_goal_summary(result, today))
+    return result
+
+
+_goal_cache = {"signature": None, "built_at": 0.0,
+               "native": {"ready": False, "items": [], "additional_count": 0}}
+_goal_cache_lock = threading.Lock()
+GOAL_NATIVE_REFRESH_S = 60.0
+
+
+def refresh_goal_cache():
+    """Watcher-owned rebuild of the native summary from already published evidence."""
+    cross = _xsess.get("data")
+    if cross is None:
+        return
+    try:
+        settings_revision = os.stat(TOKEN_METER_SETTINGS).st_mtime_ns
+    except OSError:
+        settings_revision = 0
+    service = _git_delivery_service_instance
+    git_revision = service.last_checked() if service is not None else None
+    today = datetime.date.today()
+    git_stale = git_revision is None or time.time() - float(git_revision) > GIT_DELIVERY_INTERVAL_S * 2
+    signature = (_xsess.get("at"), settings_revision, today, git_revision, git_stale)
+    previous = _goal_cache["signature"]
+    if signature == previous:
+        return
+    # Live sessions republish evidence every few seconds; only that change is throttled.
+    if (previous and previous[1:] == signature[1:]
+            and time.monotonic() - _goal_cache["built_at"] < GOAL_NATIVE_REFRESH_S):
+        return
+    try:
+        raw = goal_settings()
+        items = raw.get("items") if isinstance(raw, dict) else None
+        native = (native_goal_summary(build_goals(raw, cross=cross,
+                                                  detail=False, today=today), today)
+                  if items else {"ready": True, "items": [], "additional_count": 0})
+    # The watcher thread must survive a goal evaluation failure; goals are optional.
+    except Exception:
+        native = {"ready": False, "items": [], "additional_count": 0}
+    with _goal_cache_lock:
+        _goal_cache.update(signature=signature, built_at=time.monotonic(), native=native)
 
 
 def effective_session_budget(session_id, settings=None):
@@ -7741,6 +7908,8 @@ def clear_git_delivery_activity(confirm=False):
     if confirm is not True:
         return {"ok": False, "error": "Explicit confirmation is required."}
     git_delivery_service().clear()
+    with _goal_cache_lock:
+        _goal_cache["signature"] = None
     _git_delivery_wake.set()
     return {"ok": True}
 
@@ -9967,6 +10136,7 @@ def menubar_state(session_id=None):
         "context_pulse": menubar_context_pulse(st),
         "provider_quotas": provider_quota_snapshots(),
         "budget": budget,
+        "goals": _goal_cache["native"],
         "software_update": menubar_software_update(),
         "ts": st.get("ts"),
     }
@@ -10108,6 +10278,7 @@ def watcher():
                 })
             cross_dirty = False
             last_cross_refresh = now
+        refresh_goal_cache()
         time.sleep(0.5)
 
 
@@ -10307,7 +10478,8 @@ class H(BaseHTTPRequestHandler):
                             "/agent-access/toggle", "/session/delete",
                             "/settings/model-pricing", "/settings/session-model-identity",
                             "/settings/budgets", "/settings/session-budget", "/settings/updates",
-                            "/git-delivery/clear", "/updates/check", "/updates/install"):
+                            "/git-delivery/clear", "/updates/check", "/updates/install",
+                            "/goals"):
             self.send_error(404)
             return
         origin = self.headers.get("Origin") or ""
@@ -10338,6 +10510,11 @@ class H(BaseHTTPRequestHandler):
         except (UnicodeDecodeError, json.JSONDecodeError):
             self._send(json.dumps({"ok": False, "error": "Invalid JSON."}),
                        "application/json", status=400)
+            return
+        if req_path == "/goals":
+            result = set_goals_action(payload)
+            self._send(json.dumps(result), "application/json",
+                       status=200 if result.get("ok") else 400)
             return
         if req_path == "/settings/model-pricing":
             if isinstance(payload.get("changes"), list):
@@ -10538,6 +10715,14 @@ class H(BaseHTTPRequestHandler):
                 (parse_qs(parsed.query).get("ids") or [""])[0],
             )
             self._send(json.dumps(payload), "application/json", status=status)
+        elif req_path == "/goals":
+            params = parse_qs(parsed.query)
+            fields = ("goal", "preview", "metric", "scope_kind", "scope_key", "scope_keys", "period", "start", "end",
+                      "models", "runtime", "query")
+            self._send(json.dumps(goals_state({
+                field: (params.get(field) or [""])[0][:2200 if field == "scope_keys" else 120 if field == "query" else 80]
+                for field in fields
+            })), "application/json")
         elif req_path == "/spend/logs":
             query = parse_qs(parsed.query)
             payload, status = spend_logs_state(
