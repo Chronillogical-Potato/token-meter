@@ -1571,25 +1571,34 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .capQueueEmpty h3{margin:0;color:var(--fg);font-size:var(--fs-16)}
 .capQueueEmpty p{max-width:760px;margin:4px 0 0;line-height:1.5}
 .capQueueEmpty .tbtn{margin-top:12px}
-.capReviewItem{padding:16px 18px;border-bottom:1px solid var(--line)}
+.capReviewHead,.capReviewItem{display:grid;grid-template-columns:minmax(0,1fr) 84px;align-items:start;gap:0 12px;padding:4px 18px;border-bottom:1px solid var(--line)}
+.capReviewHead{padding-top:8px;padding-bottom:6px;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);letter-spacing:.04em;text-transform:uppercase}
+.capReviewHead>span:last-child{text-align:right}
 .capReviewItem:last-child{border-bottom:0}
-.capReviewTop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
-.capReviewIdentity{min-width:0}
-.capReviewIdentity h3{margin:0;color:var(--fg);font-size:var(--fs-16)}
-.capReviewIdentity p{margin:3px 0 0;color:var(--faint);font-size:var(--fs-11)}
-.capReviewChoice{display:flex;align-items:center;gap:12px;flex:none}
-.capReviewChoice .stateDot{white-space:nowrap}
+.capReviewItem>.capSelect{justify-self:end}
+.capReviewCols{display:grid;grid-template-columns:12px minmax(0,1fr) 148px 92px 72px 124px;align-items:center;gap:12px;min-width:0}
+.capReviewHead .capReviewCols:before{content:""}
+.capReviewRow{min-width:0}
+.capReviewRow>summary{min-height:36px;border-radius:var(--radius-sm);list-style:none;cursor:pointer}
+.capReviewRow>summary::-webkit-details-marker{display:none}
+.capReviewRow>summary:before{content:"\25B8";color:var(--faint);font-size:var(--fs-11);transition:transform .15s ease}
+.capReviewRow[open]>summary:before{transform:rotate(90deg)}
+.capReviewRow>summary:hover{background:rgb(var(--signal-rgb)/.035)}
+.capReviewRow>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.capReviewName{display:flex;align-items:baseline;gap:8px;min-width:0;overflow:hidden;white-space:nowrap}
+.capReviewName strong{overflow:hidden;color:var(--fg);font-size:var(--fs-14);text-overflow:ellipsis}
+.capReviewName span{flex:none;color:var(--faint);font-size:var(--fs-11)}
+.capReviewNum{overflow:hidden;color:var(--fg);font:var(--fw-semibold) var(--fs-12)/1.4 var(--font-mono);font-variant-numeric:tabular-nums;text-overflow:ellipsis;white-space:nowrap}
+.capReviewCols .stateDot{color:var(--dim);font-size:var(--fs-11)}
 .capSelect{display:inline-flex;min-height:36px;align-items:center;gap:6px;padding:0 8px;border:1px solid var(--line2);border-radius:var(--radius-sm);background:rgb(var(--tint-rgb)/.035);color:var(--fg);font-size:var(--fs-11);font-weight:var(--fw-bold);cursor:pointer}
 .capSelect input{width:15px;height:15px;accent-color:var(--warn)}
-.capReviewFacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.capReviewFacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .capReviewFacts>div{padding:10px 12px;border-left:1px solid var(--line)}
 .capReviewFacts>div:first-child{padding-left:0;border-left:0}
 .capReviewFacts dt{color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}
 .capReviewFacts dd{margin:4px 0 0;color:var(--fg);font-size:var(--fs-12);line-height:1.4}
-.capReviewImpact{margin:10px 0 0;color:var(--dim);font-size:var(--fs-12);line-height:1.5}
-.capReviewDisclosure{margin-top:10px;color:var(--dim);font-size:var(--fs-11)}
-.capReviewDisclosure summary{width:max-content;max-width:100%;cursor:pointer;color:var(--accent);font-weight:var(--fw-bold)}
-.capReviewDisclosureBody{display:grid;gap:6px;margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgb(var(--bg-rgb)/.28)}
+.capReviewImpact{margin:0;color:var(--dim);font-size:var(--fs-12);line-height:1.5}
+.capReviewDisclosureBody{display:grid;gap:6px;margin:4px 0 8px 24px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgb(var(--bg-rgb)/.28);color:var(--dim);font-size:var(--fs-11)}
 .capReviewDisclosureBody b{color:var(--fg)}
 .capReviewMembers{display:flex;flex-wrap:wrap;gap:4px}
 .capReviewMembers span{padding:3px 6px;border:1px solid var(--line);border-radius:var(--radius-xs);background:rgb(var(--tint-rgb)/.025);color:var(--dim);font:var(--fw-semibold) var(--fs-11)/1.3 var(--font-mono)}
@@ -1630,10 +1639,10 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .capPath{max-width:280px}
 .capCatalogHead>span:first-child{display:grid;gap:2px}
 @media(max-width:1400px){.capFilters{grid-template-columns:1fr 1fr}.capFilterControl:first-child{grid-column:1/-1}}
-@media(max-width:800px){.capReviewFacts{grid-template-columns:1fr}.capReviewFacts>div,.capReviewFacts>div:first-child{padding:8px 0;border-left:0;border-top:1px solid var(--line)}.capReviewFacts>div:first-child{border-top:0}.capReviewTop{display:grid}.capReviewChoice{justify-content:space-between}.capInventoryHead{align-items:flex-start}.capCatalog{grid-template-columns:1fr;gap:8px}.capCatalogHead{grid-template-columns:minmax(0,1fr) auto;align-items:start}.capCatalogHead .subline{margin:0}.capFilters{grid-template-columns:1fr;padding:10px}.capFilterControl:first-child{grid-column:1}.capFilters .seg{width:100%}.capFilters .seg button{flex:1}.capTableWrap{overflow:visible;border:0;border-radius:0}.capTableWrap .tbl{display:block;min-width:0}.capTableWrap thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.capTableWrap tbody{display:grid;gap:8px}.capTableWrap tr{display:grid;padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--spectrum-card);box-shadow:var(--shadow-soft)}.capTableWrap td{display:grid;grid-template-columns:minmax(92px,.38fr) minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid rgb(var(--tint-rgb)/.055);overflow-wrap:anywhere}.capTableWrap td:last-child{border-bottom:0}.capTableWrap td:before{content:attr(data-label);color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.capTableWrap td.nm{display:block;padding-top:2px;font-size:var(--fs-16)}.capTableWrap td.nm:before{display:block;margin-bottom:4px}.capTableWrap .capPath{max-width:100%;white-space:normal}.capTableWrap .capEmpty{display:block}.capTableWrap .capEmpty:before{display:none}.capFilterStatus{align-items:stretch;flex-direction:column}.capFilterStatus .clearFilters{align-self:flex-start}.capCatalogBody .legend{gap:8px}}
+@media(max-width:800px){.capReviewFacts{grid-template-columns:1fr}.capReviewFacts>div,.capReviewFacts>div:first-child{padding:8px 0;border-left:0;border-top:1px solid var(--line)}.capReviewFacts>div:first-child{border-top:0}.capReviewHead{display:none}.capReviewCols{grid-template-columns:12px minmax(0,1fr)}.capReviewCols>:nth-child(n+2){grid-column:2}.capReviewDisclosureBody{margin-left:0}.capInventoryHead{align-items:flex-start}.capCatalog{grid-template-columns:1fr;gap:8px}.capCatalogHead{grid-template-columns:minmax(0,1fr) auto;align-items:start}.capCatalogHead .subline{margin:0}.capFilters{grid-template-columns:1fr;padding:10px}.capFilterControl:first-child{grid-column:1}.capFilters .seg{width:100%}.capFilters .seg button{flex:1}.capTableWrap{overflow:visible;border:0;border-radius:0}.capTableWrap .tbl{display:block;min-width:0}.capTableWrap thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.capTableWrap tbody{display:grid;gap:8px}.capTableWrap tr{display:grid;padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--spectrum-card);box-shadow:var(--shadow-soft)}.capTableWrap td{display:grid;grid-template-columns:minmax(92px,.38fr) minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid rgb(var(--tint-rgb)/.055);overflow-wrap:anywhere}.capTableWrap td:last-child{border-bottom:0}.capTableWrap td:before{content:attr(data-label);color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.capTableWrap td.nm{display:block;padding-top:2px;font-size:var(--fs-16)}.capTableWrap td.nm:before{display:block;margin-bottom:4px}.capTableWrap .capPath{max-width:100%;white-space:normal}.capTableWrap .capEmpty{display:block}.capTableWrap .capEmpty:before{display:none}.capFilterStatus{align-items:stretch;flex-direction:column}.capFilterStatus .clearFilters{align-self:flex-start}.capCatalogBody .legend{gap:8px}}
 .capMobileSort{display:none}
 @media(max-width:800px){.capMobileSort{display:grid;grid-template-columns:auto minmax(150px,220px);align-items:center;justify-content:end;gap:8px;margin:10px 0;color:var(--faint);font-size:var(--fs-11);font-weight:var(--fw-heavy);text-transform:uppercase}.capMobileSort select{height:38px}.capTableWrap .capMore{display:block}.capTableWrap .capMore:before{display:none}}
-@media(max-width:520px){.capStat{min-height:86px;padding:10px 8px}.capStat strong{font-size:var(--fs-20)}.capStatDetail{font-size:var(--fs-11)}.capQueueHead,.capReviewItem,.capQueueEmpty{padding-left:12px;padding-right:12px}.capQueueHead{display:grid}.capQueueCount{padding:0}.capReviewCaveat{padding:8px 12px}.capReviewChoice{align-items:stretch;flex-direction:column}.capSelect{min-height:44px;justify-content:center}.capSelectionBar{align-items:stretch;flex-wrap:wrap;padding:10px 12px}.capSelectionBar span{width:100%;margin:0}.capSelectionBar .tbtn{min-height:44px;flex:1}.capInventoryHead{padding:12px}.capInventoryBody{padding:12px}.capCatalogHead .subline{display:none}}
+@media(max-width:520px){.capStat{min-height:86px;padding:10px 8px}.capStat strong{font-size:var(--fs-20)}.capStatDetail{font-size:var(--fs-11)}.capQueueHead,.capReviewItem,.capQueueEmpty{padding-left:12px;padding-right:12px}.capQueueHead{display:grid}.capQueueCount{padding:0}.capReviewCaveat{padding:8px 12px}.capSelect{min-height:44px;justify-content:center}.capSelectionBar{align-items:stretch;flex-wrap:wrap;padding:10px 12px}.capSelectionBar span{width:100%;margin:0}.capSelectionBar .tbtn{min-height:44px;flex:1}.capInventoryHead{padding:12px}.capInventoryBody{padding:12px}.capCatalogHead .subline{display:none}}
 .modelChartTip{max-width:min(440px,calc(100% - 16px))}
 .modelTipMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 .spendRangeControls{display:grid;justify-items:end;gap:8px;max-width:100%}
@@ -6239,6 +6248,7 @@ let lastCapabilityReviewRevision='', lastCapabilityInventoryRevision='', capabil
 let pendingCapabilityTable=null, pendingCapabilityReview=null, capabilityInventorySnapshot=null;
 let capabilityInventoryLoading=false, capabilitySearchTimer=null, capabilityEvidenceState='loading';
 const selectedCapabilityIds=new Set();
+const openCapabilityReviewIds=new Set();
 let capabilitySort=localStorage.getItem('tm_capability_sort')||'name';
 let capabilitySortDir=localStorage.getItem('tm_capability_sort_dir')||'asc';
 if(capabilitySort==='returned')capabilitySort='use';
@@ -6422,15 +6432,28 @@ function renderCapabilityReviewQueue(cap,{force=false}={}){
   ? 'Enabled packs with measurable evidence and no observed use.'
   : `${f((optional.instruction_packs||0)+(optional.unknown_evidence_packs||0)+(optional.unscanned_packs||0))} ${countWord((optional.instruction_packs||0)+(optional.unknown_evidence_packs||0)+(optional.unscanned_packs||0),'pack')} excluded for missing use or coverage evidence.`;
  $('c-review-count').textContent=groups.length?`${f(groups.length)} user-installed ${countWord(groups.length,'pack')}`:'Queue clear';
+ const runtimes=[...new Set(groups.map(row=>row.runtime||'Runtime'))];
+ const sharedRuntime=runtimes.length===1?runtimes[0]:'';
+ const restartNote=runtime=>`Restart ${runtime} to apply. Re-enable from All capabilities.`;
  $('c-review-caveat').hidden=!groups.length;
- queue.innerHTML=groups.length?groups.map(row=>{
+ $('c-review-caveat').textContent=`No observed use means review, not proof of disuse.${sharedRuntime?` ${restartNote(sharedRuntime)}`:''}`;
+ const head=`<div class=capReviewHead aria-hidden=true><span class=capReviewCols><span>Pack</span><span>Observed use</span><span>Prompt load</span><span>Affected</span><span>Status</span></span><span>Select</span></div>`;
+ queue.innerHTML=groups.length?head+groups.map(row=>{
   const members=row.members||[], scanned=Number(row.scanned_sessions||0);
   const overhead=Number(row.unused_eager_definition_tokens||0);
   const runtime=row.runtime||'Runtime', setting=row.setting_path||'runtime plugin settings';
-  const memberChips=members.map(name=>`<span>${esc(name)}</span>`).join('');
-  return `<article class=capReviewItem data-cap-review-id="${esc(row.id)}"><div class=capReviewTop><div class=capReviewIdentity><h3>${esc(capabilityPackName(row))}</h3><p>${esc(runtime)} · User-installed pack</p></div><div class=capReviewChoice><span class="stateDot unknown">No use observed</span><label class=capSelect><input type=checkbox data-cap-select="${esc(row.id)}" aria-label="Select ${esc(capabilityPackName(row))} pack" ${selectedCapabilityIds.has(row.id)?'checked':''}><span>Select pack</span></label></div></div><dl class=capReviewFacts><div><dt>Observed use</dt><dd>0 activations · ${f(scanned)} ${esc(runtime)} ${countWord(scanned,'log')}</dd></div><div><dt>Prompt-load impact</dt><dd>${overhead?`Est. ${f(overhead)} avoidable definition tokens`:'Not measured'}</dd></div><div><dt>Affected</dt><dd>${f(members.length)} ${countWord(members.length,'skill')}</dd></div></dl><p class=capReviewImpact>Restart ${esc(runtime)} to apply. Re-enable from All capabilities.</p><details class=capReviewDisclosure><summary>View affected skills and exact control</summary><div class=capReviewDisclosureBody><div><b>Affected skills</b><div class=capReviewMembers>${memberChips||'<span>No member names available</span>'}</div></div><div>${overhead?'The avoidable-load estimate is the cumulative runtime-reported definition evidence across the scanned logs, not a per-prompt saving.':'Prompt saving is not measurable from the available evidence; this is only an activation review.'}</div><div><b>Exact control</b><div class=capReviewControl>${esc(row.id)}</div></div><div><b>Setting</b><div class=capReviewControl>${esc(setting)}</div></div></div></details></article>`;
+  const name=capabilityPackName(row), affected=`${f(members.length)} ${countWord(members.length,'skill')}`;
+  const use=`0 uses · ${f(scanned)} ${countWord(scanned,'log')}`;
+  const loadDetail=overhead?`Est. ${f(overhead)} avoidable definition tokens`:'Not measured';
+  const load=overhead?`≈${compactNumber(overhead)} tokens`:'—';
+  const memberChips=members.map(member=>`<span>${esc(member)}</span>`).join('');
+  const label=`${name}, ${runtime}, ${use}, prompt load ${loadDetail.toLowerCase()}, ${affected}, no use observed`;
+  return `<article class=capReviewItem data-cap-review-id="${esc(row.id)}"><details class=capReviewRow data-cap-review-open="${esc(row.id)}"${openCapabilityReviewIds.has(row.id)?' open':''}><summary class=capReviewCols aria-label="${esc(label)}"><span class=capReviewName><strong>${esc(name)}</strong><span>${esc(runtime)} · User-installed</span></span><span class=capReviewNum>${esc(use)}</span><span class=capReviewNum title="${esc(loadDetail)}">${esc(load)}</span><span class=capReviewNum>${esc(affected)}</span><span class="stateDot unknown">No use observed</span></summary><div class=capReviewDisclosureBody><dl class=capReviewFacts><div><dt>Observed use</dt><dd>0 activations · ${f(scanned)} ${esc(runtime)} ${countWord(scanned,'log')}</dd></div><div><dt>Prompt-load impact</dt><dd>${esc(loadDetail)}</dd></div><div><dt>Affected</dt><dd>${affected}</dd></div></dl>${sharedRuntime?'':`<p class=capReviewImpact>${esc(restartNote(runtime))}</p>`}<div><b>Affected skills</b><div class=capReviewMembers>${memberChips||'<span>No member names available</span>'}</div></div><div>${overhead?'The avoidable-load estimate is the cumulative runtime-reported definition evidence across the scanned logs, not a per-prompt saving.':'Prompt saving is not measurable from the available evidence; this is only an activation review.'}</div><div><b>Exact control</b><div class=capReviewControl>${esc(row.id)}</div></div><div><b>Setting</b><div class=capReviewControl>${esc(setting)}</div></div></div></details><label class=capSelect><input type=checkbox data-cap-select="${esc(row.id)}" aria-label="Select ${esc(name)}" ${selectedCapabilityIds.has(row.id)?'checked':''}><span>Select</span></label></article>`;
  }).join(''):`<div class=capQueueEmpty><h3>No candidate requires a decision</h3><p>Only packs with reliable activation evidence appear here.</p><button class=tbtn type=button data-cap-browse>Browse all capabilities</button></div>`;
  lastCapabilityReviewRevision=revision;
+ [...queue.querySelectorAll('[data-cap-review-open]')].forEach(details=>details.addEventListener('toggle',()=>{
+  if(details.open)openCapabilityReviewIds.add(details.dataset.capReviewOpen);else openCapabilityReviewIds.delete(details.dataset.capReviewOpen);
+ }));
  [...queue.querySelectorAll('[data-cap-select]')].forEach(input=>input.onchange=()=>{
   if(input.checked)selectedCapabilityIds.add(input.dataset.capSelect);else selectedCapabilityIds.delete(input.dataset.capSelect);
   updateCapabilitySelection(cap);
