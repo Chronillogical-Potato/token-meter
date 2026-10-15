@@ -7520,6 +7520,16 @@ renderSessionBack();
 openSessionBack();
 result.deepLink={{label:$('session-back-label').textContent,aria:$('session-back').attrs['aria-label'],calls:calls.splice(0)}};
 result.labels=['current','all','compare','subagents','bogus'].map(sessionScopeLabel);
+eval(extract('applyLocationRoute'));
+elements['view-session']={{classList:{{contains:()=>true}}}};
+location={{pathname:'/sessions/xyz',hash:'#summary'}};
+history.state={{sessionScope:'compare',sessionListBack:true}};
+sessionScope='current';sessionReturnScope='current';
+applyLocationRoute();
+renderSessionBack();
+result.reload={{scope:sessionReturnScope,label:$('session-back-label').textContent}};
+openSessionBack();
+result.reloadCalls=calls.splice(0);
 process.stdout.write(JSON.stringify(result));
 """
         completed = subprocess.run(["node", "-e", script], capture_output=True, text=True)
@@ -7527,6 +7537,8 @@ process.stdout.write(JSON.stringify(result));
         payload = json.loads(completed.stdout)
 
         self.assertEqual(payload["fromList"]["state"], {"sessionScope": "all", "sessionListBack": True})
+        self.assertEqual(payload["reload"], {"scope": "compare", "label": "Compare"})
+        self.assertEqual(payload["reloadCalls"], [["back"]])
         self.assertEqual(payload["fromList"]["label"], "All sessions")
         self.assertEqual(payload["fromList"]["aria"], "Back to All sessions")
         self.assertEqual(payload["fromListCalls"], [["push", "/sessions/abc#summary"], ["back"]])
@@ -8820,6 +8832,23 @@ process.stdout.write(JSON.stringify(results));
             ".previewChartColumn{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-width:0}",
             self.page,
         )
+
+    def test_review_fixes_keep_focus_targets_timestamps_and_runtime_scoped_prices(self):
+        # The inventory heading receives programmatic focus, so it must be focusable.
+        self.assertIn("<h2 id=c-inventory-title tabindex=-1>All capabilities</h2>", self.page)
+        self.assertIn("$('c-inventory-title').focus(", self.page)
+        # Detail view keeps the date/time line break instead of collapsing it.
+        self.assertIn(
+            "body.sessionRoute #view-session.sessionDetail .previewTimes b{overflow:visible;white-space:pre-line;line-height:1.35}",
+            self.page,
+        )
+        self.assertIn("$('preview-started-at').textContent=(dt12(timing.start_local)||'--').replace(' ','\\n');", self.page)
+        # Learn's price fallback matches the model within its runtime only.
+        self.assertIn("row.model===mix.model&&row.provider===mix.runtime&&priced(row)", self.page)
+        self.assertIn("row.model===topModel.model&&row.provider===topModel.runtime&&priced(row)", self.page)
+        # The welcome tour opened from the palette returns focus to where the palette opened.
+        self.assertIn("const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});", self.page)
+        self.assertNotIn("WELCOME_PANELS[2].title=", self.page)
 
     def test_selected_session_columns_share_top_and_bottom_edges(self):
         decision = self.page.split('<aside class=previewDecision>', 1)[1].split('</aside>', 1)[0]

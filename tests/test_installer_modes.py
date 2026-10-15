@@ -435,6 +435,42 @@ class InstallerModeTests(unittest.TestCase):
                 self.assertIn("Indexing local agent history", result.stdout)
                 self.assertNotIn("Server ready", result.stdout)
 
+    def test_failed_menubar_build_replays_its_output_and_removes_temp_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            env, _, _ = self.installer_environment(workspace, "Darwin")
+            env.pop("BASH_ENV")
+            temp_dir = workspace / "tmp"
+            temp_dir.mkdir()
+            env["TMPDIR"] = str(temp_dir)
+            self.write_executable(
+                workspace / "bin" / "swiftc",
+                """
+                #!/usr/bin/env bash
+                printf 'COMPILER-STDOUT\\n'
+                printf 'COMPILER-STDERR\\n' >&2
+                exit 1
+                """,
+            )
+
+            result = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "install")],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=60,
+            )
+
+            self.assertEqual(result.returncode, 1, result.stderr)
+            failure = "Token Meter installation failed: the native companion cannot build"
+            build_error = "Token Meter menu bar build failed"
+            self.assertIn(build_error, result.stderr)
+            self.assertIn(failure, result.stderr)
+            self.assertLess(result.stderr.index(build_error), result.stderr.index(failure))
+            self.assertNotIn("\r", result.stdout)
+            self.assertNotIn("Menu bar companion ready", result.stdout)
+            self.assertEqual(sorted(temp_dir.glob("token-meter-menubar-check.*")), [])
+
     def git(self, *arguments, cwd):
         return subprocess.run(
             ["git", *arguments],

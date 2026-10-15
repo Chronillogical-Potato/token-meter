@@ -1453,7 +1453,7 @@ body.sessionRoute #view-session.sessionDetail .previewPressureBar{height:8px;bor
 body.sessionRoute #view-session.sessionDetail .previewPressureBar i{border-radius:inherit;background:linear-gradient(90deg,var(--session-signal),var(--session-signal-mid) 58%,var(--session-signal-hi))}
 body.sessionRoute #view-session.sessionDetail .previewTimes{border-top-color:rgb(var(--signal-rgb)/.12)}
 body.sessionRoute #view-session.sessionDetail .previewTimes span{color:var(--faint);font-size:var(--fs-11)}
-body.sessionRoute #view-session.sessionDetail .previewTimes b{overflow:visible;white-space:normal;line-height:1.35}
+body.sessionRoute #view-session.sessionDetail .previewTimes b{overflow:visible;white-space:pre-line;line-height:1.35}
 body.sessionRoute #view-session.sessionDetail .previewRunBudgetSlot .sessionBudget{padding:18px;border-color:rgb(var(--signal-rgb)/.14);border-radius:var(--radius-md);background:linear-gradient(145deg,rgb(var(--panel-rgb)/.96),rgb(var(--bg-rgb)/.98));box-shadow:none}
 body.sessionRoute #view-session.sessionDetail .previewTokenSlot .bar{border-color:rgb(var(--signal-rgb)/.16);background:rgb(var(--bg-rgb)/.7)}
 body.sessionRoute #view-session.sessionDetail .previewKpi.previewSpeed .v{color:var(--session-signal-hi);text-shadow:none}
@@ -3152,7 +3152,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
    <div class=capSelectionBar id=c-selection-bar hidden><span id=c-selection-count>0 selected</span><button class=tbtn id=c-clear-selection type=button>Clear selection</button><button class="tbtn danger" id=c-disable-selected type=button disabled>Disable selected&hellip;</button></div>
   </section>
   <section class="card capInventory" id=c-inventory aria-labelledby=c-inventory-title>
-   <div class=capInventoryHead><span class=capInventorySummary><h2 id=c-inventory-title>All capabilities</h2><small>Tools, MCP servers, skills, evidence, and state</small></span><span class=capInventoryCount id=c-inventory-count>Waiting for inventory</span></div>
+   <div class=capInventoryHead><span class=capInventorySummary><h2 id=c-inventory-title tabindex=-1>All capabilities</h2><small>Tools, MCP servers, skills, evidence, and state</small></span><span class=capInventoryCount id=c-inventory-count>Waiting for inventory</span></div>
    <div class=capInventoryBody>
     <section class=capCatalog aria-label="Prompt-load evidence">
      <div class=capCatalogHead><span><b>Prompt-load evidence</b><small>Tool definitions in the initial prompt</small></span><span class=subline id=c-def-note>Waiting for evidence</span></div>
@@ -3722,14 +3722,14 @@ function welcomeShouldAutoShow(){
 function markWelcomeSeen(){
  try{localStorage.setItem(WELCOME_KEY,JSON.stringify({seen:true,dismissed_at:Date.now()}));}catch(error){}
 }
+const WELCOME_HOST=/mac/i.test(navigator.userAgentData?.platform||navigator.platform||navigator.userAgent||'')?'Mac':'machine';
 const WELCOME_PANELS=[
  {id:'cost',title:'What did this session just cost?'},
  {id:'trust',title:'Can I trust the number?'},
- {id:'privacy',title:'Your traces never leave this Mac.'},
+ {id:'privacy',title:`Your traces never leave this ${WELCOME_HOST}.`},
  {id:'levers',title:'Five levers move the bill'},
  {id:'budget',title:'Set a monthly budget'},
 ];
-const WELCOME_HOST=/mac/i.test(navigator.userAgentData?.platform||navigator.platform||navigator.userAgent||'')?'Mac':'machine';
 const TOKEN_TYPES=[
  {key:'cache_read',label:'Cache reads',color:'var(--c-cache-read)'},
  {key:'input',label:'Fresh input',color:'var(--c-input)'},
@@ -3775,8 +3775,8 @@ function learnEvidence(state=LATEST){
  const priced=row=>row?.prices&&TOKEN_TYPES.some(type=>Number(row.prices[type.key])>0);
  const priceRows=Array.isArray(xs.model_pricing?.models)?xs.model_pricing.models:[];
  const latestPrice=hasSession?priceRows.find(row=>row.provider===runtimeId(state)&&row.model===state.primary_model&&priced(row)):null;
- const topModel=[...(Array.isArray(xs.model_mix)?xs.model_mix:[])].sort((a,b)=>(Number(b.cost)||0)-(Number(a.cost)||0)).find(mix=>priceRows.some(row=>row.model===mix.model&&priced(row)));
- const priceRow=latestPrice||(topModel?priceRows.find(row=>row.model===topModel.model&&priced(row)):null);
+ const topModel=[...(Array.isArray(xs.model_mix)?xs.model_mix:[])].sort((a,b)=>(Number(b.cost)||0)-(Number(a.cost)||0)).find(mix=>priceRows.some(row=>row.model===mix.model&&row.provider===mix.runtime&&priced(row)));
+ const priceRow=latestPrice||(topModel?priceRows.find(row=>row.model===topModel.model&&row.provider===topModel.runtime&&priced(row)):null);
  if(priceRow){
   const rows=TOKEN_TYPES.map(type=>({...type,price:Number(priceRow.prices[type.key])||0})).filter(row=>row.price>0).sort((a,b)=>a.price-b.price);
   price={model:currentSessionModelName(priceRow.model),unit:xs.model_pricing?.unit||'per 1M tokens',rows};
@@ -3913,17 +3913,16 @@ function showWelcomePanel(index,{animate=true}={}){
  $('welcome-next').textContent=last?'Done':'Next';
  $('welcome-next').className=last?'tbtn':'welcomePrimary';
 }
-function openWelcome(index=0,{auto=false}={}){
+function openWelcome(index=0,{auto=false,returnFocus=null}={}){
  const dialog=$('welcome-dialog'),other=document.querySelector('dialog[open]');
  if(other&&other!==dialog){if(auto)return false;other.close();}
  if(WELCOME_HOST!=='Mac'){
   $('welcome-privacy-title').textContent='Your traces never leave this machine.';
   $('welcome-privacy-body').textContent='Token Meter reads your agents’ logs without changing them and does the math here. Prompts, responses, paths, and costs stay on this machine.';
-  WELCOME_PANELS[2].title='Your traces never leave this machine.';
  }
  renderWelcome(LATEST);
  showWelcomePanel(index,{animate:false});
- if(!dialog.open){welcomeReturnFocus=document.activeElement;dialog.showModal();}
+ if(!dialog.open){welcomeReturnFocus=returnFocus||document.activeElement;dialog.showModal();}
  requestAnimationFrame(()=>$('welcome-next').focus());
  return true;
 }
@@ -4082,7 +4081,7 @@ function closeCommandPalette(){if($('command-palette').open)$('command-palette')
 function runNavigationCommand(command){
  if(!command)return;
  closeCommandPalette();
- if(command.action==='welcome'){openWelcome(0);return;}
+ if(command.action==='welcome'){const returnFocus=commandReturnFocus;commandReturnFocus=null;openWelcome(0,{returnFocus});return;}
  if(command.action==='theme'){setTheme(command.theme);return;}
  if(command.action==='sessions'){openCurrentSessions();return;}
  if(command.action==='selected-session'){openSelectedSessionRoute(command.route);return;}
@@ -4374,7 +4373,7 @@ else{
 function applyLocationRoute(){
  applyHashRoute();
  const id=routedSessionId();
- if(id){sessionReturnScope=normalizeSessionScope(history.state?.sessionScope);selectSession(id,{updateUrl:false,show:$('view-session').classList.contains('on')});return;}
+ if(id){sessionReturnScope=normalizeSessionScope(history.state?.sessionScope);selectSession(id,{updateUrl:false,show:$('view-session').classList.contains('on'),returnScope:sessionReturnScope});return;}
  if(pinned){
   pinned=null;
   if(LATEST&&$('view-session').classList.contains('on'))renderSession(LATEST);
