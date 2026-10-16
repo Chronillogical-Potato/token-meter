@@ -8239,7 +8239,7 @@ function renderSpend(xs){
  const earliest=availableDays[0]||today;
  let window=spendRangeWindow(spendRangeChoice,spendCustomFrom,spendCustomTo,new Date(),earliest);
  const savedCustomInvalid=spendRangeChoice==='custom'&&(!window.valid||window.start<earliest||window.end>today);
- if(savedCustomInvalid){spendRangeChoice='30';window=spendRangeWindow('30');persistSpendRange();}
+ if(savedCustomInvalid){spendRangeChoice='30';spendGranularityChoice='auto';window=spendRangeWindow('30');persistSpendRange();}
  spendCurrentSource=source;spendCurrentWindow=window;spendCurrentRows=spendCalendarRows(source,window);
  $('s-range').value=spendRangeChoice;
  $('s-custom').hidden=spendRangeChoice!=='custom';
@@ -8262,7 +8262,7 @@ function renderSpend(xs){
  [...$('s-granularity').querySelectorAll('[data-spend-granularity]')].forEach(button=>{
   const value=button.dataset.spendGranularity,on=value===granularity;
   button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));button.setAttribute('aria-disabled',String(!granularityOptions[value]));
-  button.title=granularityOptions[value]?'':`Needs a range with at least one full ${value}`;
+  button.title=granularityOptions[value]?'':`Needs a range with at least two ${value}s, one of them complete`;
  });
  $('s-chart-note').textContent=SPEND_GRANULARITY_COPY[granularity].note;
  spendChartRows=spendBucketRows(rows,granularity,today);
