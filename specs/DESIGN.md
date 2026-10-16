@@ -307,7 +307,7 @@ in-progress bucket draws faded with a dashed outline and says so in its tooltip.
 Each bar stacks its agents in the shared `--provider-*` colors at 82% opacity
 (full on hover or focus), with a hairline between segments, square corners, and
 a fixed maximum thickness per grouping (24, 44, and 64 px), always at most 64%
-of its column. Estimated and partial-coverage segments keep their hatch and
+of its column (52% beyond 45 bars). Estimated and partial-coverage segments keep their hatch and
 ring. The legend names each agent shown. The y axis uses four equal divisions
 on a round step, with gridlines from one `.spendGrid` layer on those ticks.
 Hover or focus dims sibling bars. The peak value always shows, and every value

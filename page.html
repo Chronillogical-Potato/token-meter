@@ -1776,7 +1776,7 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendLegend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .spendLegend i{width:9px;height:9px;border-radius:var(--radius-2xs);background:var(--spend-color)}
 .spendLegend .spendEstimateKey i{border:1px solid rgb(var(--tint-rgb)/.28);background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.38) 0 1px,transparent 1px 4px),rgb(var(--tint-rgb)/.08)}
-.spendLegend .spendPartialKey i{background:var(--signal);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.42)}
+.spendLegend .spendPartialKey i{background:var(--provider-other);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.55)}
 .spendLegend .spendIncompleteKey i{border:1px dashed rgb(var(--tint-rgb)/.5);background:rgb(var(--tint-rgb)/.14)}
 .spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px}
 .spendYAxis{height:260px;display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--spend-day-head) + var(--spend-day-gap)) 8px calc(var(--spend-day-foot) + var(--spend-day-gap)) 0;color:var(--faint);font-size:var(--fs-11);text-align:right}
@@ -1784,7 +1784,7 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendYAxis span{line-height:0}
 .spendGrid{position:absolute;inset:calc(var(--spend-day-head) + var(--spend-day-gap)) 0 calc(var(--spend-day-foot) + var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
 .spendChartInner{position:relative;width:100%;height:260px;display:flex;align-items:stretch}
-.spendDay{appearance:none;position:relative;display:grid;grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0;color:var(--faint);font:inherit;cursor:pointer}
+.spendDay{appearance:none;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0;color:var(--faint);font:inherit;cursor:pointer}
 .spendDay:hover,.spendDay:focus-visible{background:rgb(var(--signal-rgb)/.055);outline:none}
 .spendDay:focus-visible{box-shadow:inset 0 0 0 1px rgb(var(--signal-rgb)/.52)}
 .spendBarValue{overflow:hidden;color:var(--dim);font-size:var(--fs-11);text-align:center;text-overflow:ellipsis;white-space:nowrap;opacity:0}
@@ -1795,8 +1795,9 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendDay[data-peak=true][data-axis-edge=first] .spendBarValue{align-self:flex-start}
 .spendDay[data-peak=true][data-axis-edge=last] .spendBarValue{align-self:flex-end}
 .spendDayTrack{grid-row:2;display:flex;height:100%;min-height:0;flex-direction:column;align-items:center;justify-content:flex-end;border-bottom:1px solid var(--line2)}
-.spendDayStack{display:flex;flex:none;width:min(var(--spend-bar-max,24px),64%);min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;transition:opacity .16s,filter .16s}
+.spendDayStack{display:flex;flex:none;width:min(var(--spend-bar-max,24px),var(--spend-bar-share,64%));min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;transition:opacity .16s,filter .16s}
 .spendChartInner[data-granularity] .spendDay:is(:hover,:focus-visible) .spendDayStack{filter:brightness(1.18)}
+.spendChartInner[data-dense=true]{--spend-bar-share:52%}
 .spendChartInner[data-granularity=week]{--spend-bar-max:44px}
 .spendChartInner[data-granularity=month]{--spend-bar-max:64px}
 .spendChartInner[data-granularity]:hover .spendDay:not(:hover) .spendDayStack,.spendChartInner[data-granularity]:has(.spendDay:focus-visible) .spendDay:not(:focus-visible) .spendDayStack{opacity:.45}
@@ -8086,7 +8087,7 @@ function reconcileSpendBars(rows){
  const granularity=rows[0]?.granularity||'day',inner=$('s-chart-inner'),keys=`${granularity}:${rows.map(row=>row.day).join('|')}`,costs=rows.map(row=>Number(row.cost||0)),axisMax=spendNiceMax(Math.max(0,...costs)),chartWidth=Math.max(1,inner.clientWidth||$('s-chart').clientWidth||1);
  const existing=[...inner.querySelectorAll('[data-spend-day]')],same=inner.dataset.keys===keys&&existing.length===rows.length;
  const peakCost=Math.max(0,...costs),peakIndex=rows.length>1&&peakCost>0?costs.indexOf(peakCost):-1,spansYears=Boolean(rows.length)&&rows[0].bucketStart.slice(0,4)!==rows.at(-1).bucketStart.slice(0,4);
- inner.dataset.granularity=granularity;inner.dataset.values=rows.length<=14?'shown':'hover';
+ inner.dataset.granularity=granularity;inner.dataset.dense=String(rows.length>45);inner.dataset.values=rows.length<=14?'shown':'hover';
  renderSpendAxis(axisMax);
  if(!same){
   inner.innerHTML=rows.map(row=>`<button class=spendDay type=button data-spend-day="${esc(row.day)}"></button>`).join('');

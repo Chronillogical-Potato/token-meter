@@ -10967,6 +10967,7 @@ console.log(JSON.stringify({
         for handler in (
             "spendCustomFrom=from;spendCustomTo=to;spendRangeChoice='custom';spendGranularityChoice='auto';",
             "spendRangeChoice=range;spendGranularityChoice='auto';persistSpendRange()",
+            "if(savedCustomInvalid){spendRangeChoice='30';spendGranularityChoice='auto';",
             "spendRangeChoice='month';spendGranularityChoice='auto';persistSpendRange()",
         ):
             self.assertIn(handler, self.page)
@@ -10995,9 +10996,13 @@ console.log(JSON.stringify({
         self.assertIn(".spendChartInner[data-granularity] .spendStackSegment+.spendStackSegment{border-bottom:1px solid", self.page)
         self.assertIn("<span class=spendDayStack style=\"--spend-height:${height}%\">${segments}</span>", self.page)
         self.assertNotIn("spendTotalKey", self.page)
+        day_rule = self.page.split("\n.spendDay{", 1)[1].split("}", 1)[0]
+        self.assertIn("grid-template-columns:minmax(0,1fr)", day_rule)
+        self.assertIn(".spendChartInner[data-dense=true]{--spend-bar-share:52%}", self.page)
+        self.assertIn("inner.dataset.dense=String(rows.length>45);", self.page)
         stack_rule = self.page.split(".spendDayStack{", 1)[1].split("}", 1)[0]
         self.assertNotIn("border-radius", stack_rule)
-        self.assertIn("width:min(var(--spend-bar-max,24px),64%)", stack_rule)
+        self.assertIn("width:min(var(--spend-bar-max,24px),var(--spend-bar-share,64%))", stack_rule)
         self.assertNotIn("transparent 0 44px", self.page.split("\n.spendDayTrack{", 1)[1].split("}", 1)[0])
 
     def test_spend_average_reference_uses_every_calendar_day(self):
