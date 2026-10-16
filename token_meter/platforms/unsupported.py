@@ -36,3 +36,18 @@ class UnsupportedPlatformServices:
 
     def capabilities(self):
         return PlatformCapabilities(paths=False, detached_process=False, trash=False)
+
+    def lower_background_priority(self):
+        return False
+
+    def power_constrained(self):
+        return None
+
+    def memory_pressure(self):
+        return None
+
+    def cpu_activity(self):
+        return None
+
+    def set_background_mode(self, yielding):
+        return False

@@ -1619,6 +1619,9 @@ class OpenCodeRuntimeAdapterProxy:
     """Keep a registry entry stable while tests/configuration change DB paths."""
 
     descriptor = OpenCodeRuntimeAdapter.descriptor
+    # Summaries share the caller's read-only database connection, so they are
+    # never dispatched to cold-index worker processes.
+    worker_summaries = False
 
     def __init__(self, adapter_factory):
         self._adapter_factory = adapter_factory

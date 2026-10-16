@@ -5,6 +5,9 @@ import os
 from .base import PlatformCapabilities, ProcessOptions, ProcessPurpose, UpdatePlan
 
 
+BACKGROUND_NICE_INCREMENT = 10
+
+
 def expand_home(path, home):
     value = str(path or "")
     if value == "~":
@@ -48,3 +51,22 @@ class PosixPlatformServices:
 
     def agent_launcher(self, source_root):
         return os.path.join(str(source_root), "scripts", "run-token-meter-mcp")
+
+    def lower_background_priority(self):
+        try:
+            os.nice(BACKGROUND_NICE_INCREMENT)
+        except (AttributeError, OSError):
+            return False
+        return True
+
+    def power_constrained(self):
+        return None
+
+    def memory_pressure(self):
+        return None
+
+    def cpu_activity(self):
+        return None
+
+    def set_background_mode(self, yielding):
+        return False
