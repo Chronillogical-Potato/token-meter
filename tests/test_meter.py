@@ -10996,6 +10996,14 @@ console.log(JSON.stringify({
         self.assertIn(".spendChartInner[data-granularity] .spendStackSegment+.spendStackSegment{border-bottom:1px solid", self.page)
         self.assertIn("<span class=spendDayStack style=\"--spend-height:${height}%\">${segments}</span>", self.page)
         self.assertNotIn("spendTotalKey", self.page)
+        grid_rule = self.page.split("\n.spendGrid{", 1)[1].split("}", 1)[0]
+        self.assertIn("height:calc(260px - var(--spend-day-head) - var(--spend-day-foot) - 2*var(--spend-day-gap))", grid_rule)
+        self.assertNotIn("inset:", grid_rule)
+        self.assertIn("(index%step===0&&count-1-index>=Math.ceil(step/2))", self.page)
+        self.assertIn("[data-peak=true][data-peak-edge=first] .spendBarValue{align-self:flex-start}", self.page)
+        show_tip = self.page.split("function showSpendTip(", 1)[1].split("function selectSpendDay", 1)[0]
+        self.assertIn("details.runtimes.filter(runtime=>runtime.cost>0||runtime.unavailable)", show_tip)
+        self.assertIn("Math.min(cardRect.height-tip.offsetHeight-8", show_tip)
         day_rule = self.page.split("\n.spendDay{", 1)[1].split("}", 1)[0]
         self.assertIn("grid-template-columns:minmax(0,1fr)", day_rule)
         self.assertIn(".spendChartInner[data-dense=true]{--spend-bar-share:52%}", self.page)

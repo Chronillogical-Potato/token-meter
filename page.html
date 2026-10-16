@@ -1776,13 +1776,13 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendLegend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .spendLegend i{width:9px;height:9px;border-radius:var(--radius-2xs);background:var(--spend-color)}
 .spendLegend .spendEstimateKey i{border:1px solid rgb(var(--tint-rgb)/.28);background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.38) 0 1px,transparent 1px 4px),rgb(var(--tint-rgb)/.08)}
-.spendLegend .spendPartialKey i{background:var(--provider-other);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.55)}
+.spendLegend .spendPartialKey i{border:1px solid rgb(var(--tint-rgb)/.7)}
 .spendLegend .spendIncompleteKey i{border:1px dashed rgb(var(--tint-rgb)/.5);background:rgb(var(--tint-rgb)/.14)}
 .spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px}
 .spendYAxis{height:260px;display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--spend-day-head) + var(--spend-day-gap)) 8px calc(var(--spend-day-foot) + var(--spend-day-gap)) 0;color:var(--faint);font-size:var(--fs-11);text-align:right}
 .spendPlot{position:relative;min-width:0;overflow:hidden;border-bottom:1px solid var(--line)}
 .spendYAxis span{line-height:0}
-.spendGrid{position:absolute;inset:calc(var(--spend-day-head) + var(--spend-day-gap)) 0 calc(var(--spend-day-foot) + var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
+.spendGrid{position:absolute;top:calc(var(--spend-day-head) + var(--spend-day-gap));right:0;left:0;height:calc(260px - var(--spend-day-head) - var(--spend-day-foot) - 2*var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
 .spendChartInner{position:relative;width:100%;height:260px;display:flex;align-items:stretch}
 .spendDay{appearance:none;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0;color:var(--faint);font:inherit;cursor:pointer}
 .spendDay:hover,.spendDay:focus-visible{background:rgb(var(--signal-rgb)/.055);outline:none}
@@ -1792,8 +1792,8 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendDayTrack .spendBarValue{flex:none;max-width:100%;padding-bottom:3px;line-height:1.3}
 .spendChartInner[data-values=shown] .spendBarValue{opacity:1}
 .spendDay[data-peak=true] .spendBarValue{position:relative;z-index:1;max-width:none;overflow:visible;color:var(--fg);font-weight:var(--fw-bold);opacity:1}
-.spendDay[data-peak=true][data-axis-edge=first] .spendBarValue{align-self:flex-start}
-.spendDay[data-peak=true][data-axis-edge=last] .spendBarValue{align-self:flex-end}
+.spendDay[data-peak=true][data-peak-edge=first] .spendBarValue{align-self:flex-start}
+.spendDay[data-peak=true][data-peak-edge=last] .spendBarValue{align-self:flex-end}
 .spendDayTrack{grid-row:2;display:flex;height:100%;min-height:0;flex-direction:column;align-items:center;justify-content:flex-end;border-bottom:1px solid var(--line2)}
 .spendDayStack{display:flex;flex:none;width:min(var(--spend-bar-max,24px),var(--spend-bar-share,64%));min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;transition:opacity .16s,filter .16s}
 .spendChartInner[data-granularity] .spendDay:is(:hover,:focus-visible) .spendDayStack{filter:brightness(1.18)}
@@ -8047,7 +8047,7 @@ function spendAxisText(row,spansYears){
 function spendAxisLabel(row,index,count,chartWidth,spansYears=false){
  const maxLabels=Math.max(2,Math.floor(Math.max(1,chartWidth)/54));
  const step=Math.max(1,Math.ceil(Math.max(1,count-1)/Math.max(1,maxLabels-1)));
- return index===0||index===count-1||index%step===0?spendAxisText(row,spansYears):'';
+ return index===0||index===count-1||(index%step===0&&count-1-index>=Math.ceil(step/2))?spendAxisText(row,spansYears):'';
 }
 function spendBarBody(row,index,count,axisMax,chartWidth,spansYears){
  const runtimes=spendRuntimeTotals([row]).filter(runtime=>runtime.cost>0),total=Number(row.cost||0),height=total?Math.max(1.5,100*total/axisMax):0;
@@ -8063,7 +8063,7 @@ function renderSpendAverage(rows,axisMax){
  const line=$('s-average-line'),reference=spendAverageReference(spendAverageBasis(rows),axisMax),track=$('s-chart-inner').querySelector('.spendDayTrack');
  if(!track||reference.value<=0){line.hidden=true;return;}
  const trackRect=track.getBoundingClientRect(),plotRect=line.parentElement.getBoundingClientRect(),unit=SPEND_GRANULARITY_COPY[rows[0]?.granularity||'day'].unit;
- const top=trackRect.top-plotRect.top+(1-reference.ratio)*trackRect.height,label=`avg ${money(reference.value)} / ${unit}`;
+ const top=trackRect.top-plotRect.top+(1-reference.ratio)*trackRect.height,label=`avg ${money(reference.value)}/${unit}`;
  line.style.top=`${Math.round(top*10)/10}px`;line.hidden=false;
  const value=line.querySelector('span');if(value.textContent!==label)value.textContent=label;
 }
@@ -8079,7 +8079,8 @@ function updateSpendBar(button,row,index,count,axisMax,chartWidth,{peak=false,sp
  button.dataset.spendDay=row.day;
  button.setAttribute('aria-label',spendDayAria(row));
  if(edge)button.dataset.axisEdge=edge;else delete button.dataset.axisEdge;
- button.dataset.peak=String(peak);button.dataset.incomplete=String(Boolean(row.incomplete));
+ button.dataset.peak=String(peak);if(peak&&index<=2)button.dataset.peakEdge='first';else if(peak&&index>=count-3)button.dataset.peakEdge='last';else delete button.dataset.peakEdge;
+ button.dataset.incomplete=String(Boolean(row.incomplete));
  const body=spendBarBody(row,index,count,axisMax,chartWidth,spansYears);
  if(button._spendBody!==body){button.innerHTML=body;button._spendBody=body;}
 }
@@ -8221,13 +8222,13 @@ function showSpendTip(day,button=$('s-chart-inner').querySelector(`[data-spend-d
  spendInspectDay=day;
  const details=spendDayDetails(row),total=Number(row.cost||0),note=[details.note,spendBucketNote(row)].filter(Boolean).join(' · ');
  const span=row.granularity==='day'?'':`<div class=spendTipSpan>${esc(row.start===row.end?dayLabel(row.start):`${shortDayLabel(row.start)} – ${shortDayLabel(row.end)}`)}</div>`;
- const runtimeRows=details.runtimes.length?details.runtimes.map(runtime=>`<div class=spendTipRuntime style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><span><i></i>${esc(runtime.label)}</span><b class=mono>${costValueHtml(money(runtime.cost),!(runtime.unavailable&&!runtime.cost))}</b><small>${runtime.unavailable?'unavailable':total?spendPct(runtime.cost/total):'0%'}${runtime.estimated?' · est':''}${runtime.partial?' · partial':''}</small></div>`).join(''):'<div class=spendTipEmpty>No runtime spend recorded.</div>';
+ const shownRuntimes=details.runtimes.filter(runtime=>runtime.cost>0||runtime.unavailable),runtimeRows=shownRuntimes.length?shownRuntimes.map(runtime=>`<div class=spendTipRuntime style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><span><i></i>${esc(runtime.label)}</span><b class=mono>${costValueHtml(money(runtime.cost),!(runtime.unavailable&&!runtime.cost))}</b><small>${runtime.unavailable?'unavailable':total?spendPct(runtime.cost/total):'0%'}${runtime.estimated?' · est':''}${runtime.partial?' · partial':''}</small></div>`).join(''):'<div class=spendTipEmpty>No runtime spend recorded.</div>';
  const html=`<div class=spendTipDate>${esc(spendBucketLabel(row))}</div>${span}<div class=spendTipTotal><span>${SPEND_GRANULARITY_COPY[row.granularity].total}</span><b class=mono>${esc(details.totalText)}</b></div>${note?`<div class=spendTipNote>${esc(note)}</div>`:''}<div class=spendTipRuntimes>${runtimeRows}</div>`;
  if(tip._spendHtml!==html){tip.innerHTML=html;tip._spendHtml=html;}
  tip.hidden=false;
  const card=tip.closest('.spendChartCard'),barRect=button.getBoundingClientRect(),cardRect=card.getBoundingClientRect();
  const left=Math.max(8,Math.min(cardRect.width-tip.offsetWidth-8,barRect.left-cardRect.left+barRect.width/2-tip.offsetWidth/2));
- tip.style.left=`${left}px`;tip.style.top=`${Math.max(54,barRect.top-cardRect.top-tip.offsetHeight-8)}px`;
+ tip.style.left=`${left}px`;tip.style.top=`${Math.max(8,Math.min(cardRect.height-tip.offsetHeight-8,Math.max(54,barRect.top-cardRect.top-tip.offsetHeight-8)))}px`;
 }
 function selectSpendDay(day,{focus=false}={}){
  if(!spendChartRows.some(row=>row.day===day))return;
