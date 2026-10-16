@@ -1776,7 +1776,6 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendLegend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .spendLegend i{width:9px;height:9px;border-radius:var(--radius-2xs);background:var(--spend-color)}
 .spendLegend .spendEstimateKey i{border:1px solid rgb(var(--tint-rgb)/.28);background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.38) 0 1px,transparent 1px 4px),rgb(var(--tint-rgb)/.08)}
-.spendLegend .spendTotalKey i{background:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38))}
 .spendLegend .spendPartialKey i{background:var(--signal);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.42)}
 .spendLegend .spendIncompleteKey i{border:1px dashed rgb(var(--tint-rgb)/.5);background:rgb(var(--tint-rgb)/.14)}
 .spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px}
@@ -1796,9 +1795,7 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendDay[data-peak=true][data-axis-edge=first] .spendBarValue{align-self:flex-start}
 .spendDay[data-peak=true][data-axis-edge=last] .spendBarValue{align-self:flex-end}
 .spendDayTrack{grid-row:2;display:flex;height:100%;min-height:0;flex-direction:column;align-items:center;justify-content:flex-end;border-bottom:1px solid var(--line2)}
-.spendDayStack{--spend-bar-fill:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38));display:flex;flex:none;width:min(var(--spend-bar-max,24px),64%);min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;background:var(--spend-bar-fill);box-shadow:inset 0 1px 0 rgb(var(--tint-rgb)/.4);transition:opacity .16s,filter .16s}
-.spendDayStack[data-estimated=true]{background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.3) 0 1px,transparent 1px 4px),var(--spend-bar-fill)}
-.spendDayStack[data-partial=true]{box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.42)}
+.spendDayStack{display:flex;flex:none;width:min(var(--spend-bar-max,24px),64%);min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;transition:opacity .16s,filter .16s}
 .spendChartInner[data-granularity] .spendDay:is(:hover,:focus-visible) .spendDayStack{filter:brightness(1.18)}
 .spendChartInner[data-granularity=week]{--spend-bar-max:44px}
 .spendChartInner[data-granularity=month]{--spend-bar-max:64px}
@@ -1808,6 +1805,9 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendStackSegment{display:block;flex:none;height:var(--segment-share);min-height:1px;background:var(--spend-color)}
 .spendStackSegment[data-estimated=true]{background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.32) 0 1px,transparent 1px 4px),var(--spend-color)}
 .spendStackSegment[data-partial=true]{box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.32)}
+.spendChartInner[data-granularity] .spendStackSegment{opacity:.82;transition:opacity .16s}
+.spendChartInner[data-granularity] .spendStackSegment+.spendStackSegment{border-bottom:1px solid rgb(var(--bg2-rgb)/.9)}
+.spendChartInner[data-granularity] .spendDay:is(:hover,:focus-visible) .spendStackSegment{opacity:1}
 .spendDayLabel{position:absolute;bottom:0;left:50%;width:max-content;max-width:none;transform:translateX(-50%);font-size:var(--fs-11);line-height:20px;text-align:center;white-space:nowrap;pointer-events:none}
 .spendDay[data-axis-edge=first] .spendDayLabel{left:0;transform:none;text-align:left}
 .spendDay[data-axis-edge=last] .spendDayLabel{right:0;left:auto;transform:none}
@@ -8050,9 +8050,9 @@ function spendAxisLabel(row,index,count,chartWidth,spansYears=false){
 }
 function spendBarBody(row,index,count,axisMax,chartWidth,spansYears){
  const runtimes=spendRuntimeTotals([row]).filter(runtime=>runtime.cost>0),total=Number(row.cost||0),height=total?Math.max(1.5,100*total/axisMax):0;
- const estimated=runtimes.some(runtime=>runtime.estimated),partial=row.coverage?.cost?.complete===false||row.availability?.cost===false;
+ const segments=runtimes.map(runtime=>`<i class=spendStackSegment data-estimated="${runtime.estimated}" data-partial="${runtime.partial}" style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]};--segment-share:${total?100*runtime.cost/total:0}%"></i>`).join('');
  const axisLabel=spendAxisLabel(row,index,count,chartWidth,spansYears);
- return `<span class=spendDayTrack><span class="spendBarValue mono">${total?money(total):''}</span>${total?`<span class=spendDayStack data-estimated="${estimated}" data-partial="${partial}" style="--spend-height:${height}%"></span>`:''}</span><span class=spendDayLabel>${esc(axisLabel)}</span>`;
+ return `<span class=spendDayTrack><span class="spendBarValue mono">${total?money(total):''}</span>${total?`<span class=spendDayStack style="--spend-height:${height}%">${segments}</span>`:''}</span><span class=spendDayLabel>${esc(axisLabel)}</span>`;
 }
 function renderSpendAxis(axisMax){
  const ticks=[1,.75,.5,.25,0].map(ratio=>`<span>${money(axisMax*ratio)}</span>`).join('');
@@ -8257,7 +8257,7 @@ function renderSpend(xs){
  $('s-highest-day').textContent=periodUnavailable?'Unavailable':highest&&highest.cost?shortDayLabel(highest.day):'No spend';
  $('s-highest-day-note').textContent=highest&&highest.cost?`${money(highest.cost)} · ${dayLabel(highest.day)}`:evidence.active?'No covered daily cost':'No recorded activity';
  const visibleRuntimes=runtimeTotals.filter(runtime=>runtime.cost||runtime.unavailable);
- $('s-legend').innerHTML=(total?'<span class=spendTotalKey><i></i>Spend</span>':'')+(visibleRuntimes.some(runtime=>runtime.estimated)?'<span class=spendEstimateKey><i></i>Local estimate</span>':'')+(evidence.partial?'<span class=spendPartialKey><i></i>Partial coverage</span>':'');
+ $('s-legend').innerHTML=visibleRuntimes.map(runtime=>`<span style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><i></i>${esc(runtime.label)}</span>`).join('')+(visibleRuntimes.some(runtime=>runtime.estimated)?'<span class=spendEstimateKey><i></i>Local estimate</span>':'')+(evidence.partial?'<span class=spendPartialKey><i></i>Partial coverage</span>':'');
  const {granularity,options:granularityOptions}=spendResolveGranularity(spendGranularityChoice,rows,today);
  [...$('s-granularity').querySelectorAll('[data-spend-granularity]')].forEach(button=>{
   const value=button.dataset.spendGranularity,on=value===granularity;

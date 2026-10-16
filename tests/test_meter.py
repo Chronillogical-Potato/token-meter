@@ -10991,7 +10991,10 @@ console.log(JSON.stringify({
         )[0]
         self.assertIn("spendResolveGranularity(spendGranularityChoice,rows,today)", render_spend)
         self.assertNotIn("SPEND_GRANULARITY_KEY", self.page)
-        self.assertIn("--spend-bar-fill:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38))", self.page)
+        self.assertIn(".spendChartInner[data-granularity] .spendStackSegment{opacity:.82", self.page)
+        self.assertIn(".spendChartInner[data-granularity] .spendStackSegment+.spendStackSegment{border-bottom:1px solid", self.page)
+        self.assertIn("<span class=spendDayStack style=\"--spend-height:${height}%\">${segments}</span>", self.page)
+        self.assertNotIn("spendTotalKey", self.page)
         stack_rule = self.page.split(".spendDayStack{", 1)[1].split("}", 1)[0]
         self.assertNotIn("border-radius", stack_rule)
         self.assertIn("width:min(var(--spend-bar-max,24px),64%)", stack_rule)

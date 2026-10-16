@@ -302,12 +302,13 @@ The Spend trend groups the selected range by Day, Week (Monday start), or
 calendar Month through a `.seg` control. Grouping is automatic: Day up to 35
 days, Week up to 186, Month beyond; choosing one overrides it until the range
 changes. A grouping is offered only when the range holds at least two buckets,
-one of them full. Buckets are clipped to the range, and a clipped or
+one of them complete (neither clipped nor in progress). Buckets are clipped to the range, and a clipped or
 in-progress bucket draws faded with a dashed outline and says so in its tooltip.
-Every bar is one `--signal` gradient (solid at the top, fading toward the base)
-with square corners and a fixed maximum thickness per grouping (24, 44, and 64
-px), always at most 64% of its column. Platform split lives in the tooltip and
-the Platform split card, not in bar color. The y axis uses four equal divisions
+Each bar stacks its agents in the shared `--provider-*` colors at 82% opacity
+(full on hover or focus), with a hairline between segments, square corners, and
+a fixed maximum thickness per grouping (24, 44, and 64 px), always at most 64%
+of its column. Estimated and partial-coverage segments keep their hatch and
+ring. The legend names each agent shown. The y axis uses four equal divisions
 on a round step, with gridlines from one `.spendGrid` layer on those ticks.
 Hover or focus dims sibling bars. The peak value always shows, and every value
 shows when there are 14 bars or fewer. The average line uses every calendar day
