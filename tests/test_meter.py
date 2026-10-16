@@ -20761,7 +20761,7 @@ class DashboardThemeTests(unittest.TestCase):
         start = datetime.date(2026, 9, 1)
         days = [f"{start + datetime.timedelta(days=offset)}T12:00:00" for offset in range(56)]
         picks = self.daily_themes(days)
-        ids = ["classic", "nebula", "monolith", "voltage", "phosphor"]
+        ids = ["classic", "nebula", "monolith", "voltage", "phosphor", "omarchy"]
         self.assertTrue(set(picks) <= set(ids))
         self.assertEqual(sorted(set(picks)), sorted(ids), "every theme should appear over eight weeks")
         self.assertTrue(all(a != b for a, b in zip(picks, picks[1:])), "a day never repeats yesterday's theme")
@@ -20776,7 +20776,7 @@ class DashboardThemeTests(unittest.TestCase):
             "label:themeLabel('monolith'),key:THEME_STORAGE_KEY,random:normalizeThemeId('random')}));"
         )
         result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
-        self.assertEqual(result, {"ids": ["classic", "nebula", "monolith", "voltage", "phosphor"], "bad": "classic", "ok": "voltage",
+        self.assertEqual(result, {"ids": ["classic", "nebula", "monolith", "voltage", "phosphor", "omarchy"], "bad": "classic", "ok": "voltage",
                                   "label": "Monolith", "key": "tm_theme", "random": "random"})
         self.assertIn("...THEMES.map(theme=>({id:`theme-${theme.id}`,label:`Theme · ${theme.label}`", self.page)
         self.assertIn("if(command.action==='theme'){setTheme(command.theme);return;}", self.page)
