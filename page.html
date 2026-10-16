@@ -1778,12 +1778,12 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendLegend .spendEstimateKey i{border:1px solid rgb(var(--tint-rgb)/.28);background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.38) 0 1px,transparent 1px 4px),rgb(var(--tint-rgb)/.08)}
 .spendLegend .spendPartialKey i{border:1px solid rgb(var(--tint-rgb)/.7)}
 .spendLegend .spendIncompleteKey i{border:1px dashed rgb(var(--tint-rgb)/.5);background:rgb(var(--tint-rgb)/.14)}
-.spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px}
-.spendYAxis{height:260px;display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--spend-day-head) + var(--spend-day-gap)) 8px calc(var(--spend-day-foot) + var(--spend-day-gap)) 0;color:var(--faint);font-size:var(--fs-11);text-align:right}
+.spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px;--spend-chart-h:260px}
+.spendYAxis{height:var(--spend-chart-h);display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--spend-day-head) + var(--spend-day-gap)) 8px calc(var(--spend-day-foot) + var(--spend-day-gap)) 0;color:var(--faint);font-size:var(--fs-11);text-align:right}
 .spendPlot{position:relative;min-width:0;overflow:hidden;border-bottom:1px solid var(--line)}
 .spendYAxis span{line-height:0}
-.spendGrid{position:absolute;top:calc(var(--spend-day-head) + var(--spend-day-gap));right:0;left:0;height:calc(260px - var(--spend-day-head) - var(--spend-day-foot) - 2*var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
-.spendChartInner{position:relative;width:100%;height:260px;display:flex;align-items:stretch}
+.spendGrid{position:absolute;top:calc(var(--spend-day-head) + var(--spend-day-gap));right:0;left:0;height:calc(var(--spend-chart-h) - var(--spend-day-head) - var(--spend-day-foot) - 2*var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
+.spendChartInner{position:relative;width:100%;height:var(--spend-chart-h);display:flex;align-items:stretch}
 .spendDay{appearance:none;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0;color:var(--faint);font:inherit;cursor:pointer}
 .spendDay:hover,.spendDay:focus-visible{background:rgb(var(--signal-rgb)/.055);outline:none}
 .spendDay:focus-visible{box-shadow:inset 0 0 0 1px rgb(var(--signal-rgb)/.52)}
@@ -8037,7 +8037,7 @@ function spendBucketNote(row){
  return row.inProgress?`${unit} in progress`:'';
 }
 function spendDayAria(row){
- const details=spendDayDetails(row),parts=details.runtimes.map(runtime=>`${runtime.label} ${runtime.unavailable&&!runtime.cost?'cost unavailable':money(runtime.cost)}${runtime.estimated?' estimated':''}${runtime.partial?' partial':''}`),bucketNote=spendBucketNote(row);
+ const details=spendDayDetails(row),parts=details.runtimes.filter(runtime=>runtime.cost>0||runtime.unavailable).map(runtime=>`${runtime.label} ${runtime.unavailable&&!runtime.cost?'cost unavailable':money(runtime.cost)}${runtime.estimated?' estimated':''}${runtime.partial?' partial':''}`),bucketNote=spendBucketNote(row);
  return `${spendBucketLabel(row)}, ${details.totalText}${details.note?`, ${details.note}`:''}${bucketNote?`, ${bucketNote}`:''}${parts.length?`, ${parts.join(', ')}`:''}`;
 }
 function spendAxisText(row,spansYears){
@@ -8047,7 +8047,7 @@ function spendAxisText(row,spansYears){
 function spendAxisLabel(row,index,count,chartWidth,spansYears=false){
  const maxLabels=Math.max(2,Math.floor(Math.max(1,chartWidth)/54));
  const step=Math.max(1,Math.ceil(Math.max(1,count-1)/Math.max(1,maxLabels-1)));
- return index===0||index===count-1||(index%step===0&&count-1-index>=Math.ceil(step/2))?spendAxisText(row,spansYears):'';
+ return index===0||index===count-1||(index%step===0&&count-1-index>=step)?spendAxisText(row,spansYears):'';
 }
 function spendBarBody(row,index,count,axisMax,chartWidth,spansYears){
  const runtimes=spendRuntimeTotals([row]).filter(runtime=>runtime.cost>0),total=Number(row.cost||0),height=total?Math.max(1.5,100*total/axisMax):0;
