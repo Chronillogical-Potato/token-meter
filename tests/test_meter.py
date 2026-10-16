@@ -10933,6 +10933,46 @@ console.log(JSON.stringify({
         self.assertEqual(payload["auto"], ["day", "day", "day", "day", "week", "week", "week", "month", "month"])
         self.assertEqual(payload["resolved"], ["week", "day", "week", "day", "day"])
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_spend_trend_options_ticks_and_in_progress_week(self):
+        """A week still in progress is no basis for an average, so it cannot make Week selectable."""
+        logic = self.page.split("// spend-range-logic-start", 1)[1].split(
+            "// spend-range-logic-end", 1,
+        )[0]
+        script = logic + """
+const now = new Date(2026, 9, 11, 12, 0, 0);
+const rows = spendCalendarRows([], spendRangeWindow('custom', '2026-09-30', '2026-10-11', now));
+const yearRows = spendCalendarRows([], spendRangeWindow('custom', '2025-12-29', '2026-01-11', new Date(2026, 0, 11, 12)));
+console.log(JSON.stringify({
+  withToday: spendGranularityOptions(rows, '2026-10-11'),
+  withoutToday: spendGranularityOptions(rows),
+  fellBack: spendResolveGranularity('week', rows, '2026-10-11').granularity,
+  year: spendBucketRows(yearRows, 'month').map(row => [row.bucketStart, row.days, row.fullDays]),
+  yearWeeks: spendBucketRows(yearRows, 'week').map(row => row.bucketStart),
+  ticks: [3.95, 5, 40, 95, 3000].map(spendNiceMax),
+}));
+"""
+        result = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["withToday"], {"day": True, "week": False, "month": False})
+        self.assertEqual(payload["withoutToday"], {"day": True, "week": True, "month": False})
+        self.assertEqual(payload["fellBack"], "day")
+        self.assertEqual(payload["year"], [["2025-12-01", 3, 31], ["2026-01-01", 11, 31]])
+        self.assertEqual(payload["yearWeeks"], ["2025-12-29", "2026-01-05"])
+        self.assertEqual(payload["ticks"], [6, 6, 50, 100, 3200])
+
+    def test_spend_trend_override_resets_whenever_the_range_changes(self):
+        """A manual Day on 30 days must not follow the user onto All history."""
+        for handler in (
+            "spendCustomFrom=from;spendCustomTo=to;spendRangeChoice='custom';spendGranularityChoice='auto';",
+            "spendRangeChoice=range;spendGranularityChoice='auto';persistSpendRange()",
+            "spendRangeChoice='month';spendGranularityChoice='auto';persistSpendRange()",
+        ):
+            self.assertIn(handler, self.page)
+        self.assertIn("aria-disabled", self.page.split("function renderSpend(xs)", 1)[1])
+        self.assertNotIn("button.disabled=!granularityOptions", self.page)
+
     def test_spend_trend_granularity_control_drives_chart(self):
         for marker in (
             '<div class=seg id=s-granularity role=group aria-label="Group spend by">',
@@ -10943,19 +10983,19 @@ console.log(JSON.stringify({
             "spendChartRows=spendBucketRows(rows,granularity,today);",
             "reconcileSpendBars(spendChartRows);",
             "<div class=spendGrid aria-hidden=true></div>",
-            "button.disabled=!granularityOptions[value];",
+            "button.setAttribute('aria-disabled',String(!granularityOptions[value]));",
         ):
             self.assertIn(marker, self.page)
         render_spend = self.page.split("function renderSpend(xs)", 1)[1].split(
             "function validateSpendCustomDraft", 1,
         )[0]
-        self.assertIn("spendResolveGranularity(spendGranularityChoice,rows)", render_spend)
+        self.assertIn("spendResolveGranularity(spendGranularityChoice,rows,today)", render_spend)
         self.assertNotIn("SPEND_GRANULARITY_KEY", self.page)
         self.assertIn("--spend-bar-fill:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38))", self.page)
         stack_rule = self.page.split(".spendDayStack{", 1)[1].split("}", 1)[0]
         self.assertNotIn("border-radius", stack_rule)
         self.assertIn("width:min(var(--spend-bar-max,24px),64%)", stack_rule)
-        self.assertNotIn("repeating-linear-gradient(to top,transparent 0 44px", self.page)
+        self.assertNotIn("transparent 0 44px", self.page.split("\n.spendDayTrack{", 1)[1].split("}", 1)[0])
 
     def test_spend_average_reference_uses_every_calendar_day(self):
         """Dropping zero-spend days makes the chart line disagree with the KPI."""
@@ -11178,7 +11218,7 @@ console.log(JSON.stringify({
 
         spend = self.page.split("id=view-daily", 1)[1].split("id=view-learn", 1)[0]
         self.assertIn("Estimated agent spend over time.", spend)
-        self.assertIn("Daily spend by platform · line shows average.", spend)
+        self.assertIn("Daily spend · line shows average.", spend)
         self.assertNotIn("class=foot", spend)
 
         for marker in (

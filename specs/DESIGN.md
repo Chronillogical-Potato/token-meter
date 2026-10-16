@@ -288,7 +288,7 @@ The brand lockup pairs Splunk's unmodified white corporate wordmark with the Tok
 
 ### Spend Evidence Field
 
-Spend keeps calendar totals and the runtime-stacked trend first, then moves from
+Spend keeps calendar totals and the trend first, then moves from
 source evidence to interpretation in one route. Highest-cost logs and platform
 split establish where cost accumulated. Session economics follows with a
 top-decile concentration bar, P10-to-P90 distributions, and a log-scale
