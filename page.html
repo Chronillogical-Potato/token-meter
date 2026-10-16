@@ -1,5 +1,5 @@
 <!doctype html><html lang=en data-theme=classic><head><meta charset=utf-8>
-<script id=theme-boot>(function(){var ids=['classic','nebula','monolith','voltage','phosphor','omarchy'];function daily(now){var d=new Date(now),day=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5),i=0;for(var k=20454;k<=day;k++){var h=Math.imul(k^13,2654435761)>>>0;h=(h^(h>>>15))>>>0;i=(i+1+h%(ids.length-1))%ids.length;}return ids[i];}function resolve(pref,now){return pref==='random'?daily(now):ids.indexOf(pref)>=0?pref:'classic';}window.tokenMeterTheme={ids:ids,resolve:resolve};try{document.documentElement.dataset.theme=resolve(localStorage.getItem('tm_theme'),Date.now());}catch(e){}})();</script>
+<script id=theme-boot>(function(){var ids=['classic','nebula','monolith','voltage','phosphor','omarchy','ferrous','afterglow'];function resolve(pref){return ids.indexOf(pref)>=0?pref:'classic';}window.tokenMeterTheme={ids:ids,resolve:resolve};try{document.documentElement.dataset.theme=resolve(localStorage.getItem('tm_theme'));}catch(e){}})();</script>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>Token Meter</title>
 <link rel=icon type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307090c'/%3E%3Cpath fill='%23fff' d='M47.03 36.16v-7.58L10 10v8.32l28.7 13.97L10 46.44v8.14l37.03-18.4z'/%3E%3C/svg%3E">
@@ -38,7 +38,8 @@
  --swatch-voltage:linear-gradient(132deg,#f5e63d,#ffd23f 34%,#ff3df2 66%,#2ee6ff); --swatch-voltage-bg:#0a0907;
  --swatch-phosphor:linear-gradient(132deg,#3dfc8f,#19d97a 40%,#c6ff4d 72%,#4dd2ff); --swatch-phosphor-bg:#040a06;
  --swatch-omarchy:linear-gradient(132deg,#7aa2f7,#bb9af7 40%,#7dcfff 72%,#ff9e64); --swatch-omarchy-bg:#14151d;
- --swatch-random:conic-gradient(from 210deg,#00bceb,#9d8bff,#e4e7ee,#f5e63d,#3dfc8f,#7aa2f7,#00bceb); --swatch-random-bg:#07090c;
+ --swatch-ferrous:linear-gradient(132deg,#ff5a36,#ffa27a 38%,#ffb36b 66%,#5ee6d8); --swatch-ferrous-bg:#0f0705;
+ --swatch-afterglow:linear-gradient(132deg,#ff5fa2,#ff8a5c 40%,#ffc775 70%,#8f7bff); --swatch-afterglow-bg:#0b0510;
  /* == Type: families, size scale (11px floor), weights == */
  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif; --font-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
  --font-display:"Tektur Local","Avenir Next Condensed",-apple-system,BlinkMacSystemFont,sans-serif;
@@ -210,6 +211,52 @@
  --title-glow:0 0 20px rgb(var(--signal-rgb)/.4);
  --grain-opacity:.05;
  --fx-front-rgb:122 162 247; --fx-back-rgb:187 154 247; --fx-edge-a-rgb:122 162 247; --fx-edge-b-rgb:125 207 255;
+}
+[data-theme=ferrous]{
+ --signal:#ff5a36; --signal-rgb:255 90 54; --signal-mid:#e8481f; --signal-mid-rgb:232 72 31;
+ --signal-hi:#ffa27a; --signal-hi-rgb:255 162 122; --signal-pale:#ffe0d2; --signal-pale-rgb:255 224 210; --signal-deep-rgb:74 22 10;
+ --aura:#ffb36b; --aura-rgb:255 179 107; --aura-pale:#ffd9ad; --aura-deep:#d9822b; --aura-glow-rgb:255 150 70;
+ --flare:#5ee6d8; --flare-rgb:94 230 216;
+ --bg-deep:#080403; --bg-deep-rgb:8 4 3; --bg:#0f0705; --bg-rgb:15 7 5; --bg-lift:#2a110a; --bg-lift-rgb:42 17 10;
+ --bg2:#150b08; --bg2-rgb:21 11 8; --panel:#1c100c; --panel-rgb:28 16 12; --panel2:#271713; --panel2-rgb:39 23 19; --panel3:#33201a;
+ --line-rgb:255 150 110;
+ --fg:#fff3ee; --soft:#efd3c6; --soft-rgb:239 211 198; --dim:#c9aa9d; --faint:#ae8f83;
+ --on-accent:#1c0602; --on-accent-deep:#0d0301;
+ --reason:#ffa27a; --output:#ffb36b; --retrieval:#5ee6d8; --toolcall:#e8481f;
+ --c-input:#ff5a36; --c-output:#ffb36b; --c-cost:#5ee6d8; --c-cost-rgb:94 230 216;
+ --chart-axis:#7a5e54; --chart-label:#c9aa9d;
+ --glow:1;
+ --page-texture:repeating-linear-gradient(135deg,rgb(var(--signal-rgb)/.035) 0 1px,transparent 1px 10px);
+ --page-texture-size:auto;
+ --radius-2xs:1px; --radius-xs:2px; --radius-sm:3px; --radius-md:4px; --radius-lg:6px;
+ --ring:var(--signal),rgb(var(--signal-rgb)/.35) 20%,var(--aura) 40%,rgb(var(--signal-rgb)/.35) 60%,var(--flare) 80%,var(--signal);
+ --ring-speed:28s;
+ --title-glow:0 0 22px rgb(var(--signal-rgb)/.5);
+ --grain-opacity:.07;
+ --fx-front-rgb:255 90 54; --fx-back-rgb:150 40 20; --fx-edge-a-rgb:255 90 54; --fx-edge-b-rgb:255 179 107;
+}
+[data-theme=afterglow]{
+ --signal:#ff5fa2; --signal-rgb:255 95 162; --signal-mid:#ff8a5c; --signal-mid-rgb:255 138 92;
+ --signal-hi:#ffc775; --signal-hi-rgb:255 199 117; --signal-pale:#ffe3f0; --signal-pale-rgb:255 227 240; --signal-deep-rgb:72 14 46;
+ --aura:#8f7bff; --aura-rgb:143 123 255; --aura-pale:#c9bfff; --aura-deep:#6a55e0; --aura-glow-rgb:143 110 255;
+ --flare:#3fe3ff; --flare-rgb:63 227 255;
+ --bg-deep:#06020a; --bg-deep-rgb:6 2 10; --bg:#0b0510; --bg-rgb:11 5 16; --bg-lift:#240a26; --bg-lift-rgb:36 10 38;
+ --bg2:#12081a; --bg2-rgb:18 8 26; --panel:#190d22; --panel-rgb:25 13 34; --panel2:#22122e; --panel2-rgb:34 18 46; --panel3:#2e1a3b;
+ --line-rgb:255 160 210;
+ --fg:#fff1f8; --soft:#efd0e2; --soft-rgb:239 208 226; --dim:#cbabc2; --faint:#b08fa8;
+ --on-accent:#240418; --on-accent-deep:#12020c;
+ --reason:#ffc775; --output:#ff8a5c; --retrieval:#c9bfff; --toolcall:#ff5fa2;
+ --c-input:#ff5fa2; --c-output:#ffc775; --c-cost:#8f7bff; --c-cost-rgb:143 123 255;
+ --chart-axis:#7a5f78; --chart-label:#cbabc2;
+ --glow:1;
+ --page-texture:linear-gradient(rgb(var(--signal-rgb)/.045) 1px,transparent 1px);
+ --page-texture-size:100% 28px;
+ --radius-2xs:3px; --radius-xs:6px; --radius-sm:8px; --radius-md:12px; --radius-lg:18px;
+ --ring:var(--signal),var(--signal-mid) 25%,var(--signal-hi) 45%,var(--aura) 70%,var(--flare) 85%,var(--signal);
+ --ring-speed:32s;
+ --title-glow:0 0 22px rgb(var(--signal-rgb)/.45);
+ --grain-opacity:.05;
+ --fx-front-rgb:255 95 162; --fx-back-rgb:143 123 255; --fx-edge-a-rgb:255 95 162; --fx-edge-b-rgb:255 199 117;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -938,18 +985,18 @@ select option:checked{background-color:var(--panel3)}
 .previewKpi{min-height:96px}
 .previewKpi .v{font-size:var(--fs-readout-md)}
 .settingsPageLayout{display:grid;gap:10px}
-.themePicker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 10px}
-.themeOption{display:grid;gap:10px;min-width:0;padding:10px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.02);color:var(--fg);text-align:left;font:inherit;cursor:pointer;transition:border-color .16s,box-shadow .16s,transform .16s}
+.themePicker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 10px}
+.themeOption{display:grid;gap:8px;min-width:0;padding:8px;border:1px solid var(--line2);border-radius:var(--radius-md);background:rgb(var(--tint-rgb)/.02);color:var(--fg);text-align:left;font:inherit;cursor:pointer;transition:border-color .16s,box-shadow .16s,transform .16s}
 .themeOption:hover{border-color:var(--spectrum-edge-hover);transform:translateY(-1px)}
 .themeOption[aria-pressed=true]{border-color:var(--signal-hi);box-shadow:var(--spectrum-glow)}
-.themePreview{position:relative;display:block;height:88px;overflow:hidden;border-radius:var(--radius-sm);background:var(--theme-swatch-bg);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.08)}
-.themePreview i{position:absolute;display:block;left:12px}
-.themePreview i:nth-child(1){top:14px;width:42%;height:12px;border-radius:var(--radius-pill);background:var(--theme-swatch)}
-.themePreview i:nth-child(2){top:36px;width:58%;height:6px;border-radius:var(--radius-pill);background:rgb(var(--tint-rgb)/.16)}
-.themePreview i:nth-child(3){right:12px;bottom:12px;height:26px;background:var(--theme-swatch);opacity:.55;-webkit-mask-image:repeating-linear-gradient(90deg,var(--black) 0 7px,transparent 7px 11px),linear-gradient(0deg,var(--black),transparent);mask-image:repeating-linear-gradient(90deg,var(--black) 0 7px,transparent 7px 11px),linear-gradient(0deg,var(--black),transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
+.themePreview{position:relative;display:block;height:48px;overflow:hidden;border-radius:var(--radius-sm);background:var(--theme-swatch-bg);box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.08)}
+.themePreview i{position:absolute;display:block;left:10px}
+.themePreview i:nth-child(1){top:9px;width:42%;height:8px;border-radius:var(--radius-pill);background:var(--theme-swatch)}
+.themePreview i:nth-child(2){top:24px;width:58%;height:4px;border-radius:var(--radius-pill);background:rgb(var(--tint-rgb)/.16)}
+.themePreview i:nth-child(3){right:10px;bottom:8px;height:18px;background:var(--theme-swatch);opacity:.55;-webkit-mask-image:repeating-linear-gradient(90deg,var(--black) 0 7px,transparent 7px 11px),linear-gradient(0deg,var(--black),transparent);mask-image:repeating-linear-gradient(90deg,var(--black) 0 7px,transparent 7px 11px),linear-gradient(0deg,var(--black),transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
 .themeCopy{display:grid;gap:2px;min-width:0}
-.themeCopy b{font-family:var(--font-display);font-size:var(--fs-16);font-weight:var(--fw-semibold)}
-.themeCopy small{color:var(--dim);font-size:var(--fs-12);line-height:1.35}
+.themeCopy b{font-family:var(--font-display);font-size:var(--fs-14);font-weight:var(--fw-semibold)}
+.themeCopy small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:var(--dim);font-size:var(--fs-12);line-height:1.35}
 .appearanceSettings kbd{padding:1px 4px;border:1px solid var(--line2);border-radius:var(--radius-xs);color:var(--fg);font:var(--fw-bold) var(--fs-11)/1.35 var(--font-mono)}
 .settingsMap{display:grid;grid-template-columns:minmax(150px,.68fr) repeat(5,minmax(135px,1fr));align-items:stretch;padding:8px 10px;overflow:hidden}
 .settingsMap:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--accent),var(--signal-hi),transparent)}
@@ -4227,25 +4274,25 @@ const THEMES=[
  {id:'voltage',label:'Voltage',tagline:'Volt yellow on carbon with cyan and magenta sparks'},
  {id:'phosphor',label:'Phosphor',tagline:'Terminal green with falling-code rain'},
  {id:'omarchy',label:'Omarchy',tagline:'Deep indigo with blue, violet, and sky neon'},
+ {id:'ferrous',label:'Ferrous',tagline:'Oxidized red rust with molten amber and coolant-teal sparks'},
+ {id:'afterglow',label:'Afterglow',tagline:'Plum dusk with a pink-to-amber sunset horizon'},
 ];
-const THEME_RANDOM={id:'random',name:'Randomize daily',tagline:'A different theme every day'};
 const THEME_STORAGE_KEY='tm_theme';
-const normalizeThemeId=value=>value===THEME_RANDOM.id||THEMES.some(theme=>theme.id===value)?value:'classic';
+const normalizeThemeId=value=>THEMES.some(theme=>theme.id===value)?value:'classic';
 const themeLabel=id=>THEMES.find(theme=>theme.id===id)?.label||'Classic';
-const resolveTheme=(preference,now=Date.now())=>window.tokenMeterTheme?.resolve(preference,now)||(preference===THEME_RANDOM.id?'classic':preference);
+const resolveTheme=preference=>window.tokenMeterTheme?.resolve(preference)||preference;
 let themePreference=(()=>{try{return normalizeThemeId(localStorage.getItem(THEME_STORAGE_KEY));}catch(error){return 'classic';}})();
 let activeTheme=document.documentElement.dataset.theme||'classic';
 function renderThemePicker(){
  const host=$('theme-picker');
- const options=[...THEMES.map(theme=>({...theme,name:theme.label})),THEME_RANDOM];
- host.innerHTML=options.map(theme=>`<button type=button class=themeOption aria-pressed=false data-theme-option="${theme.id}" style="--theme-swatch:var(--swatch-${theme.id});--theme-swatch-bg:var(--swatch-${theme.id}-bg)"><span class=themePreview aria-hidden=true><i></i><i></i><i></i></span><span class=themeCopy><b>${esc(theme.name)}</b><small>${esc(theme.tagline)}</small></span></button>`).join('');
+ host.innerHTML=THEMES.map(theme=>`<button type=button class=themeOption aria-pressed=false data-theme-option="${theme.id}" title="${esc(theme.tagline)}" style="--theme-swatch:var(--swatch-${theme.id});--theme-swatch-bg:var(--swatch-${theme.id}-bg)"><span class=themePreview aria-hidden=true><i></i><i></i><i></i></span><span class=themeCopy><b>${esc(theme.label)}</b><small>${esc(theme.tagline)}</small></span></button>`).join('');
  paintThemePicker();
 }
 function paintThemePicker(){
  [...$('theme-picker').querySelectorAll('[data-theme-option]')].forEach(option=>{
   option.setAttribute('aria-pressed',String(option.dataset.themeOption===themePreference));
  });
- $('theme-current-badge').textContent=themePreference===THEME_RANDOM.id?`Random · ${themeLabel(activeTheme)} today`:themeLabel(activeTheme);
+ $('theme-current-badge').textContent=themeLabel(activeTheme);
 }
 function repaintThemedSurfaces(){
  document.querySelector('meta[name=theme-color]')?.setAttribute('content',cssVar('--bg'));
@@ -4283,7 +4330,6 @@ renderThemePicker();
 document.querySelector('meta[name=theme-color]')?.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
 $('theme-picker').onclick=event=>{const option=event.target.closest('[data-theme-option]');if(option)setTheme(option.dataset.themeOption,{origin:event.detail?{x:event.clientX,y:event.clientY}:null});};
 window.addEventListener('storage',event=>{if(event.key===THEME_STORAGE_KEY)setTheme(event.newValue,{persist:false});});
-setInterval(()=>{if(themePreference===THEME_RANDOM.id)setTheme(themePreference,{persist:false});},60000);
 
 const NAV_COMMANDS=[
  {id:'sessions',label:'Sessions',description:'Choose a recently active local session',section:'Navigate',action:'sessions'},
@@ -4301,7 +4347,6 @@ const NAV_COMMANDS=[
  {id:'session-run',label:'Session · Run',description:'Review cost, context, and pace for the selected session',section:'Selected session',route:'summary',action:'selected-session',glyph:'R'},
  {id:'appearance',label:'Settings · Appearance',description:'Choose the dashboard theme',aliases:'theme colors look',section:'Appearance',route:'settings-appearance',glyph:'◐'},
  ...THEMES.map(theme=>({id:`theme-${theme.id}`,label:`Theme · ${theme.label}`,description:theme.tagline,aliases:'appearance theme colors look',section:'Appearance',action:'theme',theme:theme.id,glyph:'◑'})),
- {id:'theme-random',label:`Theme · ${THEME_RANDOM.name}`,description:THEME_RANDOM.tagline,aliases:'appearance theme random shuffle daily',section:'Appearance',action:'theme',theme:THEME_RANDOM.id,glyph:'⚄'},
  {id:'welcome',label:'Open welcome tour',description:'Replay the 12-slide tour of Token Meter pages',aliases:'getting started onboarding intro help tour',section:'Help',action:'welcome',glyph:'?'},
 ];
 let visibleCommands=[],commandIndex=0,commandReturnFocus=null;

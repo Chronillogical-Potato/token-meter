@@ -20759,27 +20759,16 @@ class DashboardThemeTests(unittest.TestCase):
         self.assertEqual(self.run_boot(None), "classic")
         self.assertEqual(self.run_boot("voltage", throws=True), "classic")
 
-    def daily_themes(self, dates):
-        boot = re.search(r"<script id=theme-boot>(.*?)</script>", self.page, re.S).group(1)
-        script = (
-            "const document={documentElement:{dataset:{}}};const window={};const localStorage={getItem(){return null;}};"
-            + boot.replace("window.tokenMeterTheme", "globalThis.tokenMeterTheme")
-            + f";console.log(JSON.stringify({json.dumps(dates)}.map(d=>tokenMeterTheme.resolve('random',new Date(d).getTime()))));"
-        )
-        return json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    def test_random_theme_is_retired_and_stored_value_falls_back_to_classic(self):
+        self.assertEqual(self.run_boot("random"), "classic")
+        self.assertNotIn("THEME_RANDOM", self.page)
+        self.assertNotIn("theme-random", self.page)
+        self.assertNotIn("Randomize daily", self.page)
 
-    def test_random_theme_is_stable_within_a_day_and_changes_daily(self):
-        morning, evening = self.daily_themes(["2026-10-12T00:05:00", "2026-10-12T23:55:00"])
-        self.assertEqual(morning, evening)
-        start = datetime.date(2026, 9, 1)
-        days = [f"{start + datetime.timedelta(days=offset)}T12:00:00" for offset in range(56)]
-        picks = self.daily_themes(days)
-        ids = ["classic", "nebula", "monolith", "voltage", "phosphor", "omarchy"]
-        self.assertTrue(set(picks) <= set(ids))
-        self.assertEqual(sorted(set(picks)), sorted(ids), "every theme should appear over eight weeks")
-        self.assertTrue(all(a != b for a, b in zip(picks, picks[1:])), "a day never repeats yesterday's theme")
-        self.assertIn("setInterval(()=>{if(themePreference===THEME_RANDOM.id)", self.page)
-        self.assertIn("{id:'theme-random',label:`Theme · ${THEME_RANDOM.name}`", self.page)
+    def test_every_registered_theme_boots_and_the_picker_fits_two_rows_of_four(self):
+        for theme in ("classic", "nebula", "monolith", "voltage", "phosphor", "omarchy", "ferrous", "afterglow"):
+            self.assertEqual(self.run_boot(theme), theme)
+        self.assertIn(".themePicker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))", self.page)
 
     def test_theme_registry_normalizes_and_feeds_the_palette(self):
         start = self.page.index("const THEMES=[")
@@ -20789,8 +20778,8 @@ class DashboardThemeTests(unittest.TestCase):
             "label:themeLabel('monolith'),key:THEME_STORAGE_KEY,random:normalizeThemeId('random')}));"
         )
         result = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
-        self.assertEqual(result, {"ids": ["classic", "nebula", "monolith", "voltage", "phosphor", "omarchy"], "bad": "classic", "ok": "voltage",
-                                  "label": "Monolith", "key": "tm_theme", "random": "random"})
+        self.assertEqual(result, {"ids": ["classic", "nebula", "monolith", "voltage", "phosphor", "omarchy", "ferrous", "afterglow"], "bad": "classic", "ok": "voltage",
+                                  "label": "Monolith", "key": "tm_theme", "random": "classic"})
         self.assertIn("...THEMES.map(theme=>({id:`theme-${theme.id}`,label:`Theme · ${theme.label}`", self.page)
         self.assertIn("if(command.action==='theme'){setTheme(command.theme);return;}", self.page)
         self.assertIn("route:'settings-appearance'", self.page)
