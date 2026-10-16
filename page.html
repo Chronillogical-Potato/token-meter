@@ -1769,21 +1769,41 @@ body.spectrumApp.sessionRoute #view-session .srow:hover{transform:none}
 .spendChartHead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
 .spendChartHead h2,.spendPanelHead h2,.spendPlatformCard h2{margin:0;font-size:var(--fs-14)}
 .spendChartHead p{margin:3px 0 0;color:var(--faint);font-size:var(--fs-12)}
+.spendChartControls{display:grid;justify-items:end;gap:8px}
+.spendChartControls .seg button{padding:4px 12px;font-size:var(--fs-12)}
+.spendChartControls .seg button:disabled{opacity:.42;cursor:not-allowed}
 .spendLegend{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;color:var(--dim);font-size:var(--fs-11)}
 .spendLegend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .spendLegend i{width:9px;height:9px;border-radius:var(--radius-2xs);background:var(--spend-color)}
 .spendLegend .spendEstimateKey i{border:1px solid rgb(var(--tint-rgb)/.28);background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.38) 0 1px,transparent 1px 4px),rgb(var(--tint-rgb)/.08)}
+.spendLegend .spendTotalKey i{background:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38))}
+.spendLegend .spendIncompleteKey i{border:1px dashed rgb(var(--tint-rgb)/.5);background:rgb(var(--tint-rgb)/.14)}
 .spendChart{min-height:270px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:58px minmax(0,1fr);--spend-day-head:22px;--spend-day-foot:24px;--spend-day-gap:3px}
 .spendYAxis{height:260px;display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--spend-day-head) + var(--spend-day-gap)) 8px calc(var(--spend-day-foot) + var(--spend-day-gap)) 0;color:var(--faint);font-size:var(--fs-11);text-align:right}
 .spendPlot{position:relative;min-width:0;overflow:hidden;border-bottom:1px solid var(--line)}
-.spendChartInner{width:100%;height:260px;display:flex;align-items:stretch}
-.spendDay{appearance:none;position:relative;display:grid;grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0 clamp(1px,.25vw,3px);color:var(--faint);font:inherit;cursor:pointer}
+.spendYAxis span{line-height:0}
+.spendGrid{position:absolute;inset:calc(var(--spend-day-head) + var(--spend-day-gap)) 0 calc(var(--spend-day-foot) + var(--spend-day-gap));background:repeating-linear-gradient(to bottom,rgb(var(--tint-rgb)/.07) 0 1px,transparent 1px 25%);pointer-events:none}
+.spendChartInner{position:relative;width:100%;height:260px;display:flex;align-items:stretch}
+.spendDay{appearance:none;position:relative;display:grid;grid-template-rows:var(--spend-day-head) minmax(0,1fr) var(--spend-day-foot);flex:1 1 0;min-width:0;gap:var(--spend-day-gap);border:0;border-radius:var(--radius-sm);background:transparent;padding:0;color:var(--faint);font:inherit;cursor:pointer}
 .spendDay:hover,.spendDay:focus-visible{background:rgb(var(--signal-rgb)/.055);outline:none}
 .spendDay:focus-visible{box-shadow:inset 0 0 0 1px rgb(var(--signal-rgb)/.52)}
 .spendBarValue{overflow:hidden;color:var(--dim);font-size:var(--fs-11);text-align:center;text-overflow:ellipsis;white-space:nowrap;opacity:0}
 .spendDay:hover .spendBarValue{opacity:1}
-.spendDayTrack{display:flex;height:100%;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--line2);background:repeating-linear-gradient(to top,transparent 0 44px,rgb(var(--tint-rgb)/.035) 44px 45px)}
-.spendDayStack{display:flex;width:min(28px,82%);height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;border-radius:var(--radius-xs) var(--radius-xs) var(--radius-2xs) var(--radius-2xs)}
+.spendDayTrack .spendBarValue{flex:none;max-width:100%;padding-bottom:3px;line-height:1.3}
+.spendChartInner[data-values=shown] .spendBarValue{opacity:1}
+.spendDay[data-peak=true] .spendBarValue{position:relative;z-index:1;max-width:none;overflow:visible;color:var(--fg);font-weight:var(--fw-bold);opacity:1}
+.spendDay[data-peak=true][data-axis-edge=first] .spendBarValue{align-self:flex-start}
+.spendDay[data-peak=true][data-axis-edge=last] .spendBarValue{align-self:flex-end}
+.spendDayTrack{grid-row:2;display:flex;height:100%;min-height:0;flex-direction:column;align-items:center;justify-content:flex-end;border-bottom:1px solid var(--line2)}
+.spendDayStack{--spend-bar-fill:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38));display:flex;flex:none;width:min(var(--spend-bar-max,24px),64%);min-width:2px;height:var(--spend-height);min-height:0;flex-direction:column-reverse;overflow:hidden;background:var(--spend-bar-fill);box-shadow:inset 0 1px 0 rgb(var(--tint-rgb)/.4);transition:opacity .16s,filter .16s}
+.spendDayStack[data-estimated=true]{background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.3) 0 1px,transparent 1px 4px),var(--spend-bar-fill)}
+.spendDayStack[data-partial=true]{box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.42)}
+.spendDay:is(:hover,:focus-visible) .spendDayStack{filter:brightness(1.18)}
+.spendChartInner[data-granularity=week]{--spend-bar-max:44px}
+.spendChartInner[data-granularity=month]{--spend-bar-max:64px}
+.spendChartInner[data-granularity]:hover .spendDay:not(:hover) .spendDayStack,.spendChartInner[data-granularity]:has(.spendDay:focus-visible) .spendDay:not(:focus-visible) .spendDayStack{opacity:.45}
+.spendDay[data-incomplete=true] .spendDayStack{opacity:.6;outline:1px dashed rgb(var(--tint-rgb)/.5);outline-offset:1px}
+.spendChartInner[data-granularity] .spendDay[data-incomplete=true]:is(:hover,:focus-visible) .spendDayStack{opacity:.85}
 .spendStackSegment{display:block;flex:none;height:var(--segment-share);min-height:1px;background:var(--spend-color)}
 .spendStackSegment[data-estimated=true]{background:repeating-linear-gradient(135deg,rgb(var(--tint-rgb)/.32) 0 1px,transparent 1px 4px),var(--spend-color)}
 .spendStackSegment[data-partial=true]{box-shadow:inset 0 0 0 1px rgb(var(--tint-rgb)/.32)}
@@ -3154,8 +3174,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 	  </div>
 	  <section class=goalsSection id=spend-goals aria-labelledby=spend-goals-heading><div class=goalsHead><h2 id=spend-goals-heading tabindex=-1>Spend goals</h2><div class=goalActions><button class=tbtn type=button data-goals-toggle>Previous goals</button><button class=tbtn type=button data-goal-new=spend-goals>New goal</button></div></div><div class=goalsNotice role=status aria-live=polite hidden></div><div class=goalsList data-goals-current></div><div class=goalsList data-goals-previous hidden></div></section>
 	  <section class="card spendChartCard">
-	   <div class=spendChartHead><div><h2>Spend trend</h2><p>Daily spend by platform · line shows average.</p></div><div class=spendLegend id=s-legend></div></div>
-	   <div class=spendChart id=s-chart aria-label="Spend trend by day and platform"><div class="spendYAxis mono" id=s-y-axis aria-hidden=true></div><div class=spendPlot><div class=spendChartInner id=s-chart-inner></div><div class=spendAverageLine id=s-average-line hidden aria-hidden=true><span class=mono></span></div></div></div>
+	   <div class=spendChartHead><div><h2>Spend trend</h2><p id=s-chart-note>Daily spend by platform · line shows average.</p></div><div class=spendChartControls><div class=seg id=s-granularity role=group aria-label="Group spend by"><button type=button class=on aria-pressed=true data-spend-granularity=day>Day</button><button type=button aria-pressed=false data-spend-granularity=week>Week</button><button type=button aria-pressed=false data-spend-granularity=month>Month</button></div><div class=spendLegend id=s-legend></div></div></div>
+	   <div class=spendChart id=s-chart aria-label="Spend trend by day and platform"><div class="spendYAxis mono" id=s-y-axis aria-hidden=true></div><div class=spendPlot><div class=spendGrid aria-hidden=true></div><div class=spendChartInner id=s-chart-inner></div><div class=spendAverageLine id=s-average-line hidden aria-hidden=true><span class=mono></span></div></div></div>
 	   <div class="spendChartTip chartTip" id=s-chart-tip tabindex=0 hidden aria-live=polite></div>
 	  </section>
 	  <div class=spendEvidenceGrid>
@@ -7852,11 +7872,68 @@ function spendRuntimeTotals(rows){
  }));
  return [...totals.values()].sort((a,b)=>SPEND_RUNTIME_ORDER.indexOf(a.key)-SPEND_RUNTIME_ORDER.indexOf(b.key)||a.label.localeCompare(b.label));
 }
+// Four equal axis divisions on a round step, so every tick reads as a plain number.
 function spendNiceMax(value){
  value=Math.max(0,Number(value)||0);
  if(!value||!Number.isFinite(value))return 1;
- const padded=value*1.08,magnitude=10**Math.floor(Math.log10(padded)),quantum=magnitude/10;
- return Math.max(1,Number((Math.ceil(padded/quantum-1e-12)*quantum).toPrecision(12)));
+ const step=value*1.02/4,magnitude=10**Math.floor(Math.log10(step));
+ const factor=[1,1.25,1.5,2,2.5,3,4,5,6,8,10].find(item=>item*magnitude>=step*(1-1e-12));
+ return Math.max(1,Number((4*factor*magnitude).toPrecision(12)));
+}
+const SPEND_GRANULARITIES=['day','week','month'];
+function normalizeSpendGranularity(value){return SPEND_GRANULARITIES.includes(value)?value:'day';}
+function spendBucketStart(day,granularity){
+ const date=spendDayDate(day);if(!date)return '';
+ if(granularity==='week')date.setDate(date.getDate()-(date.getDay()+6)%7);
+ else if(granularity==='month')date.setDate(1);
+ return spendDayKey(date);
+}
+function spendBucketEnd(start,granularity){
+ if(granularity==='week')return spendShiftDay(start,6);
+ if(granularity==='month'){const date=spendDayDate(start);return date?spendDayKey(new Date(date.getFullYear(),date.getMonth()+1,0,12,0,0,0)):'';}
+ return start;
+}
+function spendIsEstimated(row){return ['local_estimate','mixed'].includes(row?.usage_basis)||['local_estimate','mixed'].includes(row?.provenance?.usage_basis);}
+function spendBucketRows(rows,granularity,today=''){
+ granularity=normalizeSpendGranularity(granularity);
+ if(granularity==='day')return (rows||[]).map(row=>({...row,granularity,start:row.day,end:row.day,bucketStart:row.day,bucketEnd:row.day,days:1,fullDays:1,clipped:false,inProgress:row.day===today,incomplete:row.day===today}));
+ const buckets=[],byKey=new Map();
+ (rows||[]).forEach(row=>{
+  const key=spendBucketStart(row.day,granularity);if(!key)return;
+  let bucket=byKey.get(key);
+  if(!bucket){
+   const bucketEnd=spendBucketEnd(key,granularity);
+   bucket={day:row.day,granularity,start:row.day,end:row.day,bucketStart:key,bucketEnd,days:0,fullDays:Math.round((spendDayDate(bucketEnd)-spendDayDate(key))/86400000)+1,cost:0,providers:[],hasActivity:false,availability:{cost:true},coverage:{cost:{complete:true}},usage_basis:'',provenance:{}};
+   byKey.set(key,bucket);buckets.push(bucket);
+  }
+  bucket.end=row.day;bucket.days+=1;bucket.cost+=Number(row.cost||0);
+  bucket.providers.push(...(row.providers||[]));
+  if(!row.hasActivity)return;
+  bucket.hasActivity=true;
+  if(row.availability?.cost===false)bucket.availability.cost=false;
+  if(row.coverage?.cost?.complete===false)bucket.coverage.cost.complete=false;
+  if(spendIsEstimated(row))bucket.usage_basis='mixed';
+ });
+ return buckets.map(bucket=>{
+  const clipped=bucket.days<bucket.fullDays,inProgress=Boolean(today)&&bucket.start<=today&&today<=bucket.bucketEnd;
+  return {...bucket,clipped,inProgress,incomplete:clipped||inProgress};
+ });
+}
+function spendGranularityOptions(rows){
+ return Object.fromEntries(SPEND_GRANULARITIES.map(granularity=>{
+  if(granularity==='day')return [granularity,true];
+  const buckets=spendBucketRows(rows,granularity);
+  return [granularity,buckets.length>=2&&buckets.some(bucket=>!bucket.clipped)];
+ }));
+}
+function spendAutoGranularity(dayCount){return dayCount>186?'month':dayCount>35?'week':'day';}
+function spendResolveGranularity(choice,rows){
+ const options=spendGranularityOptions(rows),order=['month','week','day'];
+ const wanted=SPEND_GRANULARITIES.includes(choice)?choice:spendAutoGranularity((rows||[]).length);
+ return {granularity:order.slice(order.indexOf(wanted)).find(granularity=>options[granularity])||'day',options};
+}
+function spendAverageBasis(buckets){
+ return (buckets||[]).filter(row=>row.granularity==='day'||!row.incomplete);
 }
 function spendAverageReference(rows,axisMax){
  const costs=(rows||[]).map(row=>{const value=Number(row?.cost||0);return Number.isFinite(value)&&value>0?value:0;});
@@ -7911,6 +7988,7 @@ function normalizeSpendRangeChoice(value){return ['today','yesterday','7','30','
 // spend-range-logic-end
 const SPEND_RANGE_KEY='tm_spend_range_v1';
 const SPEND_SCATTER_METRIC_KEY='tm_spend_scatter_metric_v1';
+let spendGranularityChoice='auto',spendChartRows=[];
 let spendRangeChoice='30',spendCustomFrom='',spendCustomTo='',spendFocusDay='',spendInspectDay='',spendCurrentRows=[],spendCurrentWindow=null,spendCurrentSource=[],spendResizeTimer=0,spendLogsRequestKey='',spendLogsRenderedRange='',spendLogsRequestSeq=0,spendInsightPayload=null,spendInsightRenderKey='',spendScatterMetric=localStorage.getItem(SPEND_SCATTER_METRIC_KEY)==='input'?'input':'cost';
 try{
  const saved=JSON.parse(localStorage.getItem(SPEND_RANGE_KEY)||'{}');
@@ -7937,57 +8015,81 @@ function spendDayDetails(row){
  const partial=row.coverage?.cost?.complete===false||!available,estimated=['local_estimate','mixed'].includes(row.usage_basis)||['local_estimate','mixed'].includes(row.provenance?.usage_basis);
  return {totalText:money(total),note:[partial?'partial coverage':'',estimated?'estimated':''].filter(Boolean).join(' · '),runtimes};
 }
-function spendDayAria(row){
- const details=spendDayDetails(row),parts=details.runtimes.map(runtime=>`${runtime.label} ${runtime.unavailable&&!runtime.cost?'cost unavailable':money(runtime.cost)}${runtime.estimated?' estimated':''}${runtime.partial?' partial':''}`);
- return `${dayLabel(row.day)}, ${details.totalText}${details.note?`, ${details.note}`:''}${parts.length?`, ${parts.join(', ')}`:''}`;
+const SPEND_GRANULARITY_COPY={
+ day:{unit:'day',total:'Daily total',note:'Daily spend by platform · line shows average.'},
+ week:{unit:'wk',total:'Weekly total',note:'Weekly spend by platform · line shows average.'},
+ month:{unit:'mo',total:'Monthly total',note:'Monthly spend by platform · line shows average.'},
+};
+function spendMonthLabel(day,style='long'){return new Date(`${day}T12:00:00`).toLocaleDateString([],style==='long'?{month:'long',year:'numeric'}:{month:'short'});}
+function spendBucketLabel(row){
+ if(row.granularity==='week')return `Week of ${shortDayLabel(row.bucketStart)}`;
+ if(row.granularity==='month')return spendMonthLabel(row.bucketStart);
+ return dayLabel(row.day);
 }
-function spendAxisLabel(row,index,count,chartWidth){
+function spendBucketNote(row){
+ if(row.granularity==='day')return row.inProgress?'today, still in progress':'';
+ const unit=row.granularity==='week'?'week':'month';
+ if(row.clipped)return `partial ${unit} · ${row.days} of ${row.fullDays} days in range${row.inProgress?' · in progress':''}`;
+ return row.inProgress?`${unit} in progress`:'';
+}
+function spendDayAria(row){
+ const details=spendDayDetails(row),parts=details.runtimes.map(runtime=>`${runtime.label} ${runtime.unavailable&&!runtime.cost?'cost unavailable':money(runtime.cost)}${runtime.estimated?' estimated':''}${runtime.partial?' partial':''}`),bucketNote=spendBucketNote(row);
+ return `${spendBucketLabel(row)}, ${details.totalText}${details.note?`, ${details.note}`:''}${bucketNote?`, ${bucketNote}`:''}${parts.length?`, ${parts.join(', ')}`:''}`;
+}
+function spendAxisText(row,spansYears){
+ if(row.granularity==='month'){const label=spendMonthLabel(row.bucketStart,'short');return spansYears||row.bucketStart.endsWith('-01-01')?`${label} ’${row.bucketStart.slice(2,4)}`:label;}
+ return shortDayLabel(row.granularity==='week'?row.bucketStart:row.day);
+}
+function spendAxisLabel(row,index,count,chartWidth,spansYears=false){
  const maxLabels=Math.max(2,Math.floor(Math.max(1,chartWidth)/54));
  const step=Math.max(1,Math.ceil(Math.max(1,count-1)/Math.max(1,maxLabels-1)));
- return index===0||index===count-1||index%step===0?shortDayLabel(row.day):'';
+ return index===0||index===count-1||index%step===0?spendAxisText(row,spansYears):'';
 }
-function spendBarBody(row,index,count,axisMax,chartWidth){
- const runtimes=spendRuntimeTotals([row]).filter(runtime=>runtime.cost>0),total=Number(row.cost||0),height=total?Math.max(3,100*total/axisMax):0;
- const segments=runtimes.map(runtime=>`<i class=spendStackSegment data-estimated="${runtime.estimated}" data-partial="${runtime.partial}" style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]};--segment-share:${total?100*runtime.cost/total:0}%"></i>`).join('');
- const axisLabel=spendAxisLabel(row,index,count,chartWidth);
- return `<span class="spendBarValue mono">${total?money(total):''}</span><span class=spendDayTrack><span class=spendDayStack style="--spend-height:${height}%">${segments}</span></span><span class=spendDayLabel>${esc(axisLabel)}</span>`;
+function spendBarBody(row,index,count,axisMax,chartWidth,spansYears){
+ const runtimes=spendRuntimeTotals([row]).filter(runtime=>runtime.cost>0),total=Number(row.cost||0),height=total?Math.max(1.5,100*total/axisMax):0;
+ const estimated=runtimes.some(runtime=>runtime.estimated),partial=row.coverage?.cost?.complete===false||row.availability?.cost===false;
+ const axisLabel=spendAxisLabel(row,index,count,chartWidth,spansYears);
+ return `<span class=spendDayTrack><span class="spendBarValue mono">${total?money(total):''}</span>${total?`<span class=spendDayStack data-estimated="${estimated}" data-partial="${partial}" style="--spend-height:${height}%"></span>`:''}</span><span class=spendDayLabel>${esc(axisLabel)}</span>`;
 }
 function renderSpendAxis(axisMax){
  const ticks=[1,.75,.5,.25,0].map(ratio=>`<span>${money(axisMax*ratio)}</span>`).join('');
  if($('s-y-axis')._spendTicks!==ticks){$('s-y-axis').innerHTML=ticks;$('s-y-axis')._spendTicks=ticks;}
 }
 function renderSpendAverage(rows,axisMax){
- const line=$('s-average-line'),reference=spendAverageReference(rows,axisMax),track=$('s-chart-inner').querySelector('.spendDayTrack');
+ const line=$('s-average-line'),reference=spendAverageReference(spendAverageBasis(rows),axisMax),track=$('s-chart-inner').querySelector('.spendDayTrack');
  if(!track||reference.value<=0){line.hidden=true;return;}
- const trackRect=track.getBoundingClientRect(),plotRect=line.parentElement.getBoundingClientRect();
- const top=trackRect.top-plotRect.top+(1-reference.ratio)*trackRect.height,label=`avg ${money(reference.value)}`;
+ const trackRect=track.getBoundingClientRect(),plotRect=line.parentElement.getBoundingClientRect(),unit=SPEND_GRANULARITY_COPY[rows[0]?.granularity||'day'].unit;
+ const top=trackRect.top-plotRect.top+(1-reference.ratio)*trackRect.height,label=`avg ${money(reference.value)} / ${unit}`;
  line.style.top=`${Math.round(top*10)/10}px`;line.hidden=false;
  const value=line.querySelector('span');if(value.textContent!==label)value.textContent=label;
 }
 function spendPaintNavigation(){
- const state=spendDayNavigation(spendCurrentRows,spendFocusDay);spendFocusDay=state.focusDay;
+ const state=spendDayNavigation(spendChartRows,spendFocusDay);spendFocusDay=state.focusDay;
  [...$('s-chart-inner').querySelectorAll('[data-spend-day]')].forEach((button,index)=>{
   const item=state.buttons[index];
   button.classList.toggle('selected',Boolean(item?.selected));button.tabIndex=item?.tabIndex??-1;button.removeAttribute('aria-pressed');
  });
 }
-function updateSpendBar(button,row,index,count,axisMax,chartWidth){
+function updateSpendBar(button,row,index,count,axisMax,chartWidth,{peak=false,spansYears=false}={}){
  const edge=count>1?(index===0?'first':index===count-1?'last':''):'';
  button.dataset.spendDay=row.day;
  button.setAttribute('aria-label',spendDayAria(row));
  if(edge)button.dataset.axisEdge=edge;else delete button.dataset.axisEdge;
- const body=spendBarBody(row,index,count,axisMax,chartWidth);
+ button.dataset.peak=String(peak);button.dataset.incomplete=String(Boolean(row.incomplete));
+ const body=spendBarBody(row,index,count,axisMax,chartWidth,spansYears);
  if(button._spendBody!==body){button.innerHTML=body;button._spendBody=body;}
 }
 function reconcileSpendBars(rows){
- const inner=$('s-chart-inner'),keys=rows.map(row=>row.day).join('|'),axisMax=spendNiceMax(Math.max(0,...rows.map(row=>Number(row.cost||0)))),chartWidth=Math.max(1,inner.clientWidth||$('s-chart').clientWidth||1);
+ const granularity=rows[0]?.granularity||'day',inner=$('s-chart-inner'),keys=`${granularity}:${rows.map(row=>row.day).join('|')}`,costs=rows.map(row=>Number(row.cost||0)),axisMax=spendNiceMax(Math.max(0,...costs)),chartWidth=Math.max(1,inner.clientWidth||$('s-chart').clientWidth||1);
  const existing=[...inner.querySelectorAll('[data-spend-day]')],same=inner.dataset.keys===keys&&existing.length===rows.length;
+ const peakCost=Math.max(0,...costs),peakIndex=rows.length>1&&peakCost>0?costs.indexOf(peakCost):-1,spansYears=Boolean(rows.length)&&rows[0].bucketStart.slice(0,4)!==rows.at(-1).bucketStart.slice(0,4);
+ inner.dataset.granularity=granularity;inner.dataset.values=rows.length<=14?'shown':'hover';
  renderSpendAxis(axisMax);
  if(!same){
   inner.innerHTML=rows.map(row=>`<button class=spendDay type=button data-spend-day="${esc(row.day)}"></button>`).join('');
   inner.dataset.keys=keys;
  }
- [...inner.querySelectorAll('[data-spend-day]')].forEach((button,index)=>updateSpendBar(button,rows[index],index,rows.length,axisMax,chartWidth));
+ [...inner.querySelectorAll('[data-spend-day]')].forEach((button,index)=>updateSpendBar(button,rows[index],index,rows.length,axisMax,chartWidth,{peak:index===peakIndex,spansYears}));
  renderSpendAverage(rows,axisMax);
  spendPaintNavigation();
 }
@@ -8110,12 +8212,13 @@ function hideSpendTip(){
  spendInspectDay='';$('s-chart-tip').hidden=true;
 }
 function showSpendTip(day,button=$('s-chart-inner').querySelector(`[data-spend-day="${day}"]`)){
- const row=spendCurrentRows.find(item=>item.day===day),tip=$('s-chart-tip');
+ const row=spendChartRows.find(item=>item.day===day),tip=$('s-chart-tip');
  if(!row||!button){hideSpendTip();return;}
  spendInspectDay=day;
- const details=spendDayDetails(row),total=Number(row.cost||0);
+ const details=spendDayDetails(row),total=Number(row.cost||0),note=[details.note,spendBucketNote(row)].filter(Boolean).join(' · ');
+ const span=row.granularity==='day'?'':`<div class=spendTipNote>${esc(row.start===row.end?dayLabel(row.start):`${shortDayLabel(row.start)} – ${shortDayLabel(row.end)}`)}</div>`;
  const runtimeRows=details.runtimes.length?details.runtimes.map(runtime=>`<div class=spendTipRuntime style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><span><i></i>${esc(runtime.label)}</span><b class=mono>${costValueHtml(money(runtime.cost),!(runtime.unavailable&&!runtime.cost))}</b><small>${runtime.unavailable?'unavailable':total?spendPct(runtime.cost/total):'0%'}${runtime.estimated?' · est':''}${runtime.partial?' · partial':''}</small></div>`).join(''):'<div class=spendTipEmpty>No runtime spend recorded.</div>';
- const html=`<div class=spendTipDate>${esc(dayLabel(row.day))}</div><div class=spendTipTotal><span>Daily total</span><b class=mono>${esc(details.totalText)}</b></div>${details.note?`<div class=spendTipNote>${esc(details.note)}</div>`:''}<div class=spendTipRuntimes>${runtimeRows}</div>`;
+ const html=`<div class=spendTipDate>${esc(spendBucketLabel(row))}</div>${span}<div class=spendTipTotal><span>${SPEND_GRANULARITY_COPY[row.granularity].total}</span><b class=mono>${esc(details.totalText)}</b></div>${note?`<div class=spendTipNote>${esc(note)}</div>`:''}<div class=spendTipRuntimes>${runtimeRows}</div>`;
  if(tip._spendHtml!==html){tip.innerHTML=html;tip._spendHtml=html;}
  tip.hidden=false;
  const card=tip.closest('.spendChartCard'),barRect=button.getBoundingClientRect(),cardRect=card.getBoundingClientRect();
@@ -8123,7 +8226,7 @@ function showSpendTip(day,button=$('s-chart-inner').querySelector(`[data-spend-d
  tip.style.left=`${left}px`;tip.style.top=`${Math.max(54,barRect.top-cardRect.top-tip.offsetHeight-8)}px`;
 }
 function selectSpendDay(day,{focus=false}={}){
- if(!spendCurrentRows.some(row=>row.day===day))return;
+ if(!spendChartRows.some(row=>row.day===day))return;
  spendFocusDay=day;spendPaintNavigation();
  const button=$('s-chart-inner').querySelector(`[data-spend-day="${day}"]`);
  if(focus)button?.focus();
@@ -8151,9 +8254,18 @@ function renderSpend(xs){
  $('s-highest-day').textContent=periodUnavailable?'Unavailable':highest&&highest.cost?shortDayLabel(highest.day):'No spend';
  $('s-highest-day-note').textContent=highest&&highest.cost?`${money(highest.cost)} · ${dayLabel(highest.day)}`:evidence.active?'No covered daily cost':'No recorded activity';
  const visibleRuntimes=runtimeTotals.filter(runtime=>runtime.cost||runtime.unavailable);
- $('s-legend').innerHTML=visibleRuntimes.map(runtime=>`<span style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><i></i>${esc(runtime.label)}</span>`).join('')+(visibleRuntimes.some(runtime=>runtime.estimated)?'<span class=spendEstimateKey><i></i>Local estimate</span>':'');
- reconcileSpendBars(rows);
-	 $('s-chart').setAttribute('aria-label',`${rangeText}. ${periodUnavailable?'Spend unavailable':`${money(total)} estimated spend, daily average ${money(dailyAverage)}`}${evidence.partial?', partial coverage':''}. Use arrow keys to inspect days.`);
+ $('s-legend').innerHTML=(total?'<span class=spendTotalKey><i></i>Spend</span>':'')+(visibleRuntimes.some(runtime=>runtime.estimated)?'<span class=spendEstimateKey><i></i>Local estimate</span>':'');
+ const {granularity,options:granularityOptions}=spendResolveGranularity(spendGranularityChoice,rows);
+ [...$('s-granularity').querySelectorAll('[data-spend-granularity]')].forEach(button=>{
+  const value=button.dataset.spendGranularity,on=value===granularity;
+  button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));button.disabled=!granularityOptions[value];
+  button.title=granularityOptions[value]?'':`Needs a range with at least one full ${value}`;
+ });
+ $('s-chart-note').textContent=SPEND_GRANULARITY_COPY[granularity].note;
+ spendChartRows=spendBucketRows(rows,granularity,today);
+ if(spendChartRows.some(row=>row.incomplete&&row.hasActivity))$('s-legend').insertAdjacentHTML('beforeend',`<span class=spendIncompleteKey><i></i>${granularity==='day'?'In progress':'Partial or in progress'}</span>`);
+ reconcileSpendBars(spendChartRows);
+	 $('s-chart').setAttribute('aria-label',`${rangeText}. ${periodUnavailable?'Spend unavailable':`${money(total)} estimated spend, daily average ${money(dailyAverage)}`}${evidence.partial?', partial coverage':''}. Use arrow keys to inspect ${granularity}s.`);
  $('s-platforms').innerHTML=visibleRuntimes.length?`<div class=spendPlatformRows>${visibleRuntimes.map(runtime=>`<div class=spendPlatformRow style="--spend-color:${SPEND_RUNTIME_COLORS[runtime.key]}"><div class=spendPlatformName><i></i><span>${esc(runtime.label)}</span></div><div class=spendPlatformTrack><i style="width:${total?100*runtime.cost/total:0}%"></i></div><div class="spendPlatformValue mono">${costValueHtml(money(runtime.cost),!(runtime.unavailable&&!runtime.cost))}<span>${runtime.unavailable?'unavailable':total?spendPct(runtime.cost/total):'0%'}${runtime.estimated?' · est':''}${runtime.partial?' · partial':''}</span></div></div>`).join('')}</div>`:`<div class="spendEmpty emptyState">${evidence.active?'Recorded activity has no runtime cost evidence.':'No spend recorded in this range.'}</div>`;
  loadSpendLogs(window,xs?.generated_at);
  const hovered=$('s-chart-inner').querySelector('.spendDay:hover');
@@ -8179,6 +8291,11 @@ $('s-range').onchange=event=>{
  spendRangeChoice=range;persistSpendRange();if(LATEST)renderSpend(LATEST.xsession);
 };
 $('s-from').onchange=validateSpendCustomDraft;$('s-to').onchange=validateSpendCustomDraft;
+$('s-granularity').onclick=event=>{
+ const button=event.target.closest('[data-spend-granularity]');if(!button||button.disabled)return;
+ spendGranularityChoice=normalizeSpendGranularity(button.dataset.spendGranularity);
+ hideSpendTip();if(LATEST)renderSpend(LATEST.xsession);
+};
 function handleSpendInspect(event){
  const button=event.target.closest('[data-spend-day]');if(!button)return;
  if(spendInspectDay===button.dataset.spendDay&&!$('s-chart-tip').hidden)return;
@@ -8292,8 +8409,8 @@ readoutObserver.observe(document.body,{subtree:true,childList:true,characterData
 window.addEventListener('resize',()=>{
  clearTimeout(spendResizeTimer);
  spendResizeTimer=setTimeout(()=>{
-  if(!$('view-daily').classList.contains('on')||!spendCurrentRows.length)return;
-  reconcileSpendBars(spendCurrentRows);
+  if(!$('view-daily').classList.contains('on')||!spendChartRows.length)return;
+  reconcileSpendBars(spendChartRows);
   const hovered=$('s-chart-inner').querySelector('.spendDay:hover');
   if(hovered)showSpendTip(hovered.dataset.spendDay,hovered);else hideSpendTip();
   if(spendInsightPayload)drawSpendScatter(spendInsightPayload.sessions||[]);

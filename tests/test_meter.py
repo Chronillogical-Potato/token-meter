@@ -10747,7 +10747,7 @@ console.log(JSON.stringify(out));
             "function hideSpendTip()",
             "$('s-chart-inner').addEventListener('pointerleave',hideSpendTip)",
             "if(!same){",
-            "updateSpendBar(button,rows[index],index,rows.length,axisMax,chartWidth)",
+            "updateSpendBar(button,rows[index],index,rows.length,axisMax,chartWidth,{peak:index===peakIndex,spansYears})",
         ):
             self.assertIn(marker, self.page)
         self.assertNotIn(
@@ -10834,7 +10834,7 @@ console.log(JSON.stringify({
             ],
             capture_output=True, text=True, check=True,
         )
-        self.assertEqual(json.loads(result.stdout), [1, 1, 20, 210, 220, 500, 1100])
+        self.assertEqual(json.loads(result.stdout), [1, 1, 20, 200, 240, 500, 1200])
         self.assertIn("flex:1 1 0;min-width:0", self.page)
         self.assertIn(
             ".spendDayLabel{position:absolute;bottom:0;left:50%;width:max-content",
@@ -10869,6 +10869,93 @@ console.log(JSON.stringify([
             {"valid": True, "start": "2025-12-01", "end": "2025-12-31", "dayCount": 31, "error": ""},
             "last_month",
         ])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for dashboard JavaScript")
+    def test_spend_trend_groups_by_monday_week_and_calendar_month(self):
+        """Clipped edge buckets and the bucket holding today must not count as full periods."""
+        logic = self.page.split("// spend-range-logic-start", 1)[1].split(
+            "// spend-range-logic-end", 1,
+        )[0]
+        script = logic + """
+const now = new Date(2026, 9, 16, 12, 0, 0);
+const window = spendRangeWindow('custom', '2026-09-24', '2026-10-16', now);
+const rows = spendCalendarRows([
+  {day:'2026-09-24', cost:2, providers:[{provider:'claude', cost:2}]},
+  {day:'2026-09-30', cost:3, providers:[{provider:'codex', cost:3}], usage_basis:'local_estimate'},
+  {day:'2026-10-05', cost:5, providers:[{provider:'claude', cost:5}], coverage:{cost:{complete:false}}},
+  {day:'2026-10-16', cost:1, providers:[{provider:'claude', cost:1}]},
+], window);
+const pick = bucket => ({day:bucket.day, start:bucket.bucketStart, end:bucket.end, days:bucket.days, fullDays:bucket.fullDays, cost:bucket.cost, clipped:bucket.clipped, inProgress:bucket.inProgress, estimated:spendIsEstimated(bucket), complete:bucket.coverage.cost.complete});
+const weeks = spendBucketRows(rows, 'week', '2026-10-16');
+const days = spendBucketRows(rows, 'day', '2026-10-16');
+console.log(JSON.stringify({
+  weeks: weeks.map(pick),
+  months: spendBucketRows(rows, 'month', '2026-10-16').map(pick),
+  dayCount: days.length,
+  todayIncomplete: days.filter(row => row.incomplete).map(row => row.day),
+  weekAverageBasis: spendAverageBasis(weeks).map(row => row.day),
+  dayAverageBasis: spendAverageBasis(days).length,
+  sevenDays: spendGranularityOptions(spendCalendarRows([], spendRangeWindow('7', '', '', now))),
+  thirtyDays: spendGranularityOptions(spendCalendarRows([], spendRangeWindow('30', '', '', now))),
+  ninetyDays: spendGranularityOptions(spendCalendarRows([], spendRangeWindow('90', '', '', now))),
+  normalized: ['day', 'week', 'month', 'year', null].map(normalizeSpendGranularity),
+  auto: [1, 7, 30, 35, 36, 90, 186, 187, 400].map(spendAutoGranularity),
+  resolved: [
+    spendResolveGranularity('auto', spendCalendarRows([], spendRangeWindow('90', '', '', now))).granularity,
+    spendResolveGranularity('day', spendCalendarRows([], spendRangeWindow('90', '', '', now))).granularity,
+    spendResolveGranularity('month', spendCalendarRows([], spendRangeWindow('30', '', '', now))).granularity,
+    spendResolveGranularity('week', spendCalendarRows([], spendRangeWindow('7', '', '', now))).granularity,
+    spendResolveGranularity('auto', spendCalendarRows([], spendRangeWindow('30', '', '', now))).granularity,
+  ],
+}));
+"""
+        result = subprocess.run(["node", "-e", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["weeks"], [
+            {"day": "2026-09-24", "start": "2026-09-21", "end": "2026-09-27", "days": 4, "fullDays": 7, "cost": 2, "clipped": True, "inProgress": False, "estimated": False, "complete": True},
+            {"day": "2026-09-28", "start": "2026-09-28", "end": "2026-10-04", "days": 7, "fullDays": 7, "cost": 3, "clipped": False, "inProgress": False, "estimated": True, "complete": True},
+            {"day": "2026-10-05", "start": "2026-10-05", "end": "2026-10-11", "days": 7, "fullDays": 7, "cost": 5, "clipped": False, "inProgress": False, "estimated": False, "complete": False},
+            {"day": "2026-10-12", "start": "2026-10-12", "end": "2026-10-16", "days": 5, "fullDays": 7, "cost": 1, "clipped": True, "inProgress": True, "estimated": False, "complete": True},
+        ])
+        self.assertEqual(payload["months"], [
+            {"day": "2026-09-24", "start": "2026-09-01", "end": "2026-09-30", "days": 7, "fullDays": 30, "cost": 5, "clipped": True, "inProgress": False, "estimated": True, "complete": True},
+            {"day": "2026-10-01", "start": "2026-10-01", "end": "2026-10-16", "days": 16, "fullDays": 31, "cost": 6, "clipped": True, "inProgress": True, "estimated": False, "complete": False},
+        ])
+        self.assertEqual(payload["dayCount"], 23)
+        self.assertEqual(payload["todayIncomplete"], ["2026-10-16"])
+        self.assertEqual(payload["weekAverageBasis"], ["2026-09-28", "2026-10-05"])
+        self.assertEqual(payload["dayAverageBasis"], 23)
+        self.assertEqual(payload["sevenDays"], {"day": True, "week": False, "month": False})
+        self.assertEqual(payload["thirtyDays"], {"day": True, "week": True, "month": False})
+        self.assertEqual(payload["ninetyDays"], {"day": True, "week": True, "month": True})
+        self.assertEqual(payload["normalized"], ["day", "week", "month", "day", "day"])
+        self.assertEqual(payload["auto"], ["day", "day", "day", "day", "week", "week", "week", "month", "month"])
+        self.assertEqual(payload["resolved"], ["week", "day", "week", "day", "day"])
+
+    def test_spend_trend_granularity_control_drives_chart(self):
+        for marker in (
+            '<div class=seg id=s-granularity role=group aria-label="Group spend by">',
+            "data-spend-granularity=day>Day</button>",
+            "data-spend-granularity=week>Week</button>",
+            "data-spend-granularity=month>Month</button>",
+            "let spendGranularityChoice='auto',spendChartRows=[];",
+            "spendChartRows=spendBucketRows(rows,granularity,today);",
+            "reconcileSpendBars(spendChartRows);",
+            "<div class=spendGrid aria-hidden=true></div>",
+            "button.disabled=!granularityOptions[value];",
+        ):
+            self.assertIn(marker, self.page)
+        render_spend = self.page.split("function renderSpend(xs)", 1)[1].split(
+            "function validateSpendCustomDraft", 1,
+        )[0]
+        self.assertIn("spendResolveGranularity(spendGranularityChoice,rows)", render_spend)
+        self.assertNotIn("SPEND_GRANULARITY_KEY", self.page)
+        self.assertIn("--spend-bar-fill:linear-gradient(180deg,var(--signal),rgb(var(--signal-rgb)/.38))", self.page)
+        stack_rule = self.page.split(".spendDayStack{", 1)[1].split("}", 1)[0]
+        self.assertNotIn("border-radius", stack_rule)
+        self.assertIn("width:min(var(--spend-bar-max,24px),64%)", stack_rule)
+        self.assertNotIn("repeating-linear-gradient(to top,transparent 0 44px", self.page)
 
     def test_spend_average_reference_uses_every_calendar_day(self):
         """Dropping zero-spend days makes the chart line disagree with the KPI."""
