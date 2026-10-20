@@ -1,6 +1,7 @@
 """macOS path and lifecycle policy."""
 
 import os
+import posixpath
 import re
 import subprocess
 
@@ -101,22 +102,22 @@ class MacOSPlatformServices(PosixPlatformServices):
         config_home = self._environment_path("XDG_CONFIG_HOME", "~/.config")
         data_home = self._environment_path("XDG_DATA_HOME", "~/.local/share")
         cache_home = self._environment_path("XDG_CACHE_HOME", "~/.cache")
-        application_support = os.path.join(self.home, "Library", "Application Support")
+        application_support = posixpath.join(self.home, "Library", "Application Support")
         return PlatformPaths(
             config_home=config_home,
             data_home=data_home,
             cache_home=cache_home,
             claude_desktop_data_roots=(
-                os.path.join(application_support, "Claude"),
-                os.path.join(application_support, "Claude-3p"),
+                posixpath.join(application_support, "Claude"),
+                posixpath.join(application_support, "Claude-3p"),
             ),
-            cursor_state_db=os.path.join(
+            cursor_state_db=posixpath.join(
                 application_support, "Cursor", "User", "globalStorage", "state.vscdb"
             ),
-            cursor_request_logs=os.path.join(application_support, "Cursor", "logs"),
-            opencode_data_root=os.path.join(data_home, "opencode"),
-            opencode_cache_root=os.path.join(cache_home, "opencode"),
-            default_trash_dir=os.path.join(self.home, ".Trash"),
+            cursor_request_logs=posixpath.join(application_support, "Cursor", "logs"),
+            opencode_data_root=posixpath.join(data_home, "opencode"),
+            opencode_cache_root=posixpath.join(cache_home, "opencode"),
+            default_trash_dir=posixpath.join(self.home, ".Trash"),
         )
 
     def trash_plan(self, path, override=None, command_available=False):

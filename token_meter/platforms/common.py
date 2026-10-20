@@ -1,6 +1,7 @@
 """Shared POSIX platform behavior."""
 
 import os
+import posixpath
 
 from .base import PlatformCapabilities, ProcessOptions, ProcessPurpose, UpdatePlan
 
@@ -13,7 +14,7 @@ def expand_home(path, home):
     if value == "~":
         return home
     if value.startswith("~/"):
-        return os.path.join(home, value[2:])
+        return posixpath.join(home, value[2:])
     return value
 
 
@@ -41,8 +42,8 @@ class PosixPlatformServices:
     def capabilities(self):
         return PlatformCapabilities(paths=True, detached_process=True, trash=True)
 
-    def update_plan(self, source_root, checkout, status_path):
-        script = os.path.join(str(source_root), "scripts", "update")
+    def update_plan(self, source_root, checkout, status_path, retry_revision=""):
+        script = posixpath.join(str(source_root), "scripts", "update")
         return UpdatePlan(
             supported=True,
             script_path=script,
@@ -50,7 +51,7 @@ class PosixPlatformServices:
         )
 
     def agent_launcher(self, source_root):
-        return os.path.join(str(source_root), "scripts", "run-token-meter-mcp")
+        return posixpath.join(str(source_root), "scripts", "run-token-meter-mcp")
 
     def lower_background_priority(self):
         try:
