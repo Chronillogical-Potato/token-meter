@@ -17521,7 +17521,8 @@ class DailySummaryTests(unittest.TestCase):
         self.assertNotIn("PRIVATE PROMPT TEXT", encoded)
         self.assertNotIn("/private/traces", encoded)
         self.assertEqual(single_status, 200)
-        self.assertEqual(single["insights"], [])
+        self.assertNotIn("insights", single)
+        self.assertNotIn("insights", payload)
         self.assertEqual((empty_status, empty["ok"]), (400, False))
         self.assertEqual((missing_status, missing["ok"]), (404, False))
         self.assertIn(
