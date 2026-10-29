@@ -145,8 +145,9 @@ Token Meter reads local agent traces, calculates clearly labeled usage estimates
   read-back verification.
 - Before routing work, read `.agents/workflow/routing.yaml`,
   `.agents/workflow/review-policy.yaml`, and
-  `.agents/workflow/handoff.schema.json`. Use the six canonical capability
-  skills under `.agents/skills/` according to the routing contract.
+  `.agents/workflow/handoff.schema.json`. Use the canonical capability
+  skills under `.agents/skills/` according to the routing contract. For a
+  pull-request review request, use `token-meter-pr-review`.
 - Work directly by default. Delegate only a bounded, independently verifiable
   assignment to the matching specialist adapter. Specialists must not delegate.
 - Keep one tracked-file writer per worktree. The coordinator may write directly
